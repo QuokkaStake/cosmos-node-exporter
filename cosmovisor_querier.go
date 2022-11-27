@@ -46,5 +46,7 @@ func (c *CosmovisorQuerier) Get() []prometheus.Collector {
 			Set(BoolToFloat64(upgrade.BinaryPresent))
 	}
 
-	return []prometheus.Collector{}
+	return []prometheus.Collector{
+		upgradeBinaryPresent,
+	}
 }
