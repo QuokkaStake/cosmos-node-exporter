@@ -23,13 +23,19 @@ func NewApp(
 	appLogger := logger.With().Str("component", "app").Logger()
 
 	var tendermintRPC *TendermintRPC
+	var cosmovisor *Cosmovisor
 
 	if config.TendermintConfig.Address != "" {
 		tendermintRPC = NewTendermintRPC(config, logger)
 	}
 
+	if config.CosmovisorConfig.Enabled && config.CosmovisorConfig.ChainFolder != "" && config.CosmovisorConfig.ChainBinaryName != "" {
+		cosmovisor = NewCosmovisor(config, logger)
+	}
+
 	queriers := []Querier{
 		NewNodeStatsQuerier(logger, tendermintRPC),
+		NewCosmovisorQuerier(logger, cosmovisor),
 	}
 
 	for _, querier := range queriers {

@@ -16,9 +16,16 @@ type TendermintConfig struct {
 	Address string `toml:"address" default:"http://localhost:26657"`
 }
 
+type CosmovisorConfig struct {
+	Enabled         bool   `toml:"enabled" default:"true"`
+	ChainBinaryName string `toml:"chain-binary-name"`
+	ChainFolder     string `toml:"chain-folder"`
+}
+
 type Config struct {
 	LogConfig        LogConfig        `toml:"log"`
 	TendermintConfig TendermintConfig `toml:"tendermint"`
+	CosmovisorConfig CosmovisorConfig `toml:"cosmovisor"`
 	ListenAddress    string           `toml:"listen-address" default:":9500"`
 }
 

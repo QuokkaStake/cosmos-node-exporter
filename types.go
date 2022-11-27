@@ -9,3 +9,8 @@ type Querier interface {
 	Get() []prometheus.Collector
 	Name() string
 }
+
+type Upgrade struct {
+	Name          string
+	BinaryPresent bool
+}
