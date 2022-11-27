@@ -61,6 +61,7 @@ func (c *Cosmovisor) GetUpgrades() ([]Upgrade, error) {
 			upgrade.BinaryPresent = true
 		}
 
+		upgrades = append(upgrades, upgrade)
 	}
 
 	return upgrades, nil

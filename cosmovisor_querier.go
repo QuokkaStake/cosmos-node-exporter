@@ -26,10 +26,24 @@ func (c *CosmovisorQuerier) Name() string {
 }
 
 func (c *CosmovisorQuerier) Get() []prometheus.Collector {
-	_, err := c.Cosmovisor.GetUpgrades()
+	upgrades, err := c.Cosmovisor.GetUpgrades()
 	if err != nil {
 		c.Logger.Error().Err(err).Msg("Could not get Cosmovisor upgrades")
 		return []prometheus.Collector{}
+	}
+
+	upgradeBinaryPresent := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: MetricsPrefix + "upgrade_binary_present",
+			Help: "Is upgrade binary present?",
+		},
+		[]string{"name"},
+	)
+
+	for _, upgrade := range upgrades {
+		upgradeBinaryPresent.
+			With(prometheus.Labels{"name": upgrade.Name}).
+			Set(BoolToFloat64(upgrade.BinaryPresent))
 	}
 
 	return []prometheus.Collector{}
