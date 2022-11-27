@@ -24,6 +24,7 @@ func NewApp(
 
 	var tendermintRPC *TendermintRPC
 	var cosmovisor *Cosmovisor
+	var github *Github
 
 	if config.TendermintConfig.Address != "" {
 		tendermintRPC = NewTendermintRPC(config, logger)
@@ -33,9 +34,14 @@ func NewApp(
 		cosmovisor = NewCosmovisor(config, logger)
 	}
 
+	if config.GithubConfig.Repository != "" {
+		github = NewGithub(config, logger)
+	}
+
 	queriers := []Querier{
 		NewNodeStatsQuerier(logger, tendermintRPC),
 		NewCosmovisorQuerier(logger, cosmovisor),
+		NewVersionsQuerier(logger, github, cosmovisor),
 	}
 
 	for _, querier := range queriers {

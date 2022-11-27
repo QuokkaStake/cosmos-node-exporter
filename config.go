@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -16,20 +17,43 @@ type TendermintConfig struct {
 	Address string `toml:"address" default:"http://localhost:26657"`
 }
 
+type GithubConfig struct {
+	Repository string `toml:"repository" default:""`
+	Token      string `toml:"token"`
+}
+
 type CosmovisorConfig struct {
 	Enabled         bool   `toml:"enabled" default:"true"`
 	ChainBinaryName string `toml:"chain-binary-name"`
 	ChainFolder     string `toml:"chain-folder"`
+	CosmovisorPath  string `toml:"cosmovisor-path"`
 }
 
 type Config struct {
 	LogConfig        LogConfig        `toml:"log"`
 	TendermintConfig TendermintConfig `toml:"tendermint"`
 	CosmovisorConfig CosmovisorConfig `toml:"cosmovisor"`
+	GithubConfig     GithubConfig     `toml:"github"`
 	ListenAddress    string           `toml:"listen-address" default:":9500"`
 }
 
+func (c *GithubConfig) Validate() error {
+	if c.Repository == "" {
+		return nil
+	}
+
+	if !GithubRegexp.Match([]byte(c.Repository)) {
+		return fmt.Errorf("repository is not valid")
+	}
+
+	return nil
+}
+
 func (c *Config) Validate() error {
+	if err := c.GithubConfig.Validate(); err != nil {
+		return fmt.Errorf("GitHub config is invalid: %s", err)
+	}
+
 	return nil
 }
 
