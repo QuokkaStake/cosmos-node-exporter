@@ -47,7 +47,7 @@ func getJsonString(input string) string {
 
 func (c *Cosmovisor) GetVersion() (VersionInfo, error) {
 	out, err := exec.
-		Command(c.CosmovisorPath, "version", "--long", "--output", "json").
+		Command(c.CosmovisorPath, "run", "version", "--long", "--output", "json").
 		CombinedOutput()
 	if err != nil {
 		c.Logger.Error().Err(err).Str("output", string(out)).Msg("Could not get app version")
