@@ -17,8 +17,9 @@ func NewVersionsQuerier(
 	cosmovisor *Cosmovisor,
 ) *VersionsQuerier {
 	return &VersionsQuerier{
-		Logger: logger.With().Str("component", "tendermint_rpc").Logger(),
-		Github: github,
+		Logger:     logger.With().Str("component", "tendermint_rpc").Logger(),
+		Github:     github,
+		Cosmovisor: cosmovisor,
 	}
 }
 
