@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/BurntSushi/toml v1.1.0
+	github.com/Masterminds/semver v1.5.0
 	github.com/google/uuid v1.3.0
 	github.com/mcuadros/go-defaults v1.2.0
 	github.com/prometheus/client_golang v1.14.0

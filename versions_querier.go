@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
+
+	"github.com/Masterminds/semver"
 )
 
 type VersionsQuerier struct {
@@ -38,6 +42,11 @@ func (v *VersionsQuerier) Get() []prometheus.Collector {
 		return []prometheus.Collector{}
 	}
 
+	// stripping first "v" character: "v1.2.3" => "1.2.3"
+	if releaseInfo.TagName[0] == 'v' {
+		releaseInfo.TagName = releaseInfo.TagName[1:]
+	}
+
 	versionInfo, err := v.Cosmovisor.GetVersion()
 	if err != nil {
 		v.Logger.Err(err).Msg("Could not get app version")
@@ -68,8 +77,40 @@ func (v *VersionsQuerier) Get() []prometheus.Collector {
 		With(prometheus.Labels{"version": versionInfo.Version}).
 		Set(1)
 
-	return []prometheus.Collector{
+	collectors := []prometheus.Collector{
 		remoteVersion,
 		localVersion,
 	}
+
+	semverLocal, err := semver.NewVersion(versionInfo.Version)
+	if err != nil {
+		v.Logger.Err(err).Msg("Could not get local app version")
+		return collectors
+	}
+
+	semverConstraint, err := semver.NewConstraint(fmt.Sprintf(">= %s", releaseInfo.TagName))
+	if err != nil {
+		v.Logger.Err(err).Msg("Could not get remote app version")
+		return collectors
+	}
+
+	isLatestOrSameVersion := semverConstraint.Check(semverLocal)
+
+	isUsingLatestVersion := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: MetricsPrefix + "is_latest",
+			Help: "Is the fullnode using the same or latest version?",
+		},
+		[]string{"local_version", "remote_version"},
+	)
+
+	isUsingLatestVersion.
+		With(prometheus.Labels{
+			"local_version":  versionInfo.Version,
+			"remote_version": releaseInfo.TagName,
+		}).
+		Set(BoolToFloat64(isLatestOrSameVersion))
+
+	collectors = append(collectors, isUsingLatestVersion)
+	return collectors
 }
