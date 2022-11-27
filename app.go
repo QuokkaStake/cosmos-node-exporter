@@ -20,9 +20,29 @@ func NewApp(
 	logger *zerolog.Logger,
 	config *Config,
 ) *App {
+	appLogger := logger.With().Str("component", "app").Logger()
+
+	var tendermintRPC *TendermintRPC
+
+	if config.TendermintConfig.Address != "" {
+		tendermintRPC = NewTendermintRPC(config, logger)
+	}
+
+	queriers := []Querier{
+		NewNodeStatsQuerier(logger, tendermintRPC),
+	}
+
+	for _, querier := range queriers {
+		if querier.Enabled() {
+			appLogger.Debug().Str("name", querier.Name()).Msg("Querier is enabled")
+		} else {
+			appLogger.Debug().Str("name", querier.Name()).Msg("Querier is disabled")
+		}
+	}
+
 	return &App{
-		Logger:   logger.With().Str("component", "app").Logger(),
-		Queriers: []Querier{},
+		Logger:   appLogger,
+		Queriers: queriers,
 	}
 }
 
@@ -43,12 +63,16 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		wg.Add(1)
-		go func() {
+		go func(querier Querier) {
 			querierResults := querier.Get()
 			mu.Lock()
 			allResults[querier.Name()] = querierResults
-		}()
+			mu.Unlock()
+			wg.Done()
+		}(querier)
 	}
+
+	wg.Wait()
 
 	registry := prometheus.NewRegistry()
 	for _, querierResults := range allResults {
