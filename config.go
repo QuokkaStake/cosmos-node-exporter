@@ -23,10 +23,13 @@ type GithubConfig struct {
 }
 
 type CosmovisorConfig struct {
-	Enabled         bool   `toml:"enabled" default:"true"`
 	ChainBinaryName string `toml:"chain-binary-name"`
 	ChainFolder     string `toml:"chain-folder"`
 	CosmovisorPath  string `toml:"cosmovisor-path"`
+}
+
+func (c *CosmovisorConfig) IsEnabled() bool {
+	return c.ChainBinaryName != "" && c.ChainFolder != "" && c.CosmovisorPath != ""
 }
 
 type Config struct {

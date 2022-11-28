@@ -35,11 +35,16 @@ func (v *VersionsQuerier) Name() string {
 	return "versions-querier"
 }
 
-func (v *VersionsQuerier) Get() []prometheus.Collector {
+func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
+	githubQuery := QueryInfo{
+		Action:  "github_get_latest_release",
+		Success: false,
+	}
+
 	releaseInfo, err := v.Github.GetLatestRelease()
 	if err != nil {
 		v.Logger.Err(err).Msg("Could not get latest Github version")
-		return []prometheus.Collector{}
+		return []prometheus.Collector{}, []QueryInfo{githubQuery}
 	}
 
 	// stripping first "v" character: "v1.2.3" => "1.2.3"
@@ -47,11 +52,19 @@ func (v *VersionsQuerier) Get() []prometheus.Collector {
 		releaseInfo.TagName = releaseInfo.TagName[1:]
 	}
 
+	githubQuery.Success = true
+	localVersionQuery := QueryInfo{
+		Action:  "cosmovisor_get_version",
+		Success: false,
+	}
+
 	versionInfo, err := v.Cosmovisor.GetVersion()
 	if err != nil {
 		v.Logger.Err(err).Msg("Could not get app version")
-		return []prometheus.Collector{}
+		return []prometheus.Collector{}, []QueryInfo{githubQuery, localVersionQuery}
 	}
+
+	localVersionQuery.Success = true
 
 	remoteVersion := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -85,13 +98,13 @@ func (v *VersionsQuerier) Get() []prometheus.Collector {
 	semverLocal, err := semver.NewVersion(versionInfo.Version)
 	if err != nil {
 		v.Logger.Err(err).Msg("Could not get local app version")
-		return collectors
+		return collectors, []QueryInfo{githubQuery, localVersionQuery}
 	}
 
 	semverConstraint, err := semver.NewConstraint(fmt.Sprintf(">= %s", releaseInfo.TagName))
 	if err != nil {
 		v.Logger.Err(err).Msg("Could not get remote app version")
-		return collectors
+		return collectors, []QueryInfo{githubQuery, localVersionQuery}
 	}
 
 	isLatestOrSameVersion := semverConstraint.Check(semverLocal)
@@ -112,5 +125,5 @@ func (v *VersionsQuerier) Get() []prometheus.Collector {
 		Set(BoolToFloat64(isLatestOrSameVersion))
 
 	collectors = append(collectors, isUsingLatestVersion)
-	return collectors
+	return collectors, []QueryInfo{githubQuery, localVersionQuery}
 }

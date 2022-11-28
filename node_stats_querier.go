@@ -27,11 +27,16 @@ func (n *NodeStatsQuerier) Name() string {
 	return "node-stats-querier"
 }
 
-func (n *NodeStatsQuerier) Get() []prometheus.Collector {
+func (n *NodeStatsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
+	queryInfo := QueryInfo{
+		Action:  "node_status",
+		Success: false,
+	}
+
 	status, err := n.TendermintRPC.GetStatus()
 	if err != nil {
 		n.Logger.Error().Err(err).Msg("Could not fetch node status")
-		return []prometheus.Collector{}
+		return []prometheus.Collector{}, []QueryInfo{queryInfo}
 	}
 
 	catchingUpGauge := prometheus.NewGaugeVec(
@@ -70,9 +75,11 @@ func (n *NodeStatsQuerier) Get() []prometheus.Collector {
 		With(prometheus.Labels{}).
 		Set(float64(status.ValidatorInfo.VotingPower))
 
+	queryInfo.Success = true
+
 	return []prometheus.Collector{
 		catchingUpGauge,
 		timeSinceLatestBlockGauge,
 		votingPowerGauge,
-	}
+	}, []QueryInfo{queryInfo}
 }

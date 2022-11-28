@@ -106,3 +106,28 @@ func (c *Cosmovisor) GetUpgrades() ([]Upgrade, error) {
 
 	return upgrades, nil
 }
+
+func (c *Cosmovisor) GetUpgradePlan() (UpgradePlan, error) {
+	out, err := exec.
+		Command(c.CosmovisorPath, "run", "query", "upgrade", "plan", "--output", "json").
+		CombinedOutput()
+	if err != nil {
+		c.Logger.Error().Err(err).Str("output", string(out)).Msg("Could not get upgrade plan")
+		return UpgradePlan{}, err
+	}
+
+	// no upgrade planned is ok and shouldn't produce an error
+	if strings.Contains(string(out), "no upgrade scheduled") {
+		return UpgradePlan{}, nil
+	}
+
+	jsonOutput := getJsonString(string(out))
+
+	var upgradePlan UpgradePlan
+	if err := json.Unmarshal([]byte(jsonOutput), &upgradePlan); err != nil {
+		c.Logger.Error().Err(err).Str("output", jsonOutput).Msg("Could not unmarshall upgrade plan")
+		return upgradePlan, err
+	}
+
+	return upgradePlan, nil
+}

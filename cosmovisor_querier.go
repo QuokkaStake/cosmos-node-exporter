@@ -25,11 +25,16 @@ func (c *CosmovisorQuerier) Name() string {
 	return "cosmovisor-querier"
 }
 
-func (c *CosmovisorQuerier) Get() []prometheus.Collector {
+func (c *CosmovisorQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
+	queryInfo := QueryInfo{
+		Action:  "cosmovisor_get_upgrades",
+		Success: false,
+	}
+
 	upgrades, err := c.Cosmovisor.GetUpgrades()
 	if err != nil {
 		c.Logger.Error().Err(err).Msg("Could not get Cosmovisor upgrades")
-		return []prometheus.Collector{}
+		return []prometheus.Collector{}, []QueryInfo{queryInfo}
 	}
 
 	upgradeBinaryPresent := prometheus.NewGaugeVec(
@@ -46,7 +51,9 @@ func (c *CosmovisorQuerier) Get() []prometheus.Collector {
 			Set(BoolToFloat64(upgrade.BinaryPresent))
 	}
 
+	queryInfo.Success = true
+
 	return []prometheus.Collector{
 		upgradeBinaryPresent,
-	}
+	}, []QueryInfo{queryInfo}
 }

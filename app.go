@@ -30,7 +30,7 @@ func NewApp(
 		tendermintRPC = NewTendermintRPC(config, logger)
 	}
 
-	if config.CosmovisorConfig.Enabled && config.CosmovisorConfig.ChainFolder != "" && config.CosmovisorConfig.ChainBinaryName != "" {
+	if config.CosmovisorConfig.IsEnabled() {
 		cosmovisor = NewCosmovisor(config, logger)
 	}
 
@@ -42,6 +42,7 @@ func NewApp(
 		NewNodeStatsQuerier(logger, tendermintRPC),
 		NewCosmovisorQuerier(logger, cosmovisor),
 		NewVersionsQuerier(logger, github, cosmovisor),
+		NewUpgradesQuerier(logger, cosmovisor),
 	}
 
 	for _, querier := range queriers {
@@ -65,20 +66,39 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 		Str("request-id", uuid.New().String()).
 		Logger()
 
+	registry := prometheus.NewRegistry()
+
+	querierEnabled := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: MetricsPrefix + "querier_enabled",
+			Help: "Is querier enabled?",
+		},
+		[]string{"querier"},
+	)
+	registry.MustRegister(querierEnabled)
+
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	allResults := map[string][]prometheus.Collector{}
+	allQueries := map[string][]QueryInfo{}
 
 	for _, querier := range a.Queriers {
+		querierEnabled.
+			With(prometheus.Labels{
+				"querier": querier.Name(),
+			}).
+			Set(BoolToFloat64(querier.Enabled()))
+
 		if !querier.Enabled() {
 			continue
 		}
 
 		wg.Add(1)
 		go func(querier Querier) {
-			querierResults := querier.Get()
+			querierResults, queriesInfo := querier.Get()
 			mu.Lock()
 			allResults[querier.Name()] = querierResults
+			allQueries[querier.Name()] = queriesInfo
 			mu.Unlock()
 			wg.Done()
 		}(querier)
@@ -86,10 +106,29 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	wg.Wait()
 
-	registry := prometheus.NewRegistry()
 	for _, querierResults := range allResults {
 		for _, result := range querierResults {
 			registry.MustRegister(result)
+		}
+	}
+
+	querySuccessfulGauge := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: MetricsPrefix + "query_successful",
+			Help: "Was query successful?",
+		},
+		[]string{"querier", "action"},
+	)
+	registry.MustRegister(querySuccessfulGauge)
+
+	for name, queryInfos := range allQueries {
+		for _, queryInfo := range queryInfos {
+			querySuccessfulGauge.
+				With(prometheus.Labels{
+					"querier": name,
+					"action":  queryInfo.Action,
+				}).
+				Set(BoolToFloat64(queryInfo.Success))
 		}
 	}
 

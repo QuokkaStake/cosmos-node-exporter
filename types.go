@@ -6,7 +6,7 @@ import (
 
 type Querier interface {
 	Enabled() bool
-	Get() []prometheus.Collector
+	Get() ([]prometheus.Collector, []QueryInfo)
 	Name() string
 }
 
@@ -23,4 +23,12 @@ type ReleaseInfo struct {
 type VersionInfo struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
+}
+
+type QueryInfo struct {
+	Action  string
+	Success bool
+}
+
+type UpgradePlan struct {
 }
