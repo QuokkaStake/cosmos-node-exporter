@@ -112,13 +112,13 @@ func (c *Cosmovisor) GetUpgradePlan() (UpgradePlan, error) {
 		Command(c.CosmovisorPath, "run", "query", "upgrade", "plan", "--output", "json").
 		CombinedOutput()
 	if err != nil {
+		// no upgrade planned is ok and shouldn't produce an error
+		if strings.Contains(string(out), "no upgrade scheduled") {
+			return UpgradePlan{}, nil
+		}
+
 		c.Logger.Error().Err(err).Str("output", string(out)).Msg("Could not get upgrade plan")
 		return UpgradePlan{}, err
-	}
-
-	// no upgrade planned is ok and shouldn't produce an error
-	if strings.Contains(string(out), "no upgrade scheduled") {
-		return UpgradePlan{}, nil
 	}
 
 	jsonOutput := getJsonString(string(out))
