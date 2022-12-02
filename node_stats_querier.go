@@ -12,10 +12,10 @@ type NodeStatsQuerier struct {
 	Logger        zerolog.Logger
 }
 
-func NewNodeStatsQuerier(logger *zerolog.Logger, tenderminRPC *TendermintRPC) *NodeStatsQuerier {
+func NewNodeStatsQuerier(logger *zerolog.Logger, tendermintRPC *TendermintRPC) *NodeStatsQuerier {
 	return &NodeStatsQuerier{
 		Logger:        logger.With().Str("component", "tendermint_rpc").Logger(),
-		TendermintRPC: tenderminRPC,
+		TendermintRPC: tendermintRPC,
 	}
 }
 
