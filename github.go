@@ -61,8 +61,6 @@ func (g *Github) GetLatestRelease() (ReleaseInfo, error) {
 	}
 	defer res.Body.Close()
 
-	g.Logger.Info().Int("status", res.StatusCode).Msg("Github returned status")
-
 	if res.StatusCode == http.StatusNotModified && g.LastResult != nil {
 		g.Logger.Trace().Msg("Github returned cached response")
 		g.LastModified = time.Now()
