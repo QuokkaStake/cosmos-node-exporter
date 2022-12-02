@@ -42,6 +42,7 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 	var (
 		releaseInfo ReleaseInfo
 		versionInfo VersionInfo
+		err         error
 	)
 
 	if v.Github != nil {
@@ -50,7 +51,7 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 			Success: false,
 		})
 
-		releaseInfo, err := v.Github.GetLatestRelease()
+		releaseInfo, err = v.Github.GetLatestRelease()
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get latest Github version")
 			return []prometheus.Collector{}, queriesInfo
@@ -89,7 +90,7 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 			Success: false,
 		})
 
-		versionInfo, err := v.Cosmovisor.GetVersion()
+		versionInfo, err = v.Cosmovisor.GetVersion()
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get app version")
 			return []prometheus.Collector{}, queriesInfo
