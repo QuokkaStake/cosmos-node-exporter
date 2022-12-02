@@ -47,6 +47,11 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 		return []prometheus.Collector{}, []QueryInfo{githubQuery}
 	}
 
+	if releaseInfo.TagName == "" {
+		v.Logger.Err(err).Msg("Malformed Github response when querying version")
+		return []prometheus.Collector{}, []QueryInfo{githubQuery}
+	}
+
 	// stripping first "v" character: "v1.2.3" => "1.2.3"
 	if releaseInfo.TagName[0] == 'v' {
 		releaseInfo.TagName = releaseInfo.TagName[1:]
