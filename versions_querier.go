@@ -28,7 +28,7 @@ func NewVersionsQuerier(
 }
 
 func (v *VersionsQuerier) Enabled() bool {
-	return v.Github != nil
+	return v.Github != nil || v.Cosmovisor != nil
 }
 
 func (v *VersionsQuerier) Name() string {
@@ -36,99 +36,114 @@ func (v *VersionsQuerier) Name() string {
 }
 
 func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
-	githubQuery := QueryInfo{
-		Action:  "github_get_latest_release",
-		Success: false,
-	}
+	queriesInfo := []QueryInfo{}
+	collectors := []prometheus.Collector{}
 
-	releaseInfo, err := v.Github.GetLatestRelease()
-	if err != nil {
-		v.Logger.Err(err).Msg("Could not get latest Github version")
-		return []prometheus.Collector{}, []QueryInfo{githubQuery}
-	}
-
-	if releaseInfo.TagName == "" {
-		v.Logger.Err(err).Msg("Malformed Github response when querying version")
-		return []prometheus.Collector{}, []QueryInfo{githubQuery}
-	}
-
-	// stripping first "v" character: "v1.2.3" => "1.2.3"
-	if releaseInfo.TagName[0] == 'v' {
-		releaseInfo.TagName = releaseInfo.TagName[1:]
-	}
-
-	githubQuery.Success = true
-	localVersionQuery := QueryInfo{
-		Action:  "cosmovisor_get_version",
-		Success: false,
-	}
-
-	versionInfo, err := v.Cosmovisor.GetVersion()
-	if err != nil {
-		v.Logger.Err(err).Msg("Could not get app version")
-		return []prometheus.Collector{}, []QueryInfo{githubQuery, localVersionQuery}
-	}
-
-	localVersionQuery.Success = true
-
-	remoteVersion := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: MetricsPrefix + "remote_version",
-			Help: "Latest version from Github",
-		},
-		[]string{"version"},
+	var (
+		releaseInfo ReleaseInfo
+		versionInfo VersionInfo
 	)
 
-	localVersion := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: MetricsPrefix + "local_version",
-			Help: "Fullnode local version",
-		},
-		[]string{"version"},
-	)
+	if v.Github != nil {
+		queriesInfo = append(queriesInfo, QueryInfo{
+			Action:  "github_get_latest_release",
+			Success: false,
+		})
 
-	remoteVersion.
-		With(prometheus.Labels{"version": releaseInfo.TagName}).
-		Set(1)
+		releaseInfo, err := v.Github.GetLatestRelease()
+		if err != nil {
+			v.Logger.Err(err).Msg("Could not get latest Github version")
+			return []prometheus.Collector{}, queriesInfo
+		}
 
-	localVersion.
-		With(prometheus.Labels{"version": versionInfo.Version}).
-		Set(1)
+		if releaseInfo.TagName == "" {
+			v.Logger.Err(err).Msg("Malformed Github response when querying version")
+			return []prometheus.Collector{}, queriesInfo
+		}
 
-	collectors := []prometheus.Collector{
-		remoteVersion,
-		localVersion,
+		// stripping first "v" character: "v1.2.3" => "1.2.3"
+		if releaseInfo.TagName[0] == 'v' {
+			releaseInfo.TagName = releaseInfo.TagName[1:]
+		}
+
+		queriesInfo[len(queriesInfo)-1].Success = true
+
+		remoteVersion := prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: MetricsPrefix + "remote_version",
+				Help: "Latest version from Github",
+			},
+			[]string{"version"},
+		)
+
+		remoteVersion.
+			With(prometheus.Labels{"version": releaseInfo.TagName}).
+			Set(1)
+
+		collectors = append(collectors, remoteVersion)
 	}
 
-	semverLocal, err := semver.NewVersion(versionInfo.Version)
-	if err != nil {
-		v.Logger.Err(err).Msg("Could not get local app version")
-		return collectors, []QueryInfo{githubQuery, localVersionQuery}
+	if v.Cosmovisor != nil {
+		queriesInfo = append(queriesInfo, QueryInfo{
+			Action:  "cosmovisor_get_version",
+			Success: false,
+		})
+
+		versionInfo, err := v.Cosmovisor.GetVersion()
+		if err != nil {
+			v.Logger.Err(err).Msg("Could not get app version")
+			return []prometheus.Collector{}, queriesInfo
+		}
+
+		queriesInfo[len(queriesInfo)-1].Success = true
+
+		localVersion := prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: MetricsPrefix + "local_version",
+				Help: "Fullnode local version",
+			},
+			[]string{"version"},
+		)
+
+		localVersion.
+			With(prometheus.Labels{"version": versionInfo.Version}).
+			Set(1)
+
+		collectors = append(collectors, localVersion)
 	}
 
-	semverConstraint, err := semver.NewConstraint(fmt.Sprintf(">= %s", releaseInfo.TagName))
-	if err != nil {
-		v.Logger.Err(err).Msg("Could not get remote app version")
-		return collectors, []QueryInfo{githubQuery, localVersionQuery}
+	if v.Github != nil && v.Cosmovisor != nil {
+		semverLocal, err := semver.NewVersion(versionInfo.Version)
+		if err != nil {
+			v.Logger.Err(err).Msg("Could not get local app version")
+			return collectors, queriesInfo
+		}
+
+		semverConstraint, err := semver.NewConstraint(fmt.Sprintf(">= %s", releaseInfo.TagName))
+		if err != nil {
+			v.Logger.Err(err).Msg("Could not get remote app version")
+			return collectors, queriesInfo
+		}
+
+		isLatestOrSameVersion := semverConstraint.Check(semverLocal)
+
+		isUsingLatestVersion := prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: MetricsPrefix + "is_latest",
+				Help: "Is the fullnode using the same or latest version?",
+			},
+			[]string{"local_version", "remote_version"},
+		)
+
+		isUsingLatestVersion.
+			With(prometheus.Labels{
+				"local_version":  versionInfo.Version,
+				"remote_version": releaseInfo.TagName,
+			}).
+			Set(BoolToFloat64(isLatestOrSameVersion))
+
+		collectors = append(collectors, isUsingLatestVersion)
 	}
 
-	isLatestOrSameVersion := semverConstraint.Check(semverLocal)
-
-	isUsingLatestVersion := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: MetricsPrefix + "is_latest",
-			Help: "Is the fullnode using the same or latest version?",
-		},
-		[]string{"local_version", "remote_version"},
-	)
-
-	isUsingLatestVersion.
-		With(prometheus.Labels{
-			"local_version":  versionInfo.Version,
-			"remote_version": releaseInfo.TagName,
-		}).
-		Set(BoolToFloat64(isLatestOrSameVersion))
-
-	collectors = append(collectors, isUsingLatestVersion)
-	return collectors, []QueryInfo{githubQuery, localVersionQuery}
+	return collectors, queriesInfo
 }
