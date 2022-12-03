@@ -18,6 +18,7 @@ type Upgrade struct {
 type ReleaseInfo struct {
 	Name    string `json:"name"`
 	TagName string `json:"tag_name"`
+	Message string `json:"message"`
 }
 
 type VersionInfo struct {

@@ -70,6 +70,15 @@ func (g *Github) GetLatestRelease() (ReleaseInfo, error) {
 	releaseInfo := ReleaseInfo{}
 	err = json.NewDecoder(res.Body).Decode(&releaseInfo)
 
+	if err != nil {
+		return releaseInfo, err
+	}
+
+	// Github returned error, probably ratelimiting
+	if releaseInfo.Message != "" {
+		return releaseInfo, fmt.Errorf("got error from Github: %s", releaseInfo.Message)
+	}
+
 	g.LastModified = time.Now()
 	g.LastResult = &releaseInfo
 
