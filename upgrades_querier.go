@@ -99,14 +99,16 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 				Action:  "tendermint_get_upgrade_time",
 				Success: false,
 			}
-			queryInfos = append(queryInfos, tendermintQuery)
 
 			upgradeTime, err = u.Tendermint.GetEstimateTimeTillBlock(upgradeHeight)
 			if err != nil {
 				u.Logger.Err(err).Msg("Could not get estimated upgrade time")
+				queryInfos = append(queryInfos, tendermintQuery)
 				return queries, queryInfos
 			}
 			tendermintQuery.Success = true
+			queryInfos = append(queryInfos, tendermintQuery)
+
 		}
 
 		upgradeEstimatedTimeGauge.
