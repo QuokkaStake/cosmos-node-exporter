@@ -69,7 +69,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 		)
 
 		upgradeInfoGauge.
-			With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Name}).
+			With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
 			Set(BoolToFloat64(isUpgradePresent))
 		queries = append(queries, upgradeInfoGauge)
 
@@ -112,7 +112,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 		}
 
 		upgradeEstimatedTimeGauge.
-			With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Name}).
+			With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
 			Set(float64(upgradeTime.Unix()))
 		queries = append(queries, upgradeEstimatedTimeGauge)
 	}
