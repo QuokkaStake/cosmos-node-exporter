@@ -112,7 +112,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 		upgradeEstimatedTimeGauge.
 			With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Name}).
 			Set(float64(upgradeTime.Unix()))
-		queries = append(queries, upgradeInfoGauge)
+		queries = append(queries, upgradeEstimatedTimeGauge)
 	}
 
 	return queries, queryInfos
