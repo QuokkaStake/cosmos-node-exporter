@@ -65,24 +65,19 @@ func (c *Cosmovisor) GetVersion() (VersionInfo, error) {
 	return versionInfo, nil
 }
 
-func (c *Cosmovisor) GetUpgrades() ([]Upgrade, error) {
+func (c *Cosmovisor) GetUpgrades() (UpgradesPresent, error) {
 	upgradesFolder := fmt.Sprintf("%s/cosmovisor/upgrades", c.ChainFolder)
 	upgradesFolderContent, err := os.ReadDir(upgradesFolder)
 	if err != nil {
 		c.Logger.Error().Err(err).Msg("Could not fetch Cosmovisor upgrades folder content")
-		return []Upgrade{}, err
+		return map[string]bool{}, err
 	}
 
-	upgrades := []Upgrade{}
+	upgrades := map[string]bool{}
 
 	for _, upgradeFolder := range upgradesFolderContent {
-		upgrade := Upgrade{
-			Name:          upgradeFolder.Name(),
-			BinaryPresent: false,
-		}
-
 		if !upgradeFolder.IsDir() {
-			upgrades = append(upgrades, upgrade)
+			upgrades[upgradeFolder.Name()] = false
 			continue
 		}
 
@@ -98,10 +93,9 @@ func (c *Cosmovisor) GetUpgrades() ([]Upgrade, error) {
 				c.Logger.Warn().Err(err).Msg("Error fetching Cosmovisor upgrade")
 			}
 		} else {
-			upgrade.BinaryPresent = true
+			upgrades[upgradeFolder.Name()] = true
 		}
 
-		upgrades = append(upgrades, upgrade)
 	}
 
 	return upgrades, nil

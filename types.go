@@ -39,3 +39,14 @@ type UpgradePlan struct {
 	Height string    `json:"height"`
 	Info   string    `json:"info"`
 }
+
+type UpgradesPresent map[string]bool
+
+func (u UpgradesPresent) HasUpgrade(upgrade string) bool {
+	value, ok := u[upgrade]
+	if !ok {
+		return false
+	}
+
+	return value
+}
