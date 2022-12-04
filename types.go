@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -32,4 +34,19 @@ type QueryInfo struct {
 }
 
 type UpgradePlan struct {
+	Name   string    `json:"name"`
+	Time   time.Time `json:"time"`
+	Height string    `json:"height"`
+	Info   string    `json:"info"`
+}
+
+type UpgradesPresent map[string]bool
+
+func (u UpgradesPresent) HasUpgrade(upgrade string) bool {
+	value, ok := u[upgrade]
+	if !ok {
+		return false
+	}
+
+	return value
 }
