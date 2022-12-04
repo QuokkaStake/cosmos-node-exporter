@@ -142,7 +142,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 	)
 
 	upgradeBinaryPresentGauge.
-		With(prometheus.Labels{"name": upgrade.Name}).
+		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
 		Set(BoolToFloat64(upgrades.HasUpgrade(upgrade.Name)))
 
 	return queries, queryInfos
