@@ -42,7 +42,7 @@ func NewApp(
 		NewNodeStatsQuerier(logger, tendermintRPC),
 		NewCosmovisorQuerier(logger, cosmovisor),
 		NewVersionsQuerier(logger, github, cosmovisor),
-		NewUpgradesQuerier(logger, cosmovisor),
+		NewUpgradesQuerier(logger, cosmovisor, tendermintRPC),
 	}
 
 	for _, querier := range queriers {

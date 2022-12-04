@@ -8,12 +8,14 @@ import (
 type UpgradesQuerier struct {
 	Logger     zerolog.Logger
 	Cosmovisor *Cosmovisor
+	Tendermint *TendermintRPC
 }
 
-func NewUpgradesQuerier(logger *zerolog.Logger, cosmovisor *Cosmovisor) *UpgradesQuerier {
+func NewUpgradesQuerier(logger *zerolog.Logger, cosmovisor *Cosmovisor, tendermint *TendermintRPC) *UpgradesQuerier {
 	return &UpgradesQuerier{
 		Logger:     logger.With().Str("component", "upgrades_querier").Logger(),
 		Cosmovisor: cosmovisor,
+		Tendermint: tendermint,
 	}
 }
 
@@ -31,13 +33,14 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 		Success: false,
 	}
 
-	_, err := u.Cosmovisor.GetUpgradePlan()
+	upgrade, err := u.Cosmovisor.GetUpgradePlan()
 	if err != nil {
 		u.Logger.Err(err).Msg("Could not get latest Cosmovisor upgrade plan")
 		return []prometheus.Collector{}, []QueryInfo{cosmovisorQuery}
 	}
 
 	cosmovisorQuery.Success = true
+	isUpgradePresent := upgrade.Name != ""
 
 	upcomingUpgradePresent := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -49,9 +52,60 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 	upcomingUpgradePresent.
 		With(prometheus.Labels{}).
-		Set(0)
+		Set(BoolToFloat64(isUpgradePresent))
 
-	return []prometheus.Collector{
-		upcomingUpgradePresent,
-	}, []QueryInfo{cosmovisorQuery}
+	queries := []prometheus.Collector{upcomingUpgradePresent}
+	queryInfos := []QueryInfo{cosmovisorQuery}
+
+	if isUpgradePresent {
+		upgradeInfoGauge := prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: MetricsPrefix + "upgrade_info",
+				Help: "Future upgrade info",
+			},
+			[]string{"name", "info"},
+		)
+
+		upgradeInfoGauge.
+			With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Name}).
+			Set(BoolToFloat64(isUpgradePresent))
+		queries = append(queries, upgradeInfoGauge)
+
+		upgradeEstimatedTimeGauge := prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: MetricsPrefix + "upgrade_estimated_time",
+				Help: "Estimated upgrade time, as Unix timestamp",
+			},
+			[]string{"name", "info"},
+		)
+
+		upgradeTime := upgrade.Time
+		if upgradeTime.IsZero() {
+			if u.Tendermint == nil {
+				u.Logger.Warn().
+					Msg("Tendermint RPC not initialized and upgrade time is not specified, not returning upgrade time.")
+				return queries, queryInfos
+			}
+
+			tendermintQuery := QueryInfo{
+				Action:  "tendermint_get_upgrade_time",
+				Success: false,
+			}
+			queryInfos = append(queryInfos, tendermintQuery)
+
+			upgradeTime, err = u.Tendermint.GetEstimateTimeTillBlock(int64(upgrade.Height))
+			if err != nil {
+				u.Logger.Err(err).Msg("Could not get estimated upgrade time")
+				return queries, queryInfos
+			}
+			tendermintQuery.Success = true
+		}
+
+		upgradeEstimatedTimeGauge.
+			With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Name}).
+			Set(float64(upgradeTime.Unix()))
+		queries = append(queries, upgradeInfoGauge)
+	}
+
+	return queries, queryInfos
 }
