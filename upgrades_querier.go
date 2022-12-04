@@ -1,7 +1,9 @@
 package main
 
 import (
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -141,9 +143,15 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 		[]string{"name", "info"},
 	)
 
+	// From cosmovisor docs:
+	// The name variable in upgrades/<name> is the lowercased URI-encoded name
+	// of the upgrade as specified in the upgrade module plan.
+	upgradeName := strings.ToLower(upgrade.Name)
+	upgradeName = url.QueryEscape(upgradeName)
+
 	upgradeBinaryPresentGauge.
 		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
-		Set(BoolToFloat64(upgrades.HasUpgrade(upgrade.Name)))
+		Set(BoolToFloat64(upgrades.HasUpgrade(upgradeName)))
 	queries = append(queries, upgradeBinaryPresentGauge)
 
 	return queries, queryInfos
