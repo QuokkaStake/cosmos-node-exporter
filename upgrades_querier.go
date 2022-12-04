@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 )
@@ -87,13 +89,19 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 				return queries, queryInfos
 			}
 
+			upgradeHeight, err := strconv.ParseInt(upgrade.Height, 10, 64)
+			if err != nil {
+				u.Logger.Err(err).Msg("Could not convert expected upgrade height to int64")
+				return queries, queryInfos
+			}
+
 			tendermintQuery := QueryInfo{
 				Action:  "tendermint_get_upgrade_time",
 				Success: false,
 			}
 			queryInfos = append(queryInfos, tendermintQuery)
 
-			upgradeTime, err = u.Tendermint.GetEstimateTimeTillBlock(int64(upgrade.Height))
+			upgradeTime, err = u.Tendermint.GetEstimateTimeTillBlock(upgradeHeight)
 			if err != nil {
 				u.Logger.Err(err).Msg("Could not get estimated upgrade time")
 				return queries, queryInfos

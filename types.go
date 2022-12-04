@@ -36,6 +36,6 @@ type QueryInfo struct {
 type UpgradePlan struct {
 	Name   string    `json:"name"`
 	Time   time.Time `json:"time"`
-	Height int64     `json:"height"`
+	Height string    `json:"height"`
 	Info   string    `json:"info"`
 }
