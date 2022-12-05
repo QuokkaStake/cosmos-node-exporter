@@ -21,6 +21,7 @@ func NewGrpc(config *Config, logger *zerolog.Logger) *Grpc {
 	grpcConn, err := grpc.Dial(
 		config.GrpcConfig.Address,
 		grpc.WithInsecure(),
+		//nolint:staticcheck
 		grpc.WithTimeout(5*time.Second),
 	)
 	if err != nil {
