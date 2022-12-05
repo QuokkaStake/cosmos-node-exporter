@@ -24,10 +24,15 @@ func NewApp(
 
 	var tendermintRPC *TendermintRPC
 	var cosmovisor *Cosmovisor
+	var grpc *Grpc
 	var github *Github
 
 	if config.TendermintConfig.Address != "" {
 		tendermintRPC = NewTendermintRPC(config, logger)
+	}
+
+	if config.GrpcConfig.Address != "" {
+		grpc = NewGrpc(config, logger)
 	}
 
 	if config.CosmovisorConfig.IsEnabled() {
@@ -41,7 +46,7 @@ func NewApp(
 	queriers := []Querier{
 		NewNodeStatsQuerier(logger, tendermintRPC),
 		NewVersionsQuerier(logger, github, cosmovisor),
-		NewUpgradesQuerier(logger, cosmovisor, tendermintRPC),
+		NewUpgradesQuerier(logger, cosmovisor, grpc, tendermintRPC),
 	}
 
 	for _, querier := range queriers {

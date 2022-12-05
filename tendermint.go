@@ -7,7 +7,7 @@ import (
 	"github.com/rs/zerolog"
 
 	tmrpc "github.com/tendermint/tendermint/rpc/client/http"
-	"github.com/tendermint/tendermint/rpc/coretypes"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type TendermintRPC struct {
@@ -17,7 +17,7 @@ type TendermintRPC struct {
 }
 
 func NewTendermintRPC(config *Config, logger *zerolog.Logger) *TendermintRPC {
-	client, err := tmrpc.New(config.TendermintConfig.Address)
+	client, err := tmrpc.New(config.TendermintConfig.Address, "/websocket")
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Cannot instantiate Tendermint client")
 	}

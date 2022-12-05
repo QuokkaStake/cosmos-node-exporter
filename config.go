@@ -17,6 +17,10 @@ type TendermintConfig struct {
 	Address string `toml:"address" default:"http://localhost:26657"`
 }
 
+type GrpcConfig struct {
+	Address string `toml:"address" default:"localhost:9090"`
+}
+
 type GithubConfig struct {
 	Repository string `toml:"repository" default:""`
 	Token      string `toml:"token"`
@@ -35,6 +39,7 @@ func (c *CosmovisorConfig) IsEnabled() bool {
 type Config struct {
 	LogConfig        LogConfig        `toml:"log"`
 	TendermintConfig TendermintConfig `toml:"tendermint"`
+	GrpcConfig       GrpcConfig       `toml:"grpc"`
 	CosmovisorConfig CosmovisorConfig `toml:"cosmovisor"`
 	GithubConfig     GithubConfig     `toml:"github"`
 	ListenAddress    string           `toml:"listen-address" default:":9500"`
