@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,19 +11,26 @@ import (
 type UpgradesQuerier struct {
 	Logger     zerolog.Logger
 	Cosmovisor *Cosmovisor
+	Grpc       *Grpc
 	Tendermint *TendermintRPC
 }
 
-func NewUpgradesQuerier(logger *zerolog.Logger, cosmovisor *Cosmovisor, tendermint *TendermintRPC) *UpgradesQuerier {
+func NewUpgradesQuerier(
+	logger *zerolog.Logger,
+	cosmovisor *Cosmovisor,
+	grpc *Grpc,
+	tendermint *TendermintRPC,
+) *UpgradesQuerier {
 	return &UpgradesQuerier{
 		Logger:     logger.With().Str("component", "upgrades_querier").Logger(),
 		Cosmovisor: cosmovisor,
+		Grpc:       grpc,
 		Tendermint: tendermint,
 	}
 }
 
 func (u *UpgradesQuerier) Enabled() bool {
-	return u.Cosmovisor != nil
+	return u.Grpc != nil
 }
 
 func (u *UpgradesQuerier) Name() string {
@@ -33,11 +39,11 @@ func (u *UpgradesQuerier) Name() string {
 
 func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 	cosmovisorQuery := QueryInfo{
-		Action:  "cosmovisor_get_upgrade_plan",
+		Action:  "grpc_get_upgrade_plan",
 		Success: false,
 	}
 
-	upgrade, err := u.Cosmovisor.GetUpgradePlan()
+	upgrade, err := u.Grpc.GetUpgradePlan()
 	if err != nil {
 		u.Logger.Err(err).Msg("Could not get latest Cosmovisor upgrade plan")
 		return []prometheus.Collector{}, []QueryInfo{cosmovisorQuery}
@@ -94,18 +100,12 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 			return queries, queryInfos
 		}
 
-		upgradeHeight, err := strconv.ParseInt(upgrade.Height, 10, 64)
-		if err != nil {
-			u.Logger.Err(err).Msg("Could not convert expected upgrade height to int64")
-			return queries, queryInfos
-		}
-
 		tendermintQuery := QueryInfo{
 			Action:  "tendermint_get_upgrade_time",
 			Success: false,
 		}
 
-		upgradeTime, err = u.Tendermint.GetEstimateTimeTillBlock(upgradeHeight)
+		upgradeTime, err = u.Tendermint.GetEstimateTimeTillBlock(upgrade.Height)
 		if err != nil {
 			u.Logger.Err(err).Msg("Could not get estimated upgrade time")
 			queryInfos = append(queryInfos, tendermintQuery)
@@ -119,6 +119,12 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
 		Set(float64(upgradeTime.Unix()))
 	queries = append(queries, upgradeEstimatedTimeGauge)
+
+	if u.Cosmovisor == nil {
+		u.Logger.Warn().
+			Msg("Cosmovisor not initialized, not returning binary presence.")
+		return queries, queryInfos
+	}
 
 	cosmovisorGetUpgradesQueryInfo := QueryInfo{
 		Action:  "cosmovisor_get_upgrades",

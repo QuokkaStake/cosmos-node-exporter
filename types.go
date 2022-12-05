@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -31,13 +29,6 @@ type VersionInfo struct {
 type QueryInfo struct {
 	Action  string
 	Success bool
-}
-
-type UpgradePlan struct {
-	Name   string    `json:"name"`
-	Time   time.Time `json:"time"`
-	Height string    `json:"height"`
-	Info   string    `json:"info"`
 }
 
 type UpgradesPresent map[string]bool
