@@ -39,7 +39,8 @@ func (u *UpgradesQuerier) Name() string {
 
 func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 	cosmovisorQuery := QueryInfo{
-		Action:  "grpc_get_upgrade_plan",
+		Module:  "grpc",
+		Action:  "get_upgrade_plan",
 		Success: false,
 	}
 
@@ -102,6 +103,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 		}
 
 		tendermintQuery := QueryInfo{
+			Module:  "tendermint",
 			Action:  "tendermint_get_upgrade_time",
 			Success: false,
 		}

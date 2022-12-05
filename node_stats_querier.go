@@ -29,6 +29,7 @@ func (n *NodeStatsQuerier) Name() string {
 
 func (n *NodeStatsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 	queryInfo := QueryInfo{
+		Module:  "tendermint",
 		Action:  "node_status",
 		Success: false,
 	}

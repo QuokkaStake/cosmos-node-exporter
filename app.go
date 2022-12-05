@@ -88,9 +88,7 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	for _, querier := range a.Queriers {
 		querierEnabled.
-			With(prometheus.Labels{
-				"querier": querier.Name(),
-			}).
+			With(prometheus.Labels{"querier": querier.Name()}).
 			Set(BoolToFloat64(querier.Enabled()))
 
 		if !querier.Enabled() {
@@ -110,29 +108,11 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	wg.Wait()
 
+	allResults["query_infos"] = GetQueryInfoMetrics(allQueries)
+
 	for _, querierResults := range allResults {
 		for _, result := range querierResults {
 			registry.MustRegister(result)
-		}
-	}
-
-	querySuccessfulGauge := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: MetricsPrefix + "query_successful",
-			Help: "Was query successful?",
-		},
-		[]string{"querier", "action"},
-	)
-	registry.MustRegister(querySuccessfulGauge)
-
-	for name, queryInfos := range allQueries {
-		for _, queryInfo := range queryInfos {
-			querySuccessfulGauge.
-				With(prometheus.Labels{
-					"querier": name,
-					"action":  queryInfo.Action,
-				}).
-				Set(BoolToFloat64(queryInfo.Success))
 		}
 	}
 

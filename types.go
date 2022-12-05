@@ -26,11 +26,6 @@ type VersionInfo struct {
 	Version string `json:"version"`
 }
 
-type QueryInfo struct {
-	Action  string
-	Success bool
-}
-
 type UpgradesPresent map[string]bool
 
 func (u UpgradesPresent) HasUpgrade(upgrade string) bool {

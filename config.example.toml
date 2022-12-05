@@ -11,10 +11,15 @@ json = false
 # Tendermint RPC address. Defaults to http://localhost:26657
 address = "http://localhost:26657"
 
+# gRPC configuration
+[grpc]
+# Tendermint RPC address. Defaults to localhost:9090
+address = "localhost:9090"
+
 # Cosmovisor configuration. Omitting any parameter will result in disabling Cosmovisor metrics.
 [cosmovisor]
 # Path to folder storing fullnode data and configs (like ~/.gaia for cosmoshub).
-chain-folder = "/home/validator.gaia"
+chain-folder = "/home/validator/.gaia"
 # Binary name (like gaiad for cosmoshub)
 chain-binary-name = "gaiad"
 # Cosmovisor path (usually located at ~/go/bin/cosmovisor)
@@ -23,7 +28,7 @@ cosmovisor-path = "/home/validator/go/bin/cosmovisor"
 # Github configuration.
 [github]
 # Repository path. Omitting it will result in disabling Github metrics.
-repository = "https://github.com/osmosis-labs/osmosis"
+repository = "https://github.com/cosmos/gaia"
 # Github token. Useful if you want to make requests often, as Github rate-limits requests
 # if no token is specified.
 token = "aaa:bbb"
