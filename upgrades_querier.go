@@ -50,7 +50,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 	}
 
 	cosmovisorQuery.Success = true
-	isUpgradePresent := upgrade == nil
+	isUpgradePresent := upgrade != nil
 
 	upcomingUpgradePresent := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
