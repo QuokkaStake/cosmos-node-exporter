@@ -47,7 +47,8 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 	if v.Github != nil {
 		queriesInfo = append(queriesInfo, QueryInfo{
-			Action:  "github_get_latest_release",
+			Module:  "github",
+			Action:  "get_latest_release",
 			Success: false,
 		})
 
@@ -86,7 +87,8 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 	if v.Cosmovisor != nil {
 		queriesInfo = append(queriesInfo, QueryInfo{
-			Action:  "cosmovisor_get_version",
+			Module:  "cosmovisor",
+			Action:  "get_version",
 			Success: false,
 		})
 
