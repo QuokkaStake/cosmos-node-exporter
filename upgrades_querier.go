@@ -38,7 +38,7 @@ func (u *UpgradesQuerier) Name() string {
 }
 
 func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
-	cosmovisorQuery := QueryInfo{
+	grpcQuery := QueryInfo{
 		Module:  "grpc",
 		Action:  "get_upgrade_plan",
 		Success: false,
@@ -46,11 +46,11 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 	upgrade, err := u.Grpc.GetUpgradePlan()
 	if err != nil {
-		u.Logger.Err(err).Msg("Could not get latest Cosmovisor upgrade plan")
-		return []prometheus.Collector{}, []QueryInfo{cosmovisorQuery}
+		u.Logger.Err(err).Msg("Could not get latest upgrade plan from gRPC")
+		return []prometheus.Collector{}, []QueryInfo{grpcQuery}
 	}
 
-	cosmovisorQuery.Success = true
+	grpcQuery.Success = true
 	isUpgradePresent := upgrade != nil
 
 	upcomingUpgradePresent := prometheus.NewGaugeVec(
@@ -66,7 +66,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 		Set(BoolToFloat64(isUpgradePresent))
 
 	queries := []prometheus.Collector{upcomingUpgradePresent}
-	queryInfos := []QueryInfo{cosmovisorQuery}
+	queryInfos := []QueryInfo{grpcQuery}
 
 	if !isUpgradePresent {
 		return queries, queryInfos

@@ -14,11 +14,11 @@ type LogConfig struct {
 }
 
 type TendermintConfig struct {
-	Address string `toml:"address" default:"http://localhost:26657"`
+	Address string `toml:"address" default:""`
 }
 
 type GrpcConfig struct {
-	Address string `toml:"address" default:"localhost:9090"`
+	Address string `toml:"address" default:""`
 }
 
 type GithubConfig struct {

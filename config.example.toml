@@ -8,12 +8,12 @@ json = false
 
 # Tendermint configuration
 [tendermint]
-# Tendermint RPC address. Defaults to http://localhost:26657
+# Tendermint RPC address. Omitting it will result in disabling Tendermint node metrics
 address = "http://localhost:26657"
 
 # gRPC configuration
 [grpc]
-# Tendermint RPC address. Defaults to localhost:9090
+# Tendermint RPC address. Omitting it will result in disabling upgrades metrics.
 address = "localhost:9090"
 
 # Cosmovisor configuration. Omitting any parameter will result in disabling Cosmovisor metrics.
