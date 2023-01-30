@@ -1,6 +1,18 @@
-package main
+package pkg
 
 import (
+	"main/pkg/config"
+	"main/pkg/constants"
+	cosmovisor2 "main/pkg/cosmovisor"
+	github2 "main/pkg/github"
+	grpc2 "main/pkg/grpc"
+	"main/pkg/queriers/node_stats"
+	"main/pkg/queriers/upgrades"
+	"main/pkg/queriers/versions"
+	"main/pkg/query_info"
+	"main/pkg/tendermint"
+	"main/pkg/types"
+	"main/pkg/utils"
 	"net/http"
 	"sync"
 	"time"
@@ -13,40 +25,40 @@ import (
 
 type App struct {
 	Logger   zerolog.Logger
-	Queriers []Querier
+	Queriers []types.Querier
 }
 
 func NewApp(
 	logger *zerolog.Logger,
-	config *Config,
+	config *config.Config,
 ) *App {
 	appLogger := logger.With().Str("component", "app").Logger()
 
-	var tendermintRPC *TendermintRPC
-	var cosmovisor *Cosmovisor
-	var grpc *Grpc
-	var github *Github
+	var tendermintRPC *tendermint.TendermintRPC
+	var cosmovisor *cosmovisor2.Cosmovisor
+	var grpc *grpc2.Grpc
+	var github *github2.Github
 
 	if config.TendermintConfig.Address != "" {
-		tendermintRPC = NewTendermintRPC(config, logger)
+		tendermintRPC = tendermint.NewTendermintRPC(config, logger)
 	}
 
 	if config.GrpcConfig.Address != "" {
-		grpc = NewGrpc(config, logger)
+		grpc = grpc2.NewGrpc(config, logger)
 	}
 
 	if config.CosmovisorConfig.IsEnabled() {
-		cosmovisor = NewCosmovisor(config, logger)
+		cosmovisor = cosmovisor2.NewCosmovisor(config, logger)
 	}
 
 	if config.GithubConfig.Repository != "" {
-		github = NewGithub(config, logger)
+		github = github2.NewGithub(config, logger)
 	}
 
-	queriers := []Querier{
-		NewNodeStatsQuerier(logger, tendermintRPC),
-		NewVersionsQuerier(logger, github, cosmovisor),
-		NewUpgradesQuerier(logger, cosmovisor, grpc, tendermintRPC),
+	queriers := []types.Querier{
+		node_stats.NewNodeStatsQuerier(logger, tendermintRPC),
+		versions.NewVersionsQuerier(logger, github, cosmovisor),
+		upgrades.NewUpgradesQuerier(logger, cosmovisor, grpc, tendermintRPC),
 	}
 
 	for _, querier := range queriers {
@@ -74,7 +86,7 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	querierEnabled := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: MetricsPrefix + "querier_enabled",
+			Name: constants.MetricsPrefix + "querier_enabled",
 			Help: "Is querier enabled?",
 		},
 		[]string{"querier"},
@@ -84,19 +96,19 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	allResults := map[string][]prometheus.Collector{}
-	allQueries := map[string][]QueryInfo{}
+	allQueries := map[string][]query_info.QueryInfo{}
 
 	for _, querier := range a.Queriers {
 		querierEnabled.
 			With(prometheus.Labels{"querier": querier.Name()}).
-			Set(BoolToFloat64(querier.Enabled()))
+			Set(utils.BoolToFloat64(querier.Enabled()))
 
 		if !querier.Enabled() {
 			continue
 		}
 
 		wg.Add(1)
-		go func(querier Querier) {
+		go func(querier types.Querier) {
 			querierResults, queriesInfo := querier.Get()
 			mu.Lock()
 			allResults[querier.Name()] = querierResults
@@ -108,7 +120,7 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	wg.Wait()
 
-	allResults["query_infos"] = GetQueryInfoMetrics(allQueries)
+	allResults["query_infos"] = query_info.GetQueryInfoMetrics(allQueries)
 
 	for _, querierResults := range allResults {
 		for _, result := range querierResults {

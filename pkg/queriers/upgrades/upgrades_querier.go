@@ -1,6 +1,12 @@
-package main
+package upgrades
 
 import (
+	"main/pkg/constants"
+	"main/pkg/cosmovisor"
+	"main/pkg/grpc"
+	"main/pkg/query_info"
+	"main/pkg/tendermint"
+	"main/pkg/utils"
 	"net/url"
 	"strings"
 
@@ -10,16 +16,16 @@ import (
 
 type UpgradesQuerier struct {
 	Logger     zerolog.Logger
-	Cosmovisor *Cosmovisor
-	Grpc       *Grpc
-	Tendermint *TendermintRPC
+	Cosmovisor *cosmovisor.Cosmovisor
+	Grpc       *grpc.Grpc
+	Tendermint *tendermint.TendermintRPC
 }
 
 func NewUpgradesQuerier(
 	logger *zerolog.Logger,
-	cosmovisor *Cosmovisor,
-	grpc *Grpc,
-	tendermint *TendermintRPC,
+	cosmovisor *cosmovisor.Cosmovisor,
+	grpc *grpc.Grpc,
+	tendermint *tendermint.TendermintRPC,
 ) *UpgradesQuerier {
 	return &UpgradesQuerier{
 		Logger:     logger.With().Str("component", "upgrades_querier").Logger(),
@@ -37,8 +43,8 @@ func (u *UpgradesQuerier) Name() string {
 	return "upgrades-querier"
 }
 
-func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
-	grpcQuery := QueryInfo{
+func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
+	grpcQuery := query_info.QueryInfo{
 		Module:  "grpc",
 		Action:  "get_upgrade_plan",
 		Success: false,
@@ -47,7 +53,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 	upgrade, err := u.Grpc.GetUpgradePlan()
 	if err != nil {
 		u.Logger.Err(err).Msg("Could not get latest upgrade plan from gRPC")
-		return []prometheus.Collector{}, []QueryInfo{grpcQuery}
+		return []prometheus.Collector{}, []query_info.QueryInfo{grpcQuery}
 	}
 
 	grpcQuery.Success = true
@@ -55,7 +61,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 	upcomingUpgradePresent := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: MetricsPrefix + "upgrade_coming",
+			Name: constants.MetricsPrefix + "upgrade_coming",
 			Help: "Is future upgrade planned?",
 		},
 		[]string{},
@@ -63,10 +69,10 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 	upcomingUpgradePresent.
 		With(prometheus.Labels{}).
-		Set(BoolToFloat64(isUpgradePresent))
+		Set(utils.BoolToFloat64(isUpgradePresent))
 
 	queries := []prometheus.Collector{upcomingUpgradePresent}
-	queryInfos := []QueryInfo{grpcQuery}
+	queryInfos := []query_info.QueryInfo{grpcQuery}
 
 	if !isUpgradePresent {
 		return queries, queryInfos
@@ -74,7 +80,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 	upgradeInfoGauge := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: MetricsPrefix + "upgrade_info",
+			Name: constants.MetricsPrefix + "upgrade_info",
 			Help: "Future upgrade info",
 		},
 		[]string{"name", "info"},
@@ -82,12 +88,12 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 	upgradeInfoGauge.
 		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
-		Set(BoolToFloat64(isUpgradePresent))
+		Set(utils.BoolToFloat64(isUpgradePresent))
 	queries = append(queries, upgradeInfoGauge)
 
 	upgradeEstimatedTimeGauge := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: MetricsPrefix + "upgrade_estimated_time",
+			Name: constants.MetricsPrefix + "upgrade_estimated_time",
 			Help: "Estimated upgrade time, as Unix timestamp",
 		},
 		[]string{"name", "info"},
@@ -102,7 +108,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 			return queries, queryInfos
 		}
 
-		tendermintQuery := QueryInfo{
+		tendermintQuery := query_info.QueryInfo{
 			Module:  "tendermint",
 			Action:  "tendermint_get_upgrade_time",
 			Success: false,
@@ -129,7 +135,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 		return queries, queryInfos
 	}
 
-	cosmovisorGetUpgradesQueryInfo := QueryInfo{
+	cosmovisorGetUpgradesQueryInfo := query_info.QueryInfo{
 		Action:  "cosmovisor_get_upgrades",
 		Success: false,
 	}
@@ -146,7 +152,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 	upgradeBinaryPresentGauge := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: MetricsPrefix + "upgrade_binary_present",
+			Name: constants.MetricsPrefix + "upgrade_binary_present",
 			Help: "Is upgrade binary present?",
 		},
 		[]string{"name", "info"},
@@ -160,7 +166,7 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 	upgradeBinaryPresentGauge.
 		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
-		Set(BoolToFloat64(upgrades.HasUpgrade(upgradeName)))
+		Set(utils.BoolToFloat64(upgrades.HasUpgrade(upgradeName)))
 	queries = append(queries, upgradeBinaryPresentGauge)
 
 	return queries, queryInfos

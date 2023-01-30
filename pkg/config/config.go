@@ -1,7 +1,8 @@
-package main
+package config
 
 import (
 	"fmt"
+	"main/pkg/constants"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -50,7 +51,7 @@ func (c *GithubConfig) Validate() error {
 		return nil
 	}
 
-	if !GithubRegexp.Match([]byte(c.Repository)) {
+	if !constants.GithubRegexp.Match([]byte(c.Repository)) {
 		return fmt.Errorf("repository is not valid")
 	}
 

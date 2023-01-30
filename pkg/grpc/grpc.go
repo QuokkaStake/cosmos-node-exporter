@@ -1,7 +1,8 @@
-package main
+package grpc
 
 import (
 	"context"
+	"main/pkg/config"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -15,7 +16,7 @@ type Grpc struct {
 	Client *grpc.ClientConn
 }
 
-func NewGrpc(config *Config, logger *zerolog.Logger) *Grpc {
+func NewGrpc(config *config.Config, logger *zerolog.Logger) *Grpc {
 	grpcLogger := logger.With().Str("component", "grpc").Logger()
 
 	grpcConn, err := grpc.Dial(

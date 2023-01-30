@@ -1,30 +1,33 @@
 package main
 
 import (
+	"main/pkg"
+	"main/pkg/config"
+	"main/pkg/logger"
 	"net/http"
 
 	"github.com/spf13/cobra"
 )
 
 func Execute(configPath string) {
-	config, err := GetConfig(configPath)
+	appConfig, err := config.GetConfig(configPath)
 	if err != nil {
-		GetDefaultLogger().Fatal().Err(err).Msg("Could not load config")
+		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not load config")
 	}
 
-	if err = config.Validate(); err != nil {
-		GetDefaultLogger().Fatal().Err(err).Msg("Provided config is invalid!")
+	if err = appConfig.Validate(); err != nil {
+		logger.GetDefaultLogger().Fatal().Err(err).Msg("Provided config is invalid!")
 	}
 
-	log := GetLogger(config.LogConfig)
-	app := NewApp(log, config)
+	log := logger.GetLogger(appConfig.LogConfig)
+	app := pkg.NewApp(log, appConfig)
 
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		app.HandleRequest(w, r)
 	})
 
-	log.Info().Str("addr", config.ListenAddress).Msg("Listening")
-	err = http.ListenAndServe(config.ListenAddress, nil)
+	log.Info().Str("addr", appConfig.ListenAddress).Msg("Listening")
+	err = http.ListenAndServe(appConfig.ListenAddress, nil)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Could not start application")
 	}
@@ -43,10 +46,10 @@ func main() {
 
 	rootCmd.PersistentFlags().StringVar(&ConfigPath, "config", "", "Config file path")
 	if err := rootCmd.MarkPersistentFlagRequired("config"); err != nil {
-		GetDefaultLogger().Fatal().Err(err).Msg("Could not set flag as required")
+		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not set flag as required")
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-		GetDefaultLogger().Fatal().Err(err).Msg("Could not start application")
+		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not start application")
 	}
 }

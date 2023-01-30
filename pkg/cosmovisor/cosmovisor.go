@@ -1,9 +1,11 @@
-package main
+package cosmovisor
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"main/pkg/config"
+	"main/pkg/types"
 	"os"
 	"os/exec"
 	"strings"
@@ -19,7 +21,7 @@ type Cosmovisor struct {
 }
 
 func NewCosmovisor(
-	config *Config,
+	config *config.Config,
 	logger *zerolog.Logger,
 ) *Cosmovisor {
 	return &Cosmovisor{
@@ -45,18 +47,18 @@ func getJsonString(input string) string {
 	return input
 }
 
-func (c *Cosmovisor) GetVersion() (VersionInfo, error) {
+func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
 	out, err := exec.
 		Command(c.CosmovisorPath, "run", "version", "--long", "--output", "json").
 		CombinedOutput()
 	if err != nil {
 		c.Logger.Error().Err(err).Str("output", string(out)).Msg("Could not get app version")
-		return VersionInfo{}, err
+		return types.VersionInfo{}, err
 	}
 
 	jsonOutput := getJsonString(string(out))
 
-	var versionInfo VersionInfo
+	var versionInfo types.VersionInfo
 	if err := json.Unmarshal([]byte(jsonOutput), &versionInfo); err != nil {
 		c.Logger.Error().Err(err).Str("output", jsonOutput).Msg("Could not unmarshall app version")
 		return versionInfo, err
@@ -65,7 +67,7 @@ func (c *Cosmovisor) GetVersion() (VersionInfo, error) {
 	return versionInfo, nil
 }
 
-func (c *Cosmovisor) GetUpgrades() (UpgradesPresent, error) {
+func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, error) {
 	upgradesFolder := fmt.Sprintf("%s/cosmovisor/upgrades", c.ChainFolder)
 	upgradesFolderContent, err := os.ReadDir(upgradesFolder)
 	if err != nil {
