@@ -1,9 +1,10 @@
 package query_info
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"main/pkg/constants"
 	"main/pkg/utils"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type QueryInfo struct {

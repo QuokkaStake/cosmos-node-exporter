@@ -99,7 +99,6 @@ func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []query_info.QueryInfo)
 		[]string{"name", "info"},
 	)
 
-	//nolint:staticcheck
 	upgradeTime := upgrade.Time
 	if upgradeTime.IsZero() {
 		if u.Tendermint == nil {

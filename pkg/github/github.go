@@ -44,7 +44,7 @@ func (g *Github) GetLatestRelease() (types.ReleaseInfo, error) {
 		Timeout: 10 * time.Second,
 	}
 
-	req, err := http.NewRequest("GET", latestReleaseUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, latestReleaseUrl, nil)
 	if err != nil {
 		return types.ReleaseInfo{}, err
 	}

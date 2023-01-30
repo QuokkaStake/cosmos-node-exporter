@@ -34,7 +34,7 @@ func NewCosmovisor(
 
 // a helper to get the first string in a multiline string starting with { and ending with }
 // it's a workaround for cosmovisor as it adds some extra output, causing
-// it to not be valid JSON
+// it to not be valid JSON.
 func getJsonString(input string) string {
 	split := strings.Split(input, "\n")
 	for _, line := range split {
@@ -97,7 +97,6 @@ func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, error) {
 		} else {
 			upgrades[upgradeFolder.Name()] = true
 		}
-
 	}
 
 	return upgrades, nil

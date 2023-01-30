@@ -1,8 +1,9 @@
 package types
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"main/pkg/query_info"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Querier interface {
