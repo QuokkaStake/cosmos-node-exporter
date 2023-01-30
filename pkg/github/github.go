@@ -1,8 +1,11 @@
-package main
+package github
 
 import (
 	"encoding/json"
 	"fmt"
+	"main/pkg/config"
+	"main/pkg/constants"
+	"main/pkg/types"
 	"net/http"
 	"time"
 
@@ -15,11 +18,11 @@ type Github struct {
 	Token        string
 	Logger       zerolog.Logger
 	LastModified time.Time
-	LastResult   *ReleaseInfo
+	LastResult   *types.ReleaseInfo
 }
 
-func NewGithub(config *Config, logger *zerolog.Logger) *Github {
-	value := GithubRegexp.FindStringSubmatch(config.GithubConfig.Repository)
+func NewGithub(config *config.Config, logger *zerolog.Logger) *Github {
+	value := constants.GithubRegexp.FindStringSubmatch(config.GithubConfig.Repository)
 
 	return &Github{
 		Organization: value[1],
@@ -30,7 +33,7 @@ func NewGithub(config *Config, logger *zerolog.Logger) *Github {
 	}
 }
 
-func (g *Github) GetLatestRelease() (ReleaseInfo, error) {
+func (g *Github) GetLatestRelease() (types.ReleaseInfo, error) {
 	latestReleaseUrl := fmt.Sprintf(
 		"https://api.github.com/repos/%s/%s/releases/latest",
 		g.Organization,
@@ -43,7 +46,7 @@ func (g *Github) GetLatestRelease() (ReleaseInfo, error) {
 
 	req, err := http.NewRequest("GET", latestReleaseUrl, nil)
 	if err != nil {
-		return ReleaseInfo{}, err
+		return types.ReleaseInfo{}, err
 	}
 
 	if g.LastResult != nil {
@@ -57,7 +60,7 @@ func (g *Github) GetLatestRelease() (ReleaseInfo, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return ReleaseInfo{}, err
+		return types.ReleaseInfo{}, err
 	}
 	defer res.Body.Close()
 
@@ -67,7 +70,7 @@ func (g *Github) GetLatestRelease() (ReleaseInfo, error) {
 		return *g.LastResult, nil
 	}
 
-	releaseInfo := ReleaseInfo{}
+	releaseInfo := types.ReleaseInfo{}
 	err = json.NewDecoder(res.Body).Decode(&releaseInfo)
 
 	if err != nil {

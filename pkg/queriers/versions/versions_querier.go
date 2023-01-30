@@ -1,7 +1,13 @@
-package main
+package versions
 
 import (
 	"fmt"
+	"main/pkg/constants"
+	"main/pkg/cosmovisor"
+	"main/pkg/github"
+	"main/pkg/query_info"
+	"main/pkg/types"
+	"main/pkg/utils"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -11,14 +17,14 @@ import (
 
 type VersionsQuerier struct {
 	Logger     zerolog.Logger
-	Github     *Github
-	Cosmovisor *Cosmovisor
+	Github     *github.Github
+	Cosmovisor *cosmovisor.Cosmovisor
 }
 
 func NewVersionsQuerier(
 	logger *zerolog.Logger,
-	github *Github,
-	cosmovisor *Cosmovisor,
+	github *github.Github,
+	cosmovisor *cosmovisor.Cosmovisor,
 ) *VersionsQuerier {
 	return &VersionsQuerier{
 		Logger:     logger.With().Str("component", "versions_querier").Logger(),
@@ -35,18 +41,18 @@ func (v *VersionsQuerier) Name() string {
 	return "versions-querier"
 }
 
-func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
-	queriesInfo := []QueryInfo{}
+func (v *VersionsQuerier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
+	queriesInfo := []query_info.QueryInfo{}
 	collectors := []prometheus.Collector{}
 
 	var (
-		releaseInfo ReleaseInfo
-		versionInfo VersionInfo
+		releaseInfo types.ReleaseInfo
+		versionInfo types.VersionInfo
 		err         error
 	)
 
 	if v.Github != nil {
-		queriesInfo = append(queriesInfo, QueryInfo{
+		queriesInfo = append(queriesInfo, query_info.QueryInfo{
 			Module:  "github",
 			Action:  "get_latest_release",
 			Success: false,
@@ -72,7 +78,7 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 		remoteVersion := prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: MetricsPrefix + "remote_version",
+				Name: constants.MetricsPrefix + "remote_version",
 				Help: "Latest version from Github",
 			},
 			[]string{"version"},
@@ -86,7 +92,7 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 	}
 
 	if v.Cosmovisor != nil {
-		queriesInfo = append(queriesInfo, QueryInfo{
+		queriesInfo = append(queriesInfo, query_info.QueryInfo{
 			Module:  "cosmovisor",
 			Action:  "get_version",
 			Success: false,
@@ -102,7 +108,7 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 		localVersion := prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: MetricsPrefix + "local_version",
+				Name: constants.MetricsPrefix + "local_version",
 				Help: "Fullnode local version",
 			},
 			[]string{"version"},
@@ -132,7 +138,7 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 
 		isUsingLatestVersion := prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: MetricsPrefix + "is_latest",
+				Name: constants.MetricsPrefix + "is_latest",
 				Help: "Is the fullnode using the same or latest version?",
 			},
 			[]string{"local_version", "remote_version"},
@@ -143,7 +149,7 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []QueryInfo) {
 				"local_version":  versionInfo.Version,
 				"remote_version": releaseInfo.TagName,
 			}).
-			Set(BoolToFloat64(isLatestOrSameVersion))
+			Set(utils.BoolToFloat64(isLatestOrSameVersion))
 
 		collectors = append(collectors, isUsingLatestVersion)
 	}

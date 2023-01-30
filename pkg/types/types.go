@@ -1,12 +1,13 @@
-package main
+package types
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"main/pkg/query_info"
 )
 
 type Querier interface {
 	Enabled() bool
-	Get() ([]prometheus.Collector, []QueryInfo)
+	Get() ([]prometheus.Collector, []query_info.QueryInfo)
 	Name() string
 }
 

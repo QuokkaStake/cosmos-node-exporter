@@ -1,4 +1,4 @@
-package main
+package utils
 
 func BoolToFloat64(value bool) float64 {
 	if value {
