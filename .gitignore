@@ -3,3 +3,4 @@ config.toml
 config2.toml
 .idea
 cosmos-node-exporter
+dist
