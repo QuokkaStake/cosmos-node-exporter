@@ -9,6 +9,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	version = "unknown"
+)
+
 func Execute(configPath string) {
 	appConfig, err := config.GetConfig(configPath)
 	if err != nil {
@@ -37,8 +41,9 @@ func main() {
 	var ConfigPath string
 
 	rootCmd := &cobra.Command{
-		Use:  "cosmos-node-exporter",
-		Long: "Scrapes validators info on multiple chains.",
+		Use:     "cosmos-node-exporter",
+		Long:    "A Prometheus scraper to return data about fullnode sync status and present upgrades.",
+		Version: version,
 		Run: func(cmd *cobra.Command, args []string) {
 			Execute(ConfigPath)
 		},
