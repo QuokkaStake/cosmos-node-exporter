@@ -1,57 +1,94 @@
 package tendermint
 
 import (
-	"context"
+	"encoding/json"
+	"fmt"
 	"main/pkg/config"
+	"main/pkg/utils"
+	"net/http"
 	"time"
 
 	"github.com/rs/zerolog"
-
-	tmrpc "github.com/tendermint/tendermint/rpc/client/http"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type TendermintRPC struct {
 	Logger       zerolog.Logger
-	Client       *tmrpc.HTTP
+	Address      string
 	BlocksBehind int64
 }
 
 func NewTendermintRPC(config *config.Config, logger *zerolog.Logger) *TendermintRPC {
-	client, err := tmrpc.New(config.TendermintConfig.Address, "/websocket")
-	if err != nil {
-		logger.Fatal().Err(err).Msg("Cannot instantiate Tendermint client")
-	}
-
 	return &TendermintRPC{
 		Logger:       logger.With().Str("component", "tendermint_rpc").Logger(),
-		Client:       client,
+		Address:      config.TendermintConfig.Address,
 		BlocksBehind: 1000,
 	}
 }
 
-func (t *TendermintRPC) GetStatus() (*coretypes.ResultStatus, error) {
-	return t.Client.Status(context.Background())
+func (t *TendermintRPC) Query(url string, output interface{}) error {
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("User-Agent", "cosmos-node-exporter")
+
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	return json.NewDecoder(res.Body).Decode(&output)
+}
+
+func (t *TendermintRPC) Status() (StatusResponse, error) {
+	url := fmt.Sprintf("%s/status", t.Address)
+	res := StatusResponse{}
+	err := t.Query(url, &res)
+	return res, err
+}
+
+func (t *TendermintRPC) Block(height int64) (BlockResponse, error) {
+	url := fmt.Sprintf("%s/block", t.Address)
+	if height != 0 {
+		url = fmt.Sprintf("%s/block?height=%d", t.Address, height)
+	}
+
+	res := BlockResponse{}
+	err := t.Query(url, &res)
+	return res, err
 }
 
 func (t *TendermintRPC) GetEstimateTimeTillBlock(height int64) (time.Time, error) {
-	latestBlock, err := t.Client.Block(context.Background(), nil)
+	latestBlock, err := t.Block(0)
 	if err != nil {
 		t.Logger.Error().Err(err).Msg("Could not fetch current block")
 		return time.Now(), err
 	}
 
-	blockToCheck := latestBlock.Block.Height - t.BlocksBehind
+	latestBlockHeight, err := utils.StringToInt64(latestBlock.Result.Block.Header.Height)
+	if err != nil {
+		t.Logger.Error().Err(err).
+			Msg("Error converting latest block height to int64, which should never happen.")
+		return time.Now(), err
+	}
+	blockToCheck := latestBlockHeight - t.BlocksBehind
 
-	olderBlock, err := t.Client.Block(context.Background(), &blockToCheck)
+	olderBlock, err := t.Block(blockToCheck)
 	if err != nil {
 		t.Logger.Error().Err(err).Msg("Could not fetch older block")
 		return time.Now(), err
 	}
 
-	blocksDiffTime := latestBlock.Block.Time.Sub(olderBlock.Block.Time)
+	blocksDiffTime := latestBlock.Result.Block.Header.Time.Sub(olderBlock.Result.Block.Header.Time)
 	blockTime := blocksDiffTime.Seconds() / float64(t.BlocksBehind)
-	blocksTillEstimatedBlock := height - latestBlock.Block.Height
+	blocksTillEstimatedBlock := height - latestBlockHeight
 	secondsTillEstimatedBlock := blocksTillEstimatedBlock * int64(blockTime)
 	durationTillEstimatedBlock := time.Duration(secondsTillEstimatedBlock * int64(time.Second))
 
