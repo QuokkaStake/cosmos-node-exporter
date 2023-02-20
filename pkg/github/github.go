@@ -77,7 +77,7 @@ func (g *Github) GetLatestRelease() (types.ReleaseInfo, error) {
 		return releaseInfo, err
 	}
 
-	// Github returned error, probably ratelimiting
+	// Github returned error, probably rate-limiting
 	if releaseInfo.Message != "" {
 		return releaseInfo, fmt.Errorf("got error from Github: %s", releaseInfo.Message)
 	}

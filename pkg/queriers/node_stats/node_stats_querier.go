@@ -38,7 +38,7 @@ func (n *NodeStatsQuerier) Get() ([]prometheus.Collector, []query_info.QueryInfo
 		Success: false,
 	}
 
-	status, err := n.TendermintRPC.GetStatus()
+	status, err := n.TendermintRPC.Status()
 	if err != nil {
 		n.Logger.Error().Err(err).Msg("Could not fetch node status")
 		return []prometheus.Collector{}, []query_info.QueryInfo{queryInfo}
@@ -70,15 +70,20 @@ func (n *NodeStatsQuerier) Get() ([]prometheus.Collector, []query_info.QueryInfo
 
 	catchingUpGauge.
 		With(prometheus.Labels{}).
-		Set(utils.BoolToFloat64(status.SyncInfo.CatchingUp))
+		Set(utils.BoolToFloat64(status.Result.SyncInfo.CatchingUp))
 
 	timeSinceLatestBlockGauge.
 		With(prometheus.Labels{}).
-		Set(time.Since(status.SyncInfo.LatestBlockTime).Seconds())
+		Set(time.Since(status.Result.SyncInfo.LatestBlockTime).Seconds())
 
-	votingPowerGauge.
-		With(prometheus.Labels{}).
-		Set(float64(status.ValidatorInfo.VotingPower))
+	if value, err := utils.StringToFloat64(status.Result.ValidatorInfo.VotingPower); err != nil {
+		n.Logger.Error().Err(err).
+			Msg("Got error when converting voting power to float64, which should never happen.")
+	} else {
+		votingPowerGauge.
+			With(prometheus.Labels{}).
+			Set(value)
+	}
 
 	queryInfo.Success = true
 
