@@ -1,9 +1,8 @@
 package versions
 
 import (
-	"fmt"
 	"main/pkg/constants"
-	"main/pkg/cosmovisor"
+	cosmovisorPkg "main/pkg/cosmovisor"
 	"main/pkg/github"
 	"main/pkg/query_info"
 	"main/pkg/types"
@@ -15,33 +14,33 @@ import (
 	"github.com/Masterminds/semver"
 )
 
-type VersionsQuerier struct {
+type Querier struct {
 	Logger     zerolog.Logger
 	Github     *github.Github
-	Cosmovisor *cosmovisor.Cosmovisor
+	Cosmovisor *cosmovisorPkg.Cosmovisor
 }
 
-func NewVersionsQuerier(
+func NewQuerier(
 	logger *zerolog.Logger,
 	github *github.Github,
-	cosmovisor *cosmovisor.Cosmovisor,
-) *VersionsQuerier {
-	return &VersionsQuerier{
+	cosmovisor *cosmovisorPkg.Cosmovisor,
+) *Querier {
+	return &Querier{
 		Logger:     logger.With().Str("component", "versions_querier").Logger(),
 		Github:     github,
 		Cosmovisor: cosmovisor,
 	}
 }
 
-func (v *VersionsQuerier) Enabled() bool {
+func (v *Querier) Enabled() bool {
 	return v.Github != nil || v.Cosmovisor != nil
 }
 
-func (v *VersionsQuerier) Name() string {
+func (v *Querier) Name() string {
 	return "versions-querier"
 }
 
-func (v *VersionsQuerier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
+func (v *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 	queriesInfo := []query_info.QueryInfo{}
 	collectors := []prometheus.Collector{}
 
@@ -128,13 +127,14 @@ func (v *VersionsQuerier) Get() ([]prometheus.Collector, []query_info.QueryInfo)
 			return collectors, queriesInfo
 		}
 
-		semverConstraint, err := semver.NewConstraint(fmt.Sprintf(">= %s", releaseInfo.TagName))
+		semverRemote, err := semver.NewVersion(releaseInfo.TagName)
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get remote app version")
 			return collectors, queriesInfo
 		}
 
-		isLatestOrSameVersion := semverConstraint.Check(semverLocal)
+		// 0 is for equal, 1 is when the local version is greater
+		isLatestOrSameVersion := semverLocal.Compare(semverRemote) >= 0
 
 		isUsingLatestVersion := prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{

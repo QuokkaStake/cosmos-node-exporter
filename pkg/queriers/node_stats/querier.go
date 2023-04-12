@@ -11,27 +11,27 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type NodeStatsQuerier struct {
-	TendermintRPC *tendermint.TendermintRPC
+type Querier struct {
+	TendermintRPC *tendermint.RPC
 	Logger        zerolog.Logger
 }
 
-func NewNodeStatsQuerier(logger *zerolog.Logger, tendermintRPC *tendermint.TendermintRPC) *NodeStatsQuerier {
-	return &NodeStatsQuerier{
+func NewQuerier(logger *zerolog.Logger, tendermintRPC *tendermint.RPC) *Querier {
+	return &Querier{
 		Logger:        logger.With().Str("component", "tendermint_rpc").Logger(),
 		TendermintRPC: tendermintRPC,
 	}
 }
 
-func (n *NodeStatsQuerier) Enabled() bool {
+func (n *Querier) Enabled() bool {
 	return n.TendermintRPC != nil
 }
 
-func (n *NodeStatsQuerier) Name() string {
+func (n *Querier) Name() string {
 	return "node-stats-querier"
 }
 
-func (n *NodeStatsQuerier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
+func (n *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 	queryInfo := query_info.QueryInfo{
 		Module:  "tendermint",
 		Action:  "node_status",
