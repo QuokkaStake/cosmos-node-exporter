@@ -6,20 +6,23 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-	"github.com/mcuadros/go-defaults"
+	"github.com/creasty/defaults"
+	"gopkg.in/guregu/null.v4"
 )
 
 type LogConfig struct {
-	LogLevel   string `toml:"level" default:"info"`
-	JSONOutput bool   `toml:"json" default:"false"`
+	LogLevel   string    `toml:"level" default:"info"`
+	JSONOutput null.Bool `toml:"json" default:"false"`
 }
 
 type TendermintConfig struct {
-	Address string `toml:"address" default:""`
+	Enabled null.Bool `toml:"enabled" default:"true"`
+	Address string    `toml:"address" default:"http://localhost:26657"`
 }
 
 type GrpcConfig struct {
-	Address string `toml:"address" default:""`
+	Enabled null.Bool `toml:"enabled" default:"true"`
+	Address string    `toml:"address" default:"localhost:9090"`
 }
 
 type GithubConfig struct {
@@ -28,13 +31,10 @@ type GithubConfig struct {
 }
 
 type CosmovisorConfig struct {
-	ChainBinaryName string `toml:"chain-binary-name"`
-	ChainFolder     string `toml:"chain-folder"`
-	CosmovisorPath  string `toml:"cosmovisor-path"`
-}
-
-func (c *CosmovisorConfig) IsEnabled() bool {
-	return c.ChainBinaryName != "" && c.ChainFolder != "" && c.CosmovisorPath != ""
+	Enabled         null.Bool `toml:"enabled" default:"true"`
+	ChainBinaryName string    `toml:"chain-binary-name"`
+	ChainFolder     string    `toml:"chain-folder"`
+	CosmovisorPath  string    `toml:"cosmovisor-path"`
 }
 
 type Config struct {
@@ -79,6 +79,8 @@ func GetConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
-	defaults.SetDefaults(&configStruct)
+	if err := defaults.Set(&configStruct); err != nil {
+		return nil, err
+	}
 	return &configStruct, nil
 }
