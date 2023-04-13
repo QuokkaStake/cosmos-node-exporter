@@ -2,7 +2,7 @@ package upgrades
 
 import (
 	"main/pkg/constants"
-	"main/pkg/cosmovisor"
+	cosmovisorPkg "main/pkg/cosmovisor"
 	"main/pkg/grpc"
 	"main/pkg/query_info"
 	"main/pkg/tendermint"
@@ -14,20 +14,20 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type UpgradesQuerier struct {
+type Querier struct {
 	Logger     zerolog.Logger
-	Cosmovisor *cosmovisor.Cosmovisor
+	Cosmovisor *cosmovisorPkg.Cosmovisor
 	Grpc       *grpc.Grpc
-	Tendermint *tendermint.TendermintRPC
+	Tendermint *tendermint.RPC
 }
 
-func NewUpgradesQuerier(
+func NewQuerier(
 	logger *zerolog.Logger,
-	cosmovisor *cosmovisor.Cosmovisor,
+	cosmovisor *cosmovisorPkg.Cosmovisor,
 	grpc *grpc.Grpc,
-	tendermint *tendermint.TendermintRPC,
-) *UpgradesQuerier {
-	return &UpgradesQuerier{
+	tendermint *tendermint.RPC,
+) *Querier {
+	return &Querier{
 		Logger:     logger.With().Str("component", "upgrades_querier").Logger(),
 		Cosmovisor: cosmovisor,
 		Grpc:       grpc,
@@ -35,15 +35,15 @@ func NewUpgradesQuerier(
 	}
 }
 
-func (u *UpgradesQuerier) Enabled() bool {
+func (u *Querier) Enabled() bool {
 	return u.Grpc != nil
 }
 
-func (u *UpgradesQuerier) Name() string {
+func (u *Querier) Name() string {
 	return "upgrades-querier"
 }
 
-func (u *UpgradesQuerier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
+func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 	grpcQuery := query_info.QueryInfo{
 		Module:  "grpc",
 		Action:  "get_upgrade_plan",

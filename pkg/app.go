@@ -3,10 +3,10 @@ package pkg
 import (
 	"main/pkg/config"
 	"main/pkg/constants"
-	cosmovisor2 "main/pkg/cosmovisor"
-	github2 "main/pkg/github"
-	grpc2 "main/pkg/grpc"
-	"main/pkg/queriers/node_stats"
+	cosmovisorPkg "main/pkg/cosmovisor"
+	githubPkg "main/pkg/github"
+	grpcPkg "main/pkg/grpc"
+	nodeStats "main/pkg/queriers/node_stats"
 	"main/pkg/queriers/upgrades"
 	"main/pkg/queriers/versions"
 	"main/pkg/query_info"
@@ -34,31 +34,31 @@ func NewApp(
 ) *App {
 	appLogger := logger.With().Str("component", "app").Logger()
 
-	var tendermintRPC *tendermint.TendermintRPC
-	var cosmovisor *cosmovisor2.Cosmovisor
-	var grpc *grpc2.Grpc
-	var github *github2.Github
+	var tendermintRPC *tendermint.RPC
+	var cosmovisor *cosmovisorPkg.Cosmovisor
+	var grpc *grpcPkg.Grpc
+	var github *githubPkg.Github
 
 	if config.TendermintConfig.Address != "" {
-		tendermintRPC = tendermint.NewTendermintRPC(config, logger)
+		tendermintRPC = tendermint.NewRPC(config, logger)
 	}
 
 	if config.GrpcConfig.Address != "" {
-		grpc = grpc2.NewGrpc(config, logger)
+		grpc = grpcPkg.NewGrpc(config, logger)
 	}
 
 	if config.CosmovisorConfig.IsEnabled() {
-		cosmovisor = cosmovisor2.NewCosmovisor(config, logger)
+		cosmovisor = cosmovisorPkg.NewCosmovisor(config, logger)
 	}
 
 	if config.GithubConfig.Repository != "" {
-		github = github2.NewGithub(config, logger)
+		github = githubPkg.NewGithub(config, logger)
 	}
 
 	queriers := []types.Querier{
-		node_stats.NewNodeStatsQuerier(logger, tendermintRPC),
-		versions.NewVersionsQuerier(logger, github, cosmovisor),
-		upgrades.NewUpgradesQuerier(logger, cosmovisor, grpc, tendermintRPC),
+		nodeStats.NewQuerier(logger, tendermintRPC),
+		versions.NewQuerier(logger, github, cosmovisor),
+		upgrades.NewQuerier(logger, cosmovisor, grpc, tendermintRPC),
 	}
 
 	for _, querier := range queriers {

@@ -11,21 +11,21 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type TendermintRPC struct {
+type RPC struct {
 	Logger       zerolog.Logger
 	Address      string
 	BlocksBehind int64
 }
 
-func NewTendermintRPC(config *config.Config, logger *zerolog.Logger) *TendermintRPC {
-	return &TendermintRPC{
+func NewRPC(config *config.Config, logger *zerolog.Logger) *RPC {
+	return &RPC{
 		Logger:       logger.With().Str("component", "tendermint_rpc").Logger(),
 		Address:      config.TendermintConfig.Address,
 		BlocksBehind: 1000,
 	}
 }
 
-func (t *TendermintRPC) Query(url string, output interface{}) error {
+func (t *RPC) Query(url string, output interface{}) error {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
@@ -47,14 +47,14 @@ func (t *TendermintRPC) Query(url string, output interface{}) error {
 	return json.NewDecoder(res.Body).Decode(&output)
 }
 
-func (t *TendermintRPC) Status() (StatusResponse, error) {
+func (t *RPC) Status() (StatusResponse, error) {
 	url := fmt.Sprintf("%s/status", t.Address)
 	res := StatusResponse{}
 	err := t.Query(url, &res)
 	return res, err
 }
 
-func (t *TendermintRPC) Block(height int64) (BlockResponse, error) {
+func (t *RPC) Block(height int64) (BlockResponse, error) {
 	url := fmt.Sprintf("%s/block", t.Address)
 	if height != 0 {
 		url = fmt.Sprintf("%s/block?height=%d", t.Address, height)
@@ -65,7 +65,7 @@ func (t *TendermintRPC) Block(height int64) (BlockResponse, error) {
 	return res, err
 }
 
-func (t *TendermintRPC) GetEstimateTimeTillBlock(height int64) (time.Time, error) {
+func (t *RPC) GetEstimateTimeTillBlock(height int64) (time.Time, error) {
 	latestBlock, err := t.Block(0)
 	if err != nil {
 		t.Logger.Error().Err(err).Msg("Could not fetch current block")
@@ -74,7 +74,8 @@ func (t *TendermintRPC) GetEstimateTimeTillBlock(height int64) (time.Time, error
 
 	latestBlockHeight, err := utils.StringToInt64(latestBlock.Result.Block.Header.Height)
 	if err != nil {
-		t.Logger.Error().Err(err).
+		t.Logger.Error().
+			Err(err).
 			Msg("Error converting latest block height to int64, which should never happen.")
 		return time.Now(), err
 	}
