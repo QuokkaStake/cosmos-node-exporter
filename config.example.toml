@@ -3,21 +3,26 @@
 # Verbosity level. Set to `debug` or even `trace` to make it more verbose. Defaults to `info`.
 level = "debug"
 # Whether to print logs in JSON format. Useful if you are using centralised logs solutions like ELK.
-# Defaults to false
+# Defaults to false.
 json = false
 
 # Tendermint configuration
 [tendermint]
-# Tendermint RPC address. Omitting it will result in disabling Tendermint node metrics
+# If set to false, the metrics related to Tendermint node would be disabled. Defaults to true.
+enabled = true
+# Tendermint RPC address. Defaults to "http://localhost:26657".
 address = "http://localhost:26657"
 
 # gRPC configuration
 [grpc]
+# If set to false, the metrics related to upgrades would be disabled. Defaults to true.
+enabled = true
 # Tendermint RPC address. Omitting it will result in disabling upgrades metrics.
 address = "localhost:9090"
 
-# Cosmovisor configuration. Omitting any parameter will result in disabling Cosmovisor metrics.
 [cosmovisor]
+# If set to false, the metrics related to Cosmovisor would be disabled. Defaults to true.
+enabled = true
 # Path to folder storing fullnode data and configs (like ~/.gaia for cosmoshub).
 chain-folder = "/home/validator/.gaia"
 # Binary name (like gaiad for cosmoshub)

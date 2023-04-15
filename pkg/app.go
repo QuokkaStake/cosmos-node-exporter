@@ -39,15 +39,15 @@ func NewApp(
 	var grpc *grpcPkg.Grpc
 	var github *githubPkg.Github
 
-	if config.TendermintConfig.Address != "" {
+	if config.TendermintConfig.Enabled.Bool {
 		tendermintRPC = tendermint.NewRPC(config, logger)
 	}
 
-	if config.GrpcConfig.Address != "" {
+	if config.GrpcConfig.Enabled.Bool {
 		grpc = grpcPkg.NewGrpc(config, logger)
 	}
 
-	if config.CosmovisorConfig.IsEnabled() {
+	if config.CosmovisorConfig.Enabled.Bool {
 		cosmovisor = cosmovisorPkg.NewCosmovisor(config, logger)
 	}
 

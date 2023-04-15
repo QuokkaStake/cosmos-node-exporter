@@ -16,7 +16,7 @@ func GetDefaultLogger() *zerolog.Logger {
 func GetLogger(config config.LogConfig) *zerolog.Logger {
 	log := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger()
 
-	if config.JSONOutput {
+	if config.JSONOutput.Bool {
 		log = zerolog.New(os.Stdout).With().Timestamp().Logger()
 	}
 
