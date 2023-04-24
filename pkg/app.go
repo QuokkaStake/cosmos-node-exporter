@@ -5,7 +5,6 @@ import (
 	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
 	githubPkg "main/pkg/github"
-	grpcPkg "main/pkg/grpc"
 	nodeStats "main/pkg/queriers/node_stats"
 	"main/pkg/queriers/upgrades"
 	"main/pkg/queriers/versions"
@@ -36,15 +35,10 @@ func NewApp(
 
 	var tendermintRPC *tendermint.RPC
 	var cosmovisor *cosmovisorPkg.Cosmovisor
-	var grpc *grpcPkg.Grpc
 	var github *githubPkg.Github
 
 	if config.TendermintConfig.Enabled.Bool {
 		tendermintRPC = tendermint.NewRPC(config, logger)
-	}
-
-	if config.GrpcConfig.Enabled.Bool {
-		grpc = grpcPkg.NewGrpc(config, logger)
 	}
 
 	if config.CosmovisorConfig.Enabled.Bool {
@@ -58,7 +52,7 @@ func NewApp(
 	queriers := []types.Querier{
 		nodeStats.NewQuerier(logger, tendermintRPC),
 		versions.NewQuerier(logger, github, cosmovisor),
-		upgrades.NewQuerier(logger, cosmovisor, grpc, tendermintRPC),
+		upgrades.NewQuerier(config, logger, cosmovisor, tendermintRPC),
 	}
 
 	for _, querier := range queriers {
