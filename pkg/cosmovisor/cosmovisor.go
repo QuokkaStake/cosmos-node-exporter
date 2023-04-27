@@ -45,10 +45,11 @@ func getJsonString(input string) string {
 
 func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
 	cmd := exec.Command(c.Config.CosmovisorPath, "run", "version", "--long", "--output", "json")
-	cmd.Env = []string{
+	cmd.Env = append(
+		os.Environ(),
 		fmt.Sprintf("DAEMON_NAME=%s", c.Config.ChainBinaryName),
 		fmt.Sprintf("DAEMON_HOME=%s", c.Config.ChainFolder),
-	}
+	)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
