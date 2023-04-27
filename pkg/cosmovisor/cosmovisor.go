@@ -14,10 +14,8 @@ import (
 )
 
 type Cosmovisor struct {
-	Logger          zerolog.Logger
-	ChainFolder     string
-	ChainBinaryName string
-	CosmovisorPath  string
+	Logger zerolog.Logger
+	Config config.CosmovisorConfig
 }
 
 func NewCosmovisor(
@@ -25,10 +23,8 @@ func NewCosmovisor(
 	logger *zerolog.Logger,
 ) *Cosmovisor {
 	return &Cosmovisor{
-		Logger:          logger.With().Str("component", "cosmovisor").Logger(),
-		ChainFolder:     config.CosmovisorConfig.ChainFolder,
-		ChainBinaryName: config.CosmovisorConfig.ChainBinaryName,
-		CosmovisorPath:  config.CosmovisorConfig.CosmovisorPath,
+		Logger: logger.With().Str("component", "cosmovisor").Logger(),
+		Config: config.CosmovisorConfig,
 	}
 }
 
@@ -48,9 +44,14 @@ func getJsonString(input string) string {
 }
 
 func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
-	out, err := exec.
-		Command(c.CosmovisorPath, "run", "version", "--long", "--output", "json").
-		CombinedOutput()
+	cmd := exec.Command(c.Config.CosmovisorPath, "run", "version", "--long", "--output", "json")
+	cmd.Env = append(
+		os.Environ(),
+		fmt.Sprintf("DAEMON_NAME=%s", c.Config.ChainBinaryName),
+		fmt.Sprintf("DAEMON_HOME=%s", c.Config.ChainFolder),
+	)
+
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		c.Logger.Error().Err(err).Str("output", string(out)).Msg("Could not get app version")
 		return types.VersionInfo{}, err
@@ -68,7 +69,7 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
 }
 
 func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, error) {
-	upgradesFolder := fmt.Sprintf("%s/cosmovisor/upgrades", c.ChainFolder)
+	upgradesFolder := fmt.Sprintf("%s/cosmovisor/upgrades", c.Config.ChainFolder)
 	upgradesFolderContent, err := os.ReadDir(upgradesFolder)
 	if err != nil {
 		c.Logger.Error().Err(err).Msg("Could not fetch Cosmovisor upgrades folder content")
@@ -87,7 +88,7 @@ func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, error) {
 			"%s/%s/bin/%s",
 			upgradesFolder,
 			upgradeFolder.Name(),
-			c.ChainBinaryName,
+			c.Config.ChainBinaryName,
 		)
 
 		if _, err := os.Stat(upgradeBinaryPath); err != nil {

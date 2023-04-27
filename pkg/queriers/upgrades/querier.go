@@ -1,9 +1,9 @@
 package upgrades
 
 import (
+	"main/pkg/config"
 	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
-	"main/pkg/grpc"
 	"main/pkg/query_info"
 	"main/pkg/tendermint"
 	"main/pkg/utils"
@@ -15,28 +15,28 @@ import (
 )
 
 type Querier struct {
+	Config     *config.Config
 	Logger     zerolog.Logger
 	Cosmovisor *cosmovisorPkg.Cosmovisor
-	Grpc       *grpc.Grpc
 	Tendermint *tendermint.RPC
 }
 
 func NewQuerier(
+	appConfig *config.Config,
 	logger *zerolog.Logger,
 	cosmovisor *cosmovisorPkg.Cosmovisor,
-	grpc *grpc.Grpc,
 	tendermint *tendermint.RPC,
 ) *Querier {
 	return &Querier{
+		Config:     appConfig,
 		Logger:     logger.With().Str("component", "upgrades_querier").Logger(),
 		Cosmovisor: cosmovisor,
-		Grpc:       grpc,
 		Tendermint: tendermint,
 	}
 }
 
 func (u *Querier) Enabled() bool {
-	return u.Grpc != nil
+	return u.Tendermint != nil && u.Config.TendermintConfig.QueryUpgrades.Bool
 }
 
 func (u *Querier) Name() string {
@@ -44,19 +44,19 @@ func (u *Querier) Name() string {
 }
 
 func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
-	grpcQuery := query_info.QueryInfo{
-		Module:  "grpc",
+	upgradePlanQuery := query_info.QueryInfo{
+		Module:  "tendermint",
 		Action:  "get_upgrade_plan",
 		Success: false,
 	}
 
-	upgrade, err := u.Grpc.GetUpgradePlan()
+	upgrade, err := u.Tendermint.GetUpgradePlan()
 	if err != nil {
-		u.Logger.Err(err).Msg("Could not get latest upgrade plan from gRPC")
-		return []prometheus.Collector{}, []query_info.QueryInfo{grpcQuery}
+		u.Logger.Err(err).Msg("Could not get latest upgrade plan from Tendermint")
+		return []prometheus.Collector{}, []query_info.QueryInfo{upgradePlanQuery}
 	}
 
-	grpcQuery.Success = true
+	upgradePlanQuery.Success = true
 	isUpgradePresent := upgrade != nil
 
 	upcomingUpgradePresent := prometheus.NewGaugeVec(
@@ -72,7 +72,7 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 		Set(utils.BoolToFloat64(isUpgradePresent))
 
 	queries := []prometheus.Collector{upcomingUpgradePresent}
-	queryInfos := []query_info.QueryInfo{grpcQuery}
+	queryInfos := []query_info.QueryInfo{upgradePlanQuery}
 
 	if !isUpgradePresent {
 		return queries, queryInfos
@@ -99,29 +99,27 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 		[]string{"name", "info"},
 	)
 
-	upgradeTime := upgrade.Time
-	if upgradeTime.IsZero() {
-		if u.Tendermint == nil {
-			u.Logger.Warn().
-				Msg("Tendermint RPC not initialized and upgrade time is not specified, not returning upgrade time.")
-			return queries, queryInfos
-		}
-
-		tendermintQuery := query_info.QueryInfo{
-			Module:  "tendermint",
-			Action:  "tendermint_get_upgrade_time",
-			Success: false,
-		}
-
-		upgradeTime, err = u.Tendermint.GetEstimateTimeTillBlock(upgrade.Height)
-		if err != nil {
-			u.Logger.Err(err).Msg("Could not get estimated upgrade time")
-			queryInfos = append(queryInfos, tendermintQuery)
-			return queries, queryInfos
-		}
-		tendermintQuery.Success = true
-		queryInfos = append(queryInfos, tendermintQuery)
+	// Calculate upgrade estimated time
+	if u.Tendermint == nil {
+		u.Logger.Warn().
+			Msg("Tendermint RPC not initialized and upgrade time is not specified, not returning upgrade time.")
+		return queries, queryInfos
 	}
+
+	upgradeTimeQuery := query_info.QueryInfo{
+		Module:  "tendermint",
+		Action:  "tendermint_get_upgrade_time",
+		Success: false,
+	}
+
+	upgradeTime, err := u.Tendermint.GetEstimateTimeTillBlock(upgrade.Height)
+	if err != nil {
+		u.Logger.Err(err).Msg("Could not get estimated upgrade time")
+		queryInfos = append(queryInfos, upgradeTimeQuery)
+		return queries, queryInfos
+	}
+	upgradeTimeQuery.Success = true
+	queryInfos = append(queryInfos, upgradeTimeQuery)
 
 	upgradeEstimatedTimeGauge.
 		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
@@ -158,7 +156,7 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 	)
 
 	// From cosmovisor docs:
-	// The name variable in upgrades/<name> is the lowercased URI-encoded name
+	// The name variable in upgrades/<name> is the lowercase URI-encoded name
 	// of the upgrade as specified in the upgrade module plan.
 	upgradeName := strings.ToLower(upgrade.Name)
 	upgradeName = url.QueryEscape(upgradeName)

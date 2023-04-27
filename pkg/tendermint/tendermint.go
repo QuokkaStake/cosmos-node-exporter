@@ -6,7 +6,11 @@ import (
 	"main/pkg/config"
 	"main/pkg/utils"
 	"net/http"
+	"net/url"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	"github.com/rs/zerolog"
 )
@@ -63,6 +67,43 @@ func (t *RPC) Block(height int64) (BlockResponse, error) {
 	res := BlockResponse{}
 	err := t.Query(url, &res)
 	return res, err
+}
+
+func (t *RPC) AbciQuery(
+	method string,
+	message codec.ProtoMarshaler,
+	output codec.ProtoMarshaler,
+) error {
+	dataBytes, err := message.Marshal()
+	if err != nil {
+		return err
+	}
+
+	methodName := fmt.Sprintf("\"%s\"", method)
+	queryURL := fmt.Sprintf(
+		"%s/abci_query?path=%s&data=0x%x",
+		t.Address,
+		url.QueryEscape(methodName),
+		dataBytes,
+	)
+
+	var response AbciQueryResponse
+	if err := t.Query(queryURL, &response); err != nil {
+		return err
+	}
+
+	return output.Unmarshal(response.Result.Response.Value)
+}
+
+func (t *RPC) GetUpgradePlan() (*upgradeTypes.Plan, error) {
+	query := upgradeTypes.QueryCurrentPlanRequest{}
+
+	var response upgradeTypes.QueryCurrentPlanResponse
+	if err := t.AbciQuery("/cosmos.upgrade.v1beta1.Query/CurrentPlan", &query, &response); err != nil {
+		return nil, err
+	}
+
+	return response.Plan, nil
 }
 
 func (t *RPC) GetEstimateTimeTillBlock(height int64) (time.Time, error) {

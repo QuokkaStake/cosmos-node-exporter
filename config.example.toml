@@ -12,13 +12,9 @@ json = false
 enabled = true
 # Tendermint RPC address. Defaults to "http://localhost:26657".
 address = "http://localhost:26657"
-
-# gRPC configuration
-[grpc]
-# If set to false, the metrics related to upgrades would be disabled. Defaults to true.
-enabled = true
-# Tendermint RPC address. Omitting it will result in disabling upgrades metrics.
-address = "localhost:9090"
+# If set to false, upgrades metrics won't be queried. Useful for chains that use Tendermint
+# but not cosmos-sdk, such as Nomic. Defaults to true.
+query-upgrades = true
 
 [cosmovisor]
 # If set to false, the metrics related to Cosmovisor would be disabled. Defaults to true.

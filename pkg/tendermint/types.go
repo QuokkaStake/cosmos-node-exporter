@@ -41,3 +41,16 @@ type BlockHeader struct {
 	Height string    `json:"height"`
 	Time   time.Time `json:"time"`
 }
+
+type AbciQueryResponse struct {
+	Result AbciQueryResult `json:"result"`
+}
+
+type AbciQueryResult struct {
+	Response AbciResponse `json:"response"`
+}
+
+type AbciResponse struct {
+	Code  int    `json:"code"`
+	Value []byte `json:"value"`
+}

@@ -16,13 +16,9 @@ type LogConfig struct {
 }
 
 type TendermintConfig struct {
-	Enabled null.Bool `toml:"enabled" default:"true"`
-	Address string    `toml:"address" default:"http://localhost:26657"`
-}
-
-type GrpcConfig struct {
-	Enabled null.Bool `toml:"enabled" default:"true"`
-	Address string    `toml:"address" default:"localhost:9090"`
+	Enabled       null.Bool `toml:"enabled" default:"true"`
+	Address       string    `toml:"address" default:"http://localhost:26657"`
+	QueryUpgrades null.Bool `toml:"query-upgrades" default:"true"`
 }
 
 type GithubConfig struct {
@@ -40,7 +36,6 @@ type CosmovisorConfig struct {
 type Config struct {
 	LogConfig        LogConfig        `toml:"log"`
 	TendermintConfig TendermintConfig `toml:"tendermint"`
-	GrpcConfig       GrpcConfig       `toml:"grpc"`
 	CosmovisorConfig CosmovisorConfig `toml:"cosmovisor"`
 	GithubConfig     GithubConfig     `toml:"github"`
 	ListenAddress    string           `toml:"listen-address" default:":9500"`
