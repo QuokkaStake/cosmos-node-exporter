@@ -24,7 +24,7 @@ func Execute(configPath string) {
 	}
 
 	log := logger.GetLogger(appConfig.LogConfig)
-	app := pkg.NewApp(log, appConfig)
+	app := pkg.NewApp(log, appConfig, version)
 
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		app.HandleRequest(w, r)
