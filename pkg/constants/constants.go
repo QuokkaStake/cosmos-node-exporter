@@ -1,9 +1,13 @@
 package constants
 
-import "regexp"
+import (
+	"regexp"
+	"time"
+)
 
 const (
-	MetricsPrefix = "cosmos_node_exporter_"
+	MetricsPrefix           = "cosmos_node_exporter_"
+	UncachedGithubQueryTime = time.Hour
 )
 
 var (

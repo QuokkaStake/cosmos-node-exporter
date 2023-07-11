@@ -33,6 +33,18 @@ func NewGithub(config *config.Config, logger *zerolog.Logger) *Github {
 	}
 }
 
+func (g *Github) UseCache() bool {
+	// If the last result is not present - do not use cache, for the first query.
+	if g.LastResult == nil {
+		return false
+	}
+
+	// We need to make uncached requests once in a while, to make sure everything is ok
+	// (for example, if we messed up caching itself).
+	diff := time.Since(g.LastModified)
+	return diff < constants.UncachedGithubQueryTime
+}
+
 func (g *Github) GetLatestRelease() (types.ReleaseInfo, error) {
 	latestReleaseUrl := fmt.Sprintf(
 		"https://api.github.com/repos/%s/%s/releases/latest",
@@ -49,7 +61,15 @@ func (g *Github) GetLatestRelease() (types.ReleaseInfo, error) {
 		return types.ReleaseInfo{}, err
 	}
 
-	if g.LastResult != nil {
+	useCache := g.UseCache()
+
+	g.Logger.Trace().
+		Str("url", latestReleaseUrl).
+		Bool("cached", useCache).
+		Str("time-since-latest", time.Since(g.LastModified).String()).
+		Msg("Querying GitHub")
+
+	if useCache {
 		req.Header.Set("If-Modified-Since", g.LastModified.Format(http.TimeFormat))
 	}
 
@@ -77,7 +97,7 @@ func (g *Github) GetLatestRelease() (types.ReleaseInfo, error) {
 		return releaseInfo, err
 	}
 
-	// Github returned error, probably rate-limiting
+	// GitHub returned error, probably rate-limiting
 	if releaseInfo.Message != "" {
 		return releaseInfo, fmt.Errorf("got error from Github: %s", releaseInfo.Message)
 	}
