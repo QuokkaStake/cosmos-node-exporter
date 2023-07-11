@@ -47,3 +47,4 @@ linters:
     - nosnakecase
     - ifshort
     - gci
+    - depguard

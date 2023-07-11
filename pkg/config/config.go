@@ -11,23 +11,23 @@ import (
 )
 
 type LogConfig struct {
-	LogLevel   string    `toml:"level" default:"info"`
-	JSONOutput null.Bool `toml:"json" default:"false"`
+	LogLevel   string    `default:"info"  toml:"level"`
+	JSONOutput null.Bool `default:"false" toml:"json"`
 }
 
 type TendermintConfig struct {
-	Enabled       null.Bool `toml:"enabled" default:"true"`
-	Address       string    `toml:"address" default:"http://localhost:26657"`
-	QueryUpgrades null.Bool `toml:"query-upgrades" default:"true"`
+	Enabled       null.Bool `default:"true"                   toml:"enabled"`
+	Address       string    `default:"http://localhost:26657" toml:"address"`
+	QueryUpgrades null.Bool `default:"true"                   toml:"query-upgrades"`
 }
 
 type GithubConfig struct {
-	Repository string `toml:"repository" default:""`
+	Repository string `default:""   toml:"repository"`
 	Token      string `toml:"token"`
 }
 
 type CosmovisorConfig struct {
-	Enabled         null.Bool `toml:"enabled" default:"true"`
+	Enabled         null.Bool `default:"true"           toml:"enabled"`
 	ChainBinaryName string    `toml:"chain-binary-name"`
 	ChainFolder     string    `toml:"chain-folder"`
 	CosmovisorPath  string    `toml:"cosmovisor-path"`
@@ -38,7 +38,7 @@ type Config struct {
 	TendermintConfig TendermintConfig `toml:"tendermint"`
 	CosmovisorConfig CosmovisorConfig `toml:"cosmovisor"`
 	GithubConfig     GithubConfig     `toml:"github"`
-	ListenAddress    string           `toml:"listen-address" default:":9500"`
+	ListenAddress    string           `default:":9500"   toml:"listen-address"`
 }
 
 func (c *GithubConfig) Validate() error {
