@@ -5,6 +5,7 @@ import (
 	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
 	githubPkg "main/pkg/github"
+	"main/pkg/queriers/app"
 	nodeStats "main/pkg/queriers/node_stats"
 	"main/pkg/queriers/upgrades"
 	"main/pkg/queriers/versions"
@@ -25,11 +26,13 @@ import (
 type App struct {
 	Logger   zerolog.Logger
 	Queriers []types.Querier
+	Version  string
 }
 
 func NewApp(
 	logger *zerolog.Logger,
 	config *config.Config,
+	version string,
 ) *App {
 	appLogger := logger.With().Str("component", "app").Logger()
 
@@ -53,6 +56,7 @@ func NewApp(
 		nodeStats.NewQuerier(logger, tendermintRPC),
 		versions.NewQuerier(logger, github, cosmovisor),
 		upgrades.NewQuerier(config, logger, cosmovisor, tendermintRPC),
+		app.NewQuerier(version),
 	}
 
 	for _, querier := range queriers {
@@ -66,6 +70,7 @@ func NewApp(
 	return &App{
 		Logger:   appLogger,
 		Queriers: queriers,
+		Version:  version,
 	}
 }
 
