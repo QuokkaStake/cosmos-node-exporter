@@ -131,7 +131,7 @@ func (t *RPC) GetEstimateTimeTillBlock(height int64) (time.Time, error) {
 	blocksDiffTime := latestBlock.Result.Block.Header.Time.Sub(olderBlock.Result.Block.Header.Time)
 	blockTime := blocksDiffTime.Seconds() / float64(t.BlocksBehind)
 	blocksTillEstimatedBlock := height - latestBlockHeight
-	secondsTillEstimatedBlock := blocksTillEstimatedBlock * int64(blockTime)
+	secondsTillEstimatedBlock := int64(float64(blocksTillEstimatedBlock) * blockTime)
 	durationTillEstimatedBlock := time.Duration(secondsTillEstimatedBlock * int64(time.Second))
 
 	return time.Now().Add(durationTillEstimatedBlock), nil
