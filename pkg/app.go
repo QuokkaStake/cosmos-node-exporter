@@ -6,6 +6,7 @@ import (
 	cosmovisorPkg "main/pkg/cosmovisor"
 	githubPkg "main/pkg/github"
 	"main/pkg/queriers/app"
+	cosmovisorQuerierPkg "main/pkg/queriers/cosmovisor"
 	nodeStats "main/pkg/queriers/node_stats"
 	"main/pkg/queriers/upgrades"
 	"main/pkg/queriers/versions"
@@ -56,6 +57,7 @@ func NewApp(
 		nodeStats.NewQuerier(logger, tendermintRPC),
 		versions.NewQuerier(logger, github, cosmovisor),
 		upgrades.NewQuerier(config, logger, cosmovisor, tendermintRPC),
+		cosmovisorQuerierPkg.NewQuerier(logger, cosmovisor),
 		app.NewQuerier(version),
 	}
 
