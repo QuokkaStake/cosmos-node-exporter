@@ -1,11 +1,12 @@
 package cosmovisor
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/rs/zerolog"
 	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
 	"main/pkg/query_info"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/rs/zerolog"
 )
 
 type Querier struct {
