@@ -68,6 +68,33 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
 	return versionInfo, nil
 }
 
+func (c *Cosmovisor) GetCosmovisorVersion() (string, error) {
+	cmd := exec.Command(c.Config.CosmovisorPath, "version")
+	cmd.Env = append(
+		os.Environ(),
+		fmt.Sprintf("DAEMON_NAME=%s", c.Config.ChainBinaryName),
+		fmt.Sprintf("DAEMON_HOME=%s", c.Config.ChainFolder),
+	)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		c.Logger.Error().Err(err).Str("output", string(out)).Msg("Could not get Cosmovisor version")
+		return "", err
+	}
+
+	outSplit := strings.Split(string(out), "\n")
+
+	cosmovisorVersionPrefix := "cosmovisor version: "
+
+	for _, outString := range outSplit {
+		if strings.HasPrefix(outString, cosmovisorVersionPrefix) {
+			return outString[len(cosmovisorVersionPrefix):], nil
+		}
+	}
+
+	return "", fmt.Errorf("could not find version in Cosmovisor response")
+}
+
 func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, error) {
 	upgradesFolder := fmt.Sprintf("%s/cosmovisor/upgrades", c.Config.ChainFolder)
 	upgradesFolderContent, err := os.ReadDir(upgradesFolder)
