@@ -33,6 +33,26 @@ type CosmovisorConfig struct {
 	CosmovisorPath  string    `toml:"cosmovisor-path"`
 }
 
+func (c *CosmovisorConfig) Validate() error {
+	if !c.Enabled.Bool {
+		return nil
+	}
+
+	if c.ChainBinaryName == "" {
+		return fmt.Errorf("chain-binary-name is not specified")
+	}
+
+	if c.ChainFolder == "" {
+		return fmt.Errorf("chain-folder is not specified")
+	}
+
+	if c.CosmovisorPath == "" {
+		return fmt.Errorf("cosmovisor-path is not specified")
+	}
+
+	return nil
+}
+
 type Config struct {
 	LogConfig        LogConfig        `toml:"log"`
 	TendermintConfig TendermintConfig `toml:"tendermint"`
@@ -56,6 +76,10 @@ func (c *GithubConfig) Validate() error {
 func (c *Config) Validate() error {
 	if err := c.GithubConfig.Validate(); err != nil {
 		return fmt.Errorf("GitHub config is invalid: %s", err)
+	}
+
+	if err := c.CosmovisorConfig.Validate(); err != nil {
+		return fmt.Errorf("Cosmovisor config is invalid: %s", err)
 	}
 
 	return nil

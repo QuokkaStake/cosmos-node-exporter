@@ -29,12 +29,13 @@ func NewRPC(config *config.Config, logger *zerolog.Logger) *RPC {
 	}
 }
 
-func (t *RPC) Query(url string, output interface{}) error {
+func (t *RPC) Query(relativeUrl string, output interface{}) error {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	fullUrl := fmt.Sprintf("%s%s", t.Address, relativeUrl)
+	req, err := http.NewRequest(http.MethodGet, fullUrl, nil)
 
 	if err != nil {
 		return err
@@ -52,20 +53,19 @@ func (t *RPC) Query(url string, output interface{}) error {
 }
 
 func (t *RPC) Status() (StatusResponse, error) {
-	url := fmt.Sprintf("%s/status", t.Address)
 	res := StatusResponse{}
-	err := t.Query(url, &res)
+	err := t.Query("/status", &res)
 	return res, err
 }
 
 func (t *RPC) Block(height int64) (BlockResponse, error) {
-	url := fmt.Sprintf("%s/block", t.Address)
+	blockUrl := fmt.Sprintf("/block")
 	if height != 0 {
-		url = fmt.Sprintf("%s/block?height=%d", t.Address, height)
+		blockUrl = fmt.Sprintf("/block?height=%d", height)
 	}
 
 	res := BlockResponse{}
-	err := t.Query(url, &res)
+	err := t.Query(blockUrl, &res)
 	return res, err
 }
 
@@ -81,8 +81,7 @@ func (t *RPC) AbciQuery(
 
 	methodName := fmt.Sprintf("\"%s\"", method)
 	queryURL := fmt.Sprintf(
-		"%s/abci_query?path=%s&data=0x%x",
-		t.Address,
+		"/abci_query?path=%s&data=0x%x",
 		url.QueryEscape(methodName),
 		dataBytes,
 	)
