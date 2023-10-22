@@ -86,10 +86,21 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 		[]string{"name", "info"},
 	)
 
+	upgradeHeightGauge := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: constants.MetricsPrefix + "upgrade_height",
+			Help: "Future upgrade height",
+		},
+		[]string{"name", "info"},
+	)
+
 	upgradeInfoGauge.
 		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
 		Set(utils.BoolToFloat64(isUpgradePresent))
-	queries = append(queries, upgradeInfoGauge)
+	upgradeHeightGauge.
+		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
+		Set(float64(upgrade.Height))
+	queries = append(queries, upgradeInfoGauge, upgradeHeightGauge)
 
 	upgradeEstimatedTimeGauge := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
