@@ -3,7 +3,7 @@ package versions
 import (
 	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
-	"main/pkg/github"
+	"main/pkg/git"
 	"main/pkg/query_info"
 	"main/pkg/types"
 	"main/pkg/utils"
@@ -16,24 +16,24 @@ import (
 
 type Querier struct {
 	Logger     zerolog.Logger
-	Github     *github.Github
+	GitClient  git.Client
 	Cosmovisor *cosmovisorPkg.Cosmovisor
 }
 
 func NewQuerier(
 	logger *zerolog.Logger,
-	github *github.Github,
+	gitClient git.Client,
 	cosmovisor *cosmovisorPkg.Cosmovisor,
 ) *Querier {
 	return &Querier{
 		Logger:     logger.With().Str("component", "versions_querier").Logger(),
-		Github:     github,
+		GitClient:  gitClient,
 		Cosmovisor: cosmovisor,
 	}
 }
 
 func (v *Querier) Enabled() bool {
-	return v.Github != nil || v.Cosmovisor != nil
+	return v.GitClient != nil || v.Cosmovisor != nil
 }
 
 func (v *Querier) Name() string {
@@ -45,32 +45,27 @@ func (v *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 	collectors := []prometheus.Collector{}
 
 	var (
-		releaseInfo types.ReleaseInfo
-		versionInfo types.VersionInfo
-		err         error
+		latestVersion string
+		versionInfo   types.VersionInfo
+		err           error
 	)
 
-	if v.Github != nil {
+	if v.GitClient != nil {
 		queriesInfo = append(queriesInfo, query_info.QueryInfo{
-			Module:  "github",
+			Module:  "git",
 			Action:  "get_latest_release",
 			Success: false,
 		})
 
-		releaseInfo, err = v.Github.GetLatestRelease()
+		latestVersion, err = v.GitClient.GetLatestRelease()
 		if err != nil {
-			v.Logger.Err(err).Msg("Could not get latest Github version")
-			return []prometheus.Collector{}, queriesInfo
-		}
-
-		if releaseInfo.TagName == "" {
-			v.Logger.Err(err).Msg("Malformed Github response when querying version")
+			v.Logger.Err(err).Msg("Could not get latest Git version")
 			return []prometheus.Collector{}, queriesInfo
 		}
 
 		// stripping first "v" character: "v1.2.3" => "1.2.3"
-		if releaseInfo.TagName[0] == 'v' {
-			releaseInfo.TagName = releaseInfo.TagName[1:]
+		if latestVersion[0] == 'v' {
+			latestVersion = latestVersion[1:]
 		}
 
 		queriesInfo[len(queriesInfo)-1].Success = true
@@ -84,7 +79,7 @@ func (v *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 		)
 
 		remoteVersion.
-			With(prometheus.Labels{"version": releaseInfo.TagName}).
+			With(prometheus.Labels{"version": latestVersion}).
 			Set(1)
 
 		collectors = append(collectors, remoteVersion)
@@ -120,14 +115,14 @@ func (v *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 		collectors = append(collectors, localVersion)
 	}
 
-	if v.Github != nil && v.Cosmovisor != nil {
+	if v.GitClient != nil && v.Cosmovisor != nil {
 		semverLocal, err := semver.NewVersion(versionInfo.Version)
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get local app version")
 			return collectors, queriesInfo
 		}
 
-		semverRemote, err := semver.NewVersion(releaseInfo.TagName)
+		semverRemote, err := semver.NewVersion(latestVersion)
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get remote app version")
 			return collectors, queriesInfo
@@ -147,7 +142,7 @@ func (v *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 		isUsingLatestVersion.
 			With(prometheus.Labels{
 				"local_version":  versionInfo.Version,
-				"remote_version": releaseInfo.TagName,
+				"remote_version": latestVersion,
 			}).
 			Set(utils.BoolToFloat64(isLatestOrSameVersion))
 

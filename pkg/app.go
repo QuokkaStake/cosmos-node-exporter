@@ -4,7 +4,7 @@ import (
 	"main/pkg/config"
 	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
-	githubPkg "main/pkg/github"
+	git "main/pkg/git"
 	"main/pkg/queriers/app"
 	cosmovisorQuerierPkg "main/pkg/queriers/cosmovisor"
 	nodeStats "main/pkg/queriers/node_stats"
@@ -39,7 +39,6 @@ func NewApp(
 
 	var tendermintRPC *tendermint.RPC
 	var cosmovisor *cosmovisorPkg.Cosmovisor
-	var github *githubPkg.Github
 
 	if config.TendermintConfig.Enabled.Bool {
 		tendermintRPC = tendermint.NewRPC(config, logger)
@@ -49,13 +48,11 @@ func NewApp(
 		cosmovisor = cosmovisorPkg.NewCosmovisor(config, logger)
 	}
 
-	if config.GithubConfig.Repository != "" {
-		github = githubPkg.NewGithub(config, logger)
-	}
+	gitClient := git.GetClient(config, logger)
 
 	queriers := []types.Querier{
 		nodeStats.NewQuerier(logger, tendermintRPC),
-		versions.NewQuerier(logger, github, cosmovisor),
+		versions.NewQuerier(logger, gitClient, cosmovisor),
 		upgrades.NewQuerier(config, logger, cosmovisor, tendermintRPC),
 		cosmovisorQuerierPkg.NewQuerier(logger, cosmovisor),
 		app.NewQuerier(version),

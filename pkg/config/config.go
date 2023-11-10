@@ -21,7 +21,7 @@ type TendermintConfig struct {
 	QueryUpgrades null.Bool `default:"true"                   toml:"query-upgrades"`
 }
 
-type GithubConfig struct {
+type GitConfig struct {
 	Repository string `default:""   toml:"repository"`
 	Token      string `toml:"token"`
 }
@@ -57,11 +57,11 @@ type Config struct {
 	LogConfig        LogConfig        `toml:"log"`
 	TendermintConfig TendermintConfig `toml:"tendermint"`
 	CosmovisorConfig CosmovisorConfig `toml:"cosmovisor"`
-	GithubConfig     GithubConfig     `toml:"github"`
+	GitConfig        GitConfig        `toml:"git"`
 	ListenAddress    string           `default:":9500"   toml:"listen-address"`
 }
 
-func (c *GithubConfig) Validate() error {
+func (c *GitConfig) Validate() error {
 	if c.Repository == "" {
 		return nil
 	}
@@ -74,7 +74,7 @@ func (c *GithubConfig) Validate() error {
 }
 
 func (c *Config) Validate() error {
-	if err := c.GithubConfig.Validate(); err != nil {
+	if err := c.GitConfig.Validate(); err != nil {
 		return fmt.Errorf("GitHub config is invalid: %s", err)
 	}
 

@@ -1,4 +1,4 @@
-package github
+package git
 
 import (
 	"encoding/json"
@@ -18,24 +18,25 @@ type Github struct {
 	Token        string
 	Logger       zerolog.Logger
 	LastModified time.Time
-	LastResult   *types.ReleaseInfo
+	LastResult   string
 }
 
 func NewGithub(config *config.Config, logger *zerolog.Logger) *Github {
-	value := constants.GithubRegexp.FindStringSubmatch(config.GithubConfig.Repository)
+	value := constants.GithubRegexp.FindStringSubmatch(config.GitConfig.Repository)
 
 	return &Github{
 		Organization: value[1],
 		Repository:   value[2],
-		Token:        config.GithubConfig.Token,
-		Logger:       logger.With().Str("component", "github").Logger(),
+		Token:        config.GitConfig.Token,
+		Logger:       logger.With().Str("component", "git").Logger(),
 		LastModified: time.Now(),
+		LastResult:   "",
 	}
 }
 
 func (g *Github) UseCache() bool {
 	// If the last result is not present - do not use cache, for the first query.
-	if g.LastResult == nil {
+	if g.LastResult == "" {
 		return false
 	}
 
@@ -45,7 +46,7 @@ func (g *Github) UseCache() bool {
 	return diff < constants.UncachedGithubQueryTime
 }
 
-func (g *Github) GetLatestRelease() (types.ReleaseInfo, error) {
+func (g *Github) GetLatestRelease() (string, error) {
 	latestReleaseUrl := fmt.Sprintf(
 		"https://api.github.com/repos/%s/%s/releases/latest",
 		g.Organization,
@@ -58,7 +59,7 @@ func (g *Github) GetLatestRelease() (types.ReleaseInfo, error) {
 
 	req, err := http.NewRequest(http.MethodGet, latestReleaseUrl, nil)
 	if err != nil {
-		return types.ReleaseInfo{}, err
+		return "", err
 	}
 
 	useCache := g.UseCache()
@@ -80,30 +81,29 @@ func (g *Github) GetLatestRelease() (types.ReleaseInfo, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return types.ReleaseInfo{}, err
+		return "", err
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode == http.StatusNotModified && g.LastResult != nil {
+	if res.StatusCode == http.StatusNotModified && g.LastResult != "" {
 		g.Logger.Trace().Msg("Github returned cached response")
-		g.LastModified = time.Now()
-		return *g.LastResult, nil
+		return g.LastResult, nil
 	}
 
 	releaseInfo := types.ReleaseInfo{}
 	err = json.NewDecoder(res.Body).Decode(&releaseInfo)
 
 	if err != nil {
-		return releaseInfo, err
+		return "", err
 	}
 
 	// GitHub returned error, probably rate-limiting
 	if releaseInfo.Message != "" {
-		return releaseInfo, fmt.Errorf("got error from Github: %s", releaseInfo.Message)
+		return "", fmt.Errorf("got error from Github: %s", releaseInfo.Message)
 	}
 
 	g.LastModified = time.Now()
-	g.LastResult = &releaseInfo
+	g.LastResult = releaseInfo.TagName
 
-	return releaseInfo, err
+	return releaseInfo.TagName, err
 }
