@@ -2,7 +2,6 @@
 
 ![Latest release](https://img.shields.io/github/v/release/QuokkaStake/cosmos-node-exporter)
 [![Actions Status](https://github.com/QuokkaStake/cosmos-node-exporter/workflows/test/badge.svg)](https://github.com/QuokkaStake/cosmos-node-exporter/actions)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FQuokkaStake%2Fcosmos-node-exporter.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FQuokkaStake%2Fcosmos-node-exporter?ref=badge_shield)
 
 cosmos-node-exporter is a Prometheus scraper that scrapes some data to monitor your node, specifically you can set up alerting if:
 - your app version does not match the latest on GitHub (can be useful to be notified on new releases)
@@ -110,7 +109,3 @@ All configuration is done via `.toml` config. Check config.example.toml for refe
 ## How can I contribute?
 
 Bug reports and feature requests are always welcome! If you want to contribute, feel free to open issues or PRs.
-
-
-## License
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FQuokkaStake%2Fcosmos-node-exporter.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FQuokkaStake%2Fcosmos-node-exporter?ref=badge_large)
