@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"main/pkg/config"
 	"main/pkg/constants"
-	"main/pkg/types"
 	"net/http"
 	"time"
 
@@ -21,6 +20,12 @@ type Github struct {
 	LastResult   string
 }
 
+type GithubReleaseInfo struct {
+	Name    string `json:"name"`
+	TagName string `json:"tag_name"`
+	Message string `json:"message"`
+}
+
 func NewGithub(config *config.Config, logger *zerolog.Logger) *Github {
 	value := constants.GithubRegexp.FindStringSubmatch(config.GitConfig.Repository)
 
@@ -28,7 +33,7 @@ func NewGithub(config *config.Config, logger *zerolog.Logger) *Github {
 		Organization: value[1],
 		Repository:   value[2],
 		Token:        config.GitConfig.Token,
-		Logger:       logger.With().Str("component", "git").Logger(),
+		Logger:       logger.With().Str("component", "github").Logger(),
 		LastModified: time.Now(),
 		LastResult:   "",
 	}
@@ -90,7 +95,7 @@ func (g *Github) GetLatestRelease() (string, error) {
 		return g.LastResult, nil
 	}
 
-	releaseInfo := types.ReleaseInfo{}
+	releaseInfo := GithubReleaseInfo{}
 	err = json.NewDecoder(res.Body).Decode(&releaseInfo)
 
 	if err != nil {
