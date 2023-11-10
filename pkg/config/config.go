@@ -66,7 +66,7 @@ func (c *GitConfig) Validate() error {
 		return nil
 	}
 
-	if !constants.GithubRegexp.Match([]byte(c.Repository)) {
+	if !constants.GithubRegexp.Match([]byte(c.Repository)) && !constants.GitopiaRegexp.Match([]byte(c.Repository)) {
 		return fmt.Errorf("repository is not valid")
 	}
 

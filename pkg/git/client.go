@@ -2,6 +2,7 @@ package git
 
 import (
 	configPkg "main/pkg/config"
+	"main/pkg/constants"
 
 	"github.com/rs/zerolog"
 )
@@ -11,8 +12,12 @@ type Client interface {
 }
 
 func GetClient(config *configPkg.Config, logger *zerolog.Logger) Client {
-	if config.GitConfig.Repository != "" {
+	if constants.GithubRegexp.Match([]byte(config.GitConfig.Repository)) {
 		return NewGithub(config, logger)
+	}
+
+	if constants.GitopiaRegexp.Match([]byte(config.GitConfig.Repository)) {
+		return NewGitopia(config, logger)
 	}
 
 	return nil
