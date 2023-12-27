@@ -1,10 +1,8 @@
 package query_info
 
 import (
-	"main/pkg/constants"
+	"main/pkg/metrics"
 	"main/pkg/utils"
-
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 type QueryInfo struct {
@@ -13,29 +11,25 @@ type QueryInfo struct {
 	Success bool
 }
 
-func GetQueryInfoMetrics(allQueries map[string]map[string][]QueryInfo) []prometheus.Collector {
-	querySuccessfulGauge := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: constants.MetricsPrefix + "query_successful",
-			Help: "Was query successful?",
-		},
-		[]string{"node", "querier", "module", "action"},
-	)
+func GetQueryInfoMetrics(allQueries map[string]map[string][]QueryInfo) []metrics.MetricInfo {
+	metricsInfos := []metrics.MetricInfo{}
 
 	for node, nodeQueryInfos := range allQueries {
 		for name, queryInfos := range nodeQueryInfos {
 			for _, queryInfo := range queryInfos {
-				querySuccessfulGauge.
-					With(prometheus.Labels{
+				metricsInfos = append(metricsInfos, metrics.MetricInfo{
+					MetricName: metrics.MetricNameQuerySuccessful,
+					Labels: map[string]string{
 						"node":    node,
 						"querier": name,
 						"module":  queryInfo.Module,
 						"action":  queryInfo.Action,
-					}).
-					Set(utils.BoolToFloat64(queryInfo.Success))
+					},
+					Value: utils.BoolToFloat64(queryInfo.Success),
+				})
 			}
 		}
 	}
 
-	return []prometheus.Collector{querySuccessfulGauge}
+	return metricsInfos
 }

@@ -26,7 +26,7 @@ type GithubReleaseInfo struct {
 	Message string `json:"message"`
 }
 
-func NewGithub(config config.NodeConfig, logger *zerolog.Logger) *Github {
+func NewGithub(config config.NodeConfig, logger zerolog.Logger) *Github {
 	value := constants.GithubRegexp.FindStringSubmatch(config.GitConfig.Repository)
 
 	return &Github{

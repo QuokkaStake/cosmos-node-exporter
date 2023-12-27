@@ -2,15 +2,14 @@ package upgrades
 
 import (
 	"main/pkg/config"
-	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
+	"main/pkg/metrics"
 	"main/pkg/query_info"
 	"main/pkg/tendermint"
 	"main/pkg/utils"
 	"net/url"
 	"strings"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 )
 
@@ -23,7 +22,7 @@ type Querier struct {
 
 func NewQuerier(
 	nodeConfig config.NodeConfig,
-	logger *zerolog.Logger,
+	logger zerolog.Logger,
 	cosmovisor *cosmovisorPkg.Cosmovisor,
 	tendermint *tendermint.RPC,
 ) *Querier {
@@ -43,7 +42,7 @@ func (u *Querier) Name() string {
 	return "upgrades-querier"
 }
 
-func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
+func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	upgradePlanQuery := query_info.QueryInfo{
 		Module:  "tendermint",
 		Action:  "get_upgrade_plan",
@@ -53,68 +52,38 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 	upgrade, err := u.Tendermint.GetUpgradePlan()
 	if err != nil {
 		u.Logger.Err(err).Msg("Could not get latest upgrade plan from Tendermint")
-		return []prometheus.Collector{}, []query_info.QueryInfo{upgradePlanQuery}
+		return []metrics.MetricInfo{}, []query_info.QueryInfo{upgradePlanQuery}
 	}
 
 	upgradePlanQuery.Success = true
 	isUpgradePresent := upgrade != nil
 
-	upcomingUpgradePresent := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: constants.MetricsPrefix + "upgrade_coming",
-			Help: "Is future upgrade planned?",
-		},
-		[]string{"node"},
-	)
-
-	upcomingUpgradePresent.
-		With(prometheus.Labels{"node": u.Config.Name}).
-		Set(utils.BoolToFloat64(isUpgradePresent))
-
-	queries := []prometheus.Collector{upcomingUpgradePresent}
+	metricInfos := []metrics.MetricInfo{{
+		MetricName: metrics.MetricNameUpgradeComing,
+		Labels:     map[string]string{},
+		Value:      utils.BoolToFloat64(isUpgradePresent),
+	}}
 	queryInfos := []query_info.QueryInfo{upgradePlanQuery}
 
 	if !isUpgradePresent {
-		return queries, queryInfos
+		return metricInfos, queryInfos
 	}
 
-	upgradeInfoGauge := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: constants.MetricsPrefix + "upgrade_info",
-			Help: "Future upgrade info",
-		},
-		[]string{"node", "name", "info"},
-	)
-
-	upgradeHeightGauge := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: constants.MetricsPrefix + "upgrade_height",
-			Help: "Future upgrade height",
-		},
-		[]string{"node", "name", "info"},
-	)
-
-	upgradeInfoGauge.
-		With(prometheus.Labels{"node": u.Config.Name, "name": upgrade.Name, "info": upgrade.Info}).
-		Set(utils.BoolToFloat64(isUpgradePresent))
-	upgradeHeightGauge.
-		With(prometheus.Labels{"node": u.Config.Name, "name": upgrade.Name, "info": upgrade.Info}).
-		Set(float64(upgrade.Height))
-	queries = append(queries, upgradeInfoGauge, upgradeHeightGauge)
-
-	upgradeEstimatedTimeGauge := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: constants.MetricsPrefix + "upgrade_estimated_time",
-			Help: "Estimated upgrade time, as Unix timestamp",
-		},
-		[]string{"node", "name", "info"},
-	)
+	metricInfos = append(metricInfos, metrics.MetricInfo{
+		MetricName: metrics.MetricNameUpgradeInfo,
+		Labels:     map[string]string{"name": upgrade.Name, "info": upgrade.Info},
+		Value:      utils.BoolToFloat64(isUpgradePresent),
+	}, metrics.MetricInfo{
+		MetricName: metrics.MetricNameUpgradeHeight,
+		Labels:     map[string]string{"name": upgrade.Name, "info": upgrade.Info},
+		Value:      float64(upgrade.Height),
+	})
 
 	// Calculate upgrade estimated time
 	if u.Tendermint == nil {
 		u.Logger.Warn().
 			Msg("Tendermint RPC not initialized and upgrade time is not specified, not returning upgrade time.")
-		return queries, queryInfos
+		return metricInfos, queryInfos
 	}
 
 	upgradeTimeQuery := query_info.QueryInfo{
@@ -127,24 +96,26 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 	if err != nil {
 		u.Logger.Err(err).Msg("Could not get estimated upgrade time")
 		queryInfos = append(queryInfos, upgradeTimeQuery)
-		return queries, queryInfos
+		return metricInfos, queryInfos
 	}
 	upgradeTimeQuery.Success = true
 	queryInfos = append(queryInfos, upgradeTimeQuery)
 
-	upgradeEstimatedTimeGauge.
-		With(prometheus.Labels{"node": u.Config.Name, "name": upgrade.Name, "info": upgrade.Info}).
-		Set(float64(upgradeTime.Unix()))
-	queries = append(queries, upgradeEstimatedTimeGauge)
+	metricInfos = append(metricInfos, metrics.MetricInfo{
+		MetricName: metrics.MetricNameUpgradeEstimatedTime,
+		Labels:     map[string]string{"name": upgrade.Name, "info": upgrade.Info},
+		Value:      float64(upgradeTime.Unix()),
+	})
 
 	if u.Cosmovisor == nil {
 		u.Logger.Warn().
 			Msg("Cosmovisor not initialized, not returning binary presence.")
-		return queries, queryInfos
+		return metricInfos, queryInfos
 	}
 
 	cosmovisorGetUpgradesQueryInfo := query_info.QueryInfo{
 		Action:  "cosmovisor_get_upgrades",
+		Module:  "cosmovisor",
 		Success: false,
 	}
 
@@ -152,19 +123,11 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 	if err != nil {
 		u.Logger.Error().Err(err).Msg("Could not get Cosmovisor upgrades")
 		queryInfos = append(queryInfos, cosmovisorGetUpgradesQueryInfo)
-		return []prometheus.Collector{}, queryInfos
+		return metricInfos, queryInfos
 	}
 
 	cosmovisorGetUpgradesQueryInfo.Success = true
 	queryInfos = append(queryInfos, cosmovisorGetUpgradesQueryInfo)
-
-	upgradeBinaryPresentGauge := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: constants.MetricsPrefix + "upgrade_binary_present",
-			Help: "Is upgrade binary present?",
-		},
-		[]string{"node", "name", "info"},
-	)
 
 	// From cosmovisor docs:
 	// The name variable in upgrades/<name> is the lowercase URI-encoded name
@@ -172,10 +135,11 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 	upgradeName := strings.ToLower(upgrade.Name)
 	upgradeName = url.QueryEscape(upgradeName)
 
-	upgradeBinaryPresentGauge.
-		With(prometheus.Labels{"node": u.Config.Name, "name": upgrade.Name, "info": upgrade.Info}).
-		Set(utils.BoolToFloat64(upgrades.HasUpgrade(upgradeName)))
-	queries = append(queries, upgradeBinaryPresentGauge)
+	metricInfos = append(metricInfos, metrics.MetricInfo{
+		MetricName: metrics.MetricNameUpgradeBinaryPresent,
+		Labels:     map[string]string{"name": upgrade.Name, "info": upgrade.Info},
+		Value:      utils.BoolToFloat64(upgrades.HasUpgrade(upgradeName)),
+	})
 
-	return queries, queryInfos
+	return metricInfos, queryInfos
 }

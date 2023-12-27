@@ -20,7 +20,7 @@ type Cosmovisor struct {
 
 func NewCosmovisor(
 	config config.NodeConfig,
-	logger *zerolog.Logger,
+	logger zerolog.Logger,
 ) *Cosmovisor {
 	return &Cosmovisor{
 		Logger: logger.With().Str("component", "cosmovisor").Logger(),

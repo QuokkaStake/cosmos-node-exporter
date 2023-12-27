@@ -2,6 +2,7 @@ package pkg
 
 import (
 	configPkg "main/pkg/config"
+	"main/pkg/metrics"
 	"main/pkg/queriers/app"
 	"main/pkg/query_info"
 	"main/pkg/types"
@@ -9,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 )
@@ -18,6 +18,7 @@ type App struct {
 	Logger         zerolog.Logger
 	Config         *configPkg.Config
 	NodeHandlers   []*NodeHandler
+	MetricsManager *metrics.Manager
 	GlobalQueriers []types.Querier
 }
 
@@ -40,6 +41,7 @@ func NewApp(
 		Logger:         logger.With().Str("component", "app").Logger(),
 		Config:         config,
 		NodeHandlers:   nodeHandlers,
+		MetricsManager: metrics.NewManager(config),
 		GlobalQueriers: globalQueriers,
 	}
 }
@@ -47,12 +49,10 @@ func NewApp(
 func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	requestStart := time.Now()
 
-	registry := prometheus.NewRegistry()
-
-	allResults := make(map[string]map[string][]prometheus.Collector)
+	allResults := make(map[string][]metrics.MetricInfo)
 	allQueries := make(map[string]map[string][]query_info.QueryInfo)
 
-	globalResults := make([]prometheus.Collector, 0)
+	globalResults := make([]metrics.MetricInfo, 0)
 
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
@@ -89,13 +89,7 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	globalResults = append(globalResults, query_info.GetQueryInfoMetrics(allQueries)...)
 
-	for _, perNodeResults := range allResults {
-		for _, nodeQuerierMetrics := range perNodeResults {
-			registry.MustRegister(nodeQuerierMetrics...)
-		}
-	}
-
-	registry.MustRegister(globalResults...)
+	registry := a.MetricsManager.CollectMetrics(allResults, globalResults)
 
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
