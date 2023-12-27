@@ -1,6 +1,7 @@
 package versions
 
 import (
+	configPkg "main/pkg/config"
 	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
 	"main/pkg/git"
@@ -17,17 +18,20 @@ import (
 type Querier struct {
 	Logger     zerolog.Logger
 	GitClient  git.Client
+	Config     configPkg.NodeConfig
 	Cosmovisor *cosmovisorPkg.Cosmovisor
 }
 
 func NewQuerier(
 	logger *zerolog.Logger,
+	config configPkg.NodeConfig,
 	gitClient git.Client,
 	cosmovisor *cosmovisorPkg.Cosmovisor,
 ) *Querier {
 	return &Querier{
 		Logger:     logger.With().Str("component", "versions_querier").Logger(),
 		GitClient:  gitClient,
+		Config:     config,
 		Cosmovisor: cosmovisor,
 	}
 }
@@ -75,11 +79,11 @@ func (v *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 				Name: constants.MetricsPrefix + "remote_version",
 				Help: "Latest version from Github",
 			},
-			[]string{"version"},
+			[]string{"node", "version"},
 		)
 
 		remoteVersion.
-			With(prometheus.Labels{"version": latestVersion}).
+			With(prometheus.Labels{"node": v.Config.Name, "version": latestVersion}).
 			Set(1)
 
 		collectors = append(collectors, remoteVersion)
@@ -105,11 +109,11 @@ func (v *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 				Name: constants.MetricsPrefix + "local_version",
 				Help: "Fullnode local version",
 			},
-			[]string{"version"},
+			[]string{"node", "version"},
 		)
 
 		localVersion.
-			With(prometheus.Labels{"version": versionInfo.Version}).
+			With(prometheus.Labels{"node": v.Config.Name, "version": versionInfo.Version}).
 			Set(1)
 
 		collectors = append(collectors, localVersion)
@@ -136,11 +140,12 @@ func (v *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 				Name: constants.MetricsPrefix + "is_latest",
 				Help: "Is the fullnode using the same or latest version?",
 			},
-			[]string{"local_version", "remote_version"},
+			[]string{"node", "local_version", "remote_version"},
 		)
 
 		isUsingLatestVersion.
 			With(prometheus.Labels{
+				"node":           v.Config.Name,
 				"local_version":  versionInfo.Version,
 				"remote_version": latestVersion,
 			}).

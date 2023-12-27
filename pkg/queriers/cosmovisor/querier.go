@@ -1,6 +1,7 @@
 package cosmovisor
 
 import (
+	configPkg "main/pkg/config"
 	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
 	"main/pkg/query_info"
@@ -10,15 +11,18 @@ import (
 )
 
 type Querier struct {
+	Config     configPkg.NodeConfig
 	Logger     zerolog.Logger
 	Cosmovisor *cosmovisorPkg.Cosmovisor
 }
 
 func NewQuerier(
+	config configPkg.NodeConfig,
 	logger *zerolog.Logger,
 	cosmovisor *cosmovisorPkg.Cosmovisor,
 ) *Querier {
 	return &Querier{
+		Config:     config,
 		Logger:     logger.With().Str("component", "cosmovisor_querier").Logger(),
 		Cosmovisor: cosmovisor,
 	}
@@ -52,11 +56,11 @@ func (v *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 			Name: constants.MetricsPrefix + "cosmovisor_version",
 			Help: "Cosmovisor version",
 		},
-		[]string{"version"},
+		[]string{"node", "version"},
 	)
 
 	cosmovisorVersionGauge.
-		With(prometheus.Labels{"version": cosmovisorVersion}).
+		With(prometheus.Labels{"node": v.Config.Name, "version": cosmovisorVersion}).
 		Set(1)
 
 	return []prometheus.Collector{cosmovisorVersionGauge}, []query_info.QueryInfo{queryInfo}

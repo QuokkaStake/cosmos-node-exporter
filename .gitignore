@@ -4,3 +4,4 @@ config2.toml
 .idea
 cosmos-node-exporter
 dist
+**/.DS_Store

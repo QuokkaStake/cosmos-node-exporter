@@ -26,7 +26,7 @@ type GitopiaRelease struct {
 	TagName string `json:"tagName"`
 }
 
-func NewGitopia(config *config.Config, logger *zerolog.Logger) *Gitopia {
+func NewGitopia(config config.NodeConfig, logger *zerolog.Logger) *Gitopia {
 	value := constants.GitopiaRegexp.FindStringSubmatch(config.GitConfig.Repository)
 
 	return &Gitopia{

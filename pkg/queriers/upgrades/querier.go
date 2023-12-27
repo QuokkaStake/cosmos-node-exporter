@@ -15,20 +15,20 @@ import (
 )
 
 type Querier struct {
-	Config     *config.Config
+	Config     config.NodeConfig
 	Logger     zerolog.Logger
 	Cosmovisor *cosmovisorPkg.Cosmovisor
 	Tendermint *tendermint.RPC
 }
 
 func NewQuerier(
-	appConfig *config.Config,
+	nodeConfig config.NodeConfig,
 	logger *zerolog.Logger,
 	cosmovisor *cosmovisorPkg.Cosmovisor,
 	tendermint *tendermint.RPC,
 ) *Querier {
 	return &Querier{
-		Config:     appConfig,
+		Config:     nodeConfig,
 		Logger:     logger.With().Str("component", "upgrades_querier").Logger(),
 		Cosmovisor: cosmovisor,
 		Tendermint: tendermint,
@@ -64,11 +64,11 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 			Name: constants.MetricsPrefix + "upgrade_coming",
 			Help: "Is future upgrade planned?",
 		},
-		[]string{},
+		[]string{"node"},
 	)
 
 	upcomingUpgradePresent.
-		With(prometheus.Labels{}).
+		With(prometheus.Labels{"node": u.Config.Name}).
 		Set(utils.BoolToFloat64(isUpgradePresent))
 
 	queries := []prometheus.Collector{upcomingUpgradePresent}
@@ -83,7 +83,7 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 			Name: constants.MetricsPrefix + "upgrade_info",
 			Help: "Future upgrade info",
 		},
-		[]string{"name", "info"},
+		[]string{"node", "name", "info"},
 	)
 
 	upgradeHeightGauge := prometheus.NewGaugeVec(
@@ -91,14 +91,14 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 			Name: constants.MetricsPrefix + "upgrade_height",
 			Help: "Future upgrade height",
 		},
-		[]string{"name", "info"},
+		[]string{"node", "name", "info"},
 	)
 
 	upgradeInfoGauge.
-		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
+		With(prometheus.Labels{"node": u.Config.Name, "name": upgrade.Name, "info": upgrade.Info}).
 		Set(utils.BoolToFloat64(isUpgradePresent))
 	upgradeHeightGauge.
-		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
+		With(prometheus.Labels{"node": u.Config.Name, "name": upgrade.Name, "info": upgrade.Info}).
 		Set(float64(upgrade.Height))
 	queries = append(queries, upgradeInfoGauge, upgradeHeightGauge)
 
@@ -107,7 +107,7 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 			Name: constants.MetricsPrefix + "upgrade_estimated_time",
 			Help: "Estimated upgrade time, as Unix timestamp",
 		},
-		[]string{"name", "info"},
+		[]string{"node", "name", "info"},
 	)
 
 	// Calculate upgrade estimated time
@@ -133,7 +133,7 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 	queryInfos = append(queryInfos, upgradeTimeQuery)
 
 	upgradeEstimatedTimeGauge.
-		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
+		With(prometheus.Labels{"node": u.Config.Name, "name": upgrade.Name, "info": upgrade.Info}).
 		Set(float64(upgradeTime.Unix()))
 	queries = append(queries, upgradeEstimatedTimeGauge)
 
@@ -163,7 +163,7 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 			Name: constants.MetricsPrefix + "upgrade_binary_present",
 			Help: "Is upgrade binary present?",
 		},
-		[]string{"name", "info"},
+		[]string{"node", "name", "info"},
 	)
 
 	// From cosmovisor docs:
@@ -173,7 +173,7 @@ func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 	upgradeName = url.QueryEscape(upgradeName)
 
 	upgradeBinaryPresentGauge.
-		With(prometheus.Labels{"name": upgrade.Name, "info": upgrade.Info}).
+		With(prometheus.Labels{"node": u.Config.Name, "name": upgrade.Name, "info": upgrade.Info}).
 		Set(utils.BoolToFloat64(upgrades.HasUpgrade(upgradeName)))
 	queries = append(queries, upgradeBinaryPresentGauge)
 

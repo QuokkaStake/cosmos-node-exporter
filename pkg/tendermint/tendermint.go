@@ -21,7 +21,7 @@ type RPC struct {
 	BlocksBehind int64
 }
 
-func NewRPC(config *config.Config, logger *zerolog.Logger) *RPC {
+func NewRPC(config config.NodeConfig, logger *zerolog.Logger) *RPC {
 	return &RPC{
 		Logger:       logger.With().Str("component", "tendermint_rpc").Logger(),
 		Address:      config.TendermintConfig.Address,

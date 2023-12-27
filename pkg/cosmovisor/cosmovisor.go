@@ -19,7 +19,7 @@ type Cosmovisor struct {
 }
 
 func NewCosmovisor(
-	config *config.Config,
+	config config.NodeConfig,
 	logger *zerolog.Logger,
 ) *Cosmovisor {
 	return &Cosmovisor{

@@ -1,6 +1,7 @@
 package node_stats
 
 import (
+	configPkg "main/pkg/config"
 	"main/pkg/constants"
 	"main/pkg/query_info"
 	"main/pkg/tendermint"
@@ -14,12 +15,14 @@ import (
 type Querier struct {
 	TendermintRPC *tendermint.RPC
 	Logger        zerolog.Logger
+	Config        configPkg.NodeConfig
 }
 
-func NewQuerier(logger *zerolog.Logger, tendermintRPC *tendermint.RPC) *Querier {
+func NewQuerier(logger *zerolog.Logger, config configPkg.NodeConfig, tendermintRPC *tendermint.RPC) *Querier {
 	return &Querier{
 		Logger:        logger.With().Str("component", "tendermint_rpc").Logger(),
 		TendermintRPC: tendermintRPC,
+		Config:        config,
 	}
 }
 
@@ -49,7 +52,7 @@ func (n *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 			Name: constants.MetricsPrefix + "catching_up",
 			Help: "Is node catching up?",
 		},
-		[]string{},
+		[]string{"node"},
 	)
 
 	timeSinceLatestBlockGauge := prometheus.NewGaugeVec(
@@ -57,7 +60,7 @@ func (n *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 			Name: constants.MetricsPrefix + "time_since_latest_block",
 			Help: "Time since latest block, in seconds",
 		},
-		[]string{},
+		[]string{"node"},
 	)
 
 	votingPowerGauge := prometheus.NewGaugeVec(
@@ -65,15 +68,15 @@ func (n *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 			Name: constants.MetricsPrefix + "voting_power",
 			Help: "Node voting power",
 		},
-		[]string{},
+		[]string{"node"},
 	)
 
 	catchingUpGauge.
-		With(prometheus.Labels{}).
+		With(prometheus.Labels{"node": n.Config.Name}).
 		Set(utils.BoolToFloat64(status.Result.SyncInfo.CatchingUp))
 
 	timeSinceLatestBlockGauge.
-		With(prometheus.Labels{}).
+		With(prometheus.Labels{"node": n.Config.Name}).
 		Set(time.Since(status.Result.SyncInfo.LatestBlockTime).Seconds())
 
 	if value, err := utils.StringToFloat64(status.Result.ValidatorInfo.VotingPower); err != nil {
@@ -81,7 +84,7 @@ func (n *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
 			Msg("Got error when converting voting power to float64, which should never happen.")
 	} else {
 		votingPowerGauge.
-			With(prometheus.Labels{}).
+			With(prometheus.Labels{"node": n.Config.Name}).
 			Set(value)
 	}
 

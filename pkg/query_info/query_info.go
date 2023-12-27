@@ -13,24 +13,27 @@ type QueryInfo struct {
 	Success bool
 }
 
-func GetQueryInfoMetrics(allQueries map[string][]QueryInfo) []prometheus.Collector {
+func GetQueryInfoMetrics(allQueries map[string]map[string][]QueryInfo) []prometheus.Collector {
 	querySuccessfulGauge := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: constants.MetricsPrefix + "query_successful",
 			Help: "Was query successful?",
 		},
-		[]string{"querier", "module", "action"},
+		[]string{"node", "querier", "module", "action"},
 	)
 
-	for name, queryInfos := range allQueries {
-		for _, queryInfo := range queryInfos {
-			querySuccessfulGauge.
-				With(prometheus.Labels{
-					"querier": name,
-					"module":  queryInfo.Module,
-					"action":  queryInfo.Action,
-				}).
-				Set(utils.BoolToFloat64(queryInfo.Success))
+	for node, nodeQueryInfos := range allQueries {
+		for name, queryInfos := range nodeQueryInfos {
+			for _, queryInfo := range queryInfos {
+				querySuccessfulGauge.
+					With(prometheus.Labels{
+						"node":    node,
+						"querier": name,
+						"module":  queryInfo.Module,
+						"action":  queryInfo.Action,
+					}).
+					Set(utils.BoolToFloat64(queryInfo.Success))
+			}
 		}
 	}
 
