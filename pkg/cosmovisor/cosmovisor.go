@@ -19,8 +19,8 @@ type Cosmovisor struct {
 }
 
 func NewCosmovisor(
-	config *config.Config,
-	logger *zerolog.Logger,
+	config config.NodeConfig,
+	logger zerolog.Logger,
 ) *Cosmovisor {
 	return &Cosmovisor{
 		Logger: logger.With().Str("component", "cosmovisor").Logger(),

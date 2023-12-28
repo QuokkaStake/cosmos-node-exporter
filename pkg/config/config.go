@@ -53,12 +53,17 @@ func (c *CosmovisorConfig) Validate() error {
 	return nil
 }
 
-type Config struct {
-	LogConfig        LogConfig        `toml:"log"`
+type NodeConfig struct {
+	Name             string           `toml:"name"`
 	TendermintConfig TendermintConfig `toml:"tendermint"`
 	CosmovisorConfig CosmovisorConfig `toml:"cosmovisor"`
 	GitConfig        GitConfig        `toml:"git"`
-	ListenAddress    string           `default:":9500"   toml:"listen-address"`
+}
+
+type Config struct {
+	LogConfig     LogConfig    `toml:"log"`
+	NodeConfigs   []NodeConfig `toml:"node"`
+	ListenAddress string       `default:":9500" toml:"listen-address"`
 }
 
 func (c *GitConfig) Validate() error {
@@ -73,13 +78,31 @@ func (c *GitConfig) Validate() error {
 	return nil
 }
 
-func (c *Config) Validate() error {
+func (c *NodeConfig) Validate() error {
+	if c.Name == "" {
+		return fmt.Errorf("node name is empty")
+	}
+
 	if err := c.GitConfig.Validate(); err != nil {
 		return fmt.Errorf("GitHub config is invalid: %s", err)
 	}
 
 	if err := c.CosmovisorConfig.Validate(); err != nil {
 		return fmt.Errorf("Cosmovisor config is invalid: %s", err)
+	}
+
+	return nil
+}
+
+func (c *Config) Validate() error {
+	if len(c.NodeConfigs) == 0 {
+		return fmt.Errorf("0 nodes provided")
+	}
+
+	for index, nodeConfig := range c.NodeConfigs {
+		if err := nodeConfig.Validate(); err != nil {
+			return fmt.Errorf("invalid config for node %d: %s", index, err)
+		}
 	}
 
 	return nil

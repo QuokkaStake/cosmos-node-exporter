@@ -3,7 +3,14 @@
 ![Latest release](https://img.shields.io/github/v/release/QuokkaStake/cosmos-node-exporter)
 [![Actions Status](https://github.com/QuokkaStake/cosmos-node-exporter/workflows/test/badge.svg)](https://github.com/QuokkaStake/cosmos-node-exporter/actions)
 
-cosmos-node-exporter is a Prometheus scraper that scrapes some data to monitor your node, specifically you can set up alerting if:
+cosmos-node-exporter is a Prometheus scraper that scrapes some data to monitor your node.
+It exposes the following metrics:
+- node status (voting power, whether the node is catching up or is stuck behind the blockchain)
+- app version (local binary, latest Github/Gitopia release and if you are running the latest version)
+- Cosmovisor metrics (version of Cosmovisor version itself)
+- upgrades metrics (time till upgrade, upgrade version, if you have a binary prepared for the upgrade)
+
+Specifically, if you are a validator or a node operator, you can set up alerting if:
 - your app version does not match the latest on GitHub (can be useful to be notified on new releases)
 - your voting power is 0 for a validator node
 - your node is catching up
@@ -11,7 +18,8 @@ cosmos-node-exporter is a Prometheus scraper that scrapes some data to monitor y
 
 ## How can I set it up?
 
-First, you need to download the latest release from [the releases page](https://github.com/QuokkaStake/cosmos-node-exporter/releases/). After that, you should unzip it, and you are ready to go:
+First, you need to download the latest release from [the releases page](https://github.com/QuokkaStake/cosmos-node-exporter/releases/).
+After that, you should unzip it, and you are ready to go:
 
 ```sh
 wget <the link from the releases page>
@@ -31,11 +39,12 @@ Then we need to create a systemd service for our app:
 sudo nano /etc/systemd/system/cosmos-node-exporter.service
 ```
 
-You can use this template (change the user to whatever user you want this to be executed from. It's advised to create a separate user for that instead of running it from root):
+You can use this template (change the user to whatever user you want this to be executed from.
+It's advised to create a separate user for that instead of running it from root):
 
 ```
 [Unit]
-Description=Cosmos Exporter
+Description=Cosmos Node Exporter
 After=network-online.target
 
 [Service]
@@ -52,8 +61,6 @@ KillSignal=SIGTERM
 [Install]
 WantedBy=multi-user.target
 ```
-
-If you're using cosmovisor, consider adding the same set of env variables as in your cosmovisor's systemd file, otherwise fetching app version would crash.
 
 Then we'll add this service to autostart and run it:
 
@@ -86,13 +93,18 @@ Then restart Prometheus and you're good to go!
 
 ## What data can I get from it?
 
-This exporter has multiple Queriers, each of them querying a node or external resource (like GitHub) in some way, then returns a set of metrics. Each Querier can be enabled or disabled based on the config. Here's the list of Queriers:
+This exporter runs a single app, which is running a separate NodeHandler for each node in config
+and scrapes data for each of NodeHandlers.
 
-| Querier          | Metrics returned                                                                                                                   | Requirements                                                                                                                                                                                              |
-|------------------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| NodeStatsQuerier | Voting power, node status<br>(catching up, time since latest block)                                                                | tendermint.address specified in config                                                                                                                                                                    |
-| VersionsQuerier  | Local node version, remote node version,<br>whether the node is using the latest binary                                            | Cosmovisor config (for local config),<br>Github config (for remote version),<br>both (for checking if the version used is latest)                                                                         |
-| UpgradesQuerier  | Whether there is an upcoming upgrade,<br>its data, estimated upgrade time and<br>whether the binary for the upgrade<br>is prepared | gRPC config (for getting the upgrade plan), Cosmovisor config (for getting the built binaries), Tendermint config (for getting<br>the upgrade time if the height upgrade is<br>specified for the upgrade) |
+Each of NodeHandlers has multiple Queriers, each of them querying a node or external resource (like GitHub)
+in some way, then returns a set of metrics. Each Querier can be enabled or disabled based on the config.
+Here's the list of Queriers:
+
+| Querier          | Metrics returned                                                                                                                   | Requirements                                                                                                                                                                                                            |
+|------------------|------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NodeStatsQuerier | Voting power, node status<br>(catching up, time since latest block)                                                                | tendermint.address specified in config                                                                                                                                                                                  |
+| VersionsQuerier  | Local node version, remote node version,<br>whether the node is using the latest binary                                            | Cosmovisor config (for local config),<br>Github config (for remote version),<br>both (for checking if the version used is latest)                                                                                       |
+| UpgradesQuerier  | Whether there is an upcoming upgrade,<br>its data, estimated upgrade time and<br>whether the binary for the upgrade<br>is prepared | Tendermint enabled config (for getting the upgrade plan), Cosmovisor config (for getting the built binaries), Tendermint config (for getting<br>the upgrade time if the height upgrade is<br>specified for the upgrade) |
 
 Additionally, each Querier returns the list of actions it did (like, querying a node, getting GitHub latest release etc.) and whether they were successful a node. The exporter itself should never return an error (if it does, please file an issue), instead it will return all the data it could get, and additionally it'll return a metrics set with all the actions it could or couldn't do. You can set alerts based on that, for example, if `node_status` action is failing for a big period of time, likely the node is down.
 
@@ -100,7 +112,7 @@ All metrics are prefixed with `cosmos_node_exporter_`, to get the list of all me
 
 ## How does it work?
 
-It fetches some data from the local node by querying Tendermint RPC (listening on port 26657 by default), Cosmovisor binary and GitHub.
+It fetches some data from the local node by querying Tendermint RPC (listening on port 26657 by default), Cosmovisor binary and GitHub/Gitopia.
 
 ## How can I configure it?
 

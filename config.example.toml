@@ -6,30 +6,38 @@ level = "debug"
 # Defaults to false.
 json = false
 
-# Tendermint configuration
-[tendermint]
-# If set to false, the metrics related to Tendermint node would be disabled. Defaults to true.
-enabled = true
-# Tendermint RPC address. Defaults to "http://localhost:26657".
-address = "http://localhost:26657"
-# If set to false, upgrades metrics won't be queried. Useful for chains that use Tendermint
+# Per-node configuration, there can be multiple nodes.
+[[node]]
+# Node name. Will be displayed in labels. Required.
+name = "cosmos"
+
+# Tendermint configuration. Has the following fields:
+# 1. enabled. If set to false, the metrics related to Tendermint node would be disabled. Defaults to true.
+# 2. address. Tendermint RPC address. Defaults to "http://localhost:26657".
+# 3. query-upgrades. If set to false, upgrades metrics won't be queried. Useful for chains that use Tendermint
 # but not cosmos-sdk, such as Nomic. Defaults to true.
-query-upgrades = true
+tendermint = { enabled = true, address = "http://localhost:26657", query-upgrades = true }
 
-[cosmovisor]
-# If set to false, the metrics related to Cosmovisor would be disabled. Defaults to true.
-enabled = true
-# Path to folder storing fullnode data and configs (like ~/.gaia for cosmoshub).
-chain-folder = "/home/validator/.gaia"
-# Binary name (like gaiad for cosmoshub)
-chain-binary-name = "gaiad"
-# Cosmovisor path (usually located at ~/go/bin/cosmovisor)
-cosmovisor-path = "/home/validator/go/bin/cosmovisor"
+# Cosmovisor configuration. Has the following fields:
+# 1. enabled. # If set to false, the metrics related to Cosmovisor would be disabled. Defaults to true.
+# 2. chain-folder. Path to folder storing fullnode data and configs (like ~/.gaia for cosmoshub).
+# 3. chain-binary-name. Binary name (like gaiad for cosmoshub)
+# 4. cosmovisor-path. Cosmovisor path (usually located at ~/go/bin/cosmovisor)
+cosmovisor = { enabled = true, chain-folder = "/home/validator/.gaia", chain-binary-name = "gaiad", cosmovisor-path = "/home/validator/go/bin/cosmovisor" }
 
-# Github configuration.
-[github]
-# Repository path. Omitting it will result in disabling Github metrics.
-repository = "https://github.com/cosmos/gaia"
-# Github token. Useful if you want to make requests often, as Github rate-limits requests
-# if no token is specified.
-token = "aaa:bbb"
+
+# Git configuration. Has the following fields:
+# 1. repository. Repository path. Omitting it will result in disabling Git metrics.
+# Can be either a link to Github repo (like below), or a Gitopia repo (see below for example).
+# 2. token. Github token. Useful if you want to make requests often, as Github rate-limits requests
+# if no token is specified. Only used for Github.
+git = { repository = "https://github.com/cosmos/gaia", token = "aaa:bbb" }
+
+# There can be multiple nodes, this might be useful if you run multiple nodes on a same server
+# and don't want to bother running multiple instances of this scraper per each node.
+[[node]]
+name = "gitopia"
+tendermint = { enabled = true, address = "http://localhost:36657", query-upgrades = true }
+cosmovisor = { enabled = true, chain-folder = "/home/validator/.gitopia", chain-binary-name = "gitopiad", cosmovisor-path = "/home/validator/go/bin/cosmovisor" }
+# Here's how you may specify a link to a Gitopia repo.
+git = { repository = "gitopia://gitopia/gitopia" }

@@ -1,10 +1,8 @@
 package app
 
 import (
-	"main/pkg/constants"
+	"main/pkg/metrics"
 	"main/pkg/query_info"
-
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Querier struct {
@@ -25,18 +23,10 @@ func (u *Querier) Name() string {
 	return "app-querier"
 }
 
-func (u *Querier) Get() ([]prometheus.Collector, []query_info.QueryInfo) {
-	appVersionGauge := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: constants.MetricsPrefix + "version",
-			Help: "The app info and version.",
-		},
-		[]string{"version"},
-	)
-
-	appVersionGauge.
-		With(prometheus.Labels{"version": u.Version}).
-		Set(1)
-
-	return []prometheus.Collector{appVersionGauge}, []query_info.QueryInfo{}
+func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
+	return []metrics.MetricInfo{{
+		MetricName: metrics.MetricNameAppVersion,
+		Labels:     map[string]string{"version": u.Version},
+		Value:      1,
+	}}, []query_info.QueryInfo{}
 }

@@ -1,135 +1,100 @@
 package pkg
 
 import (
-	"main/pkg/config"
-	"main/pkg/constants"
-	cosmovisorPkg "main/pkg/cosmovisor"
-	git "main/pkg/git"
+	configPkg "main/pkg/config"
+	"main/pkg/metrics"
 	"main/pkg/queriers/app"
-	cosmovisorQuerierPkg "main/pkg/queriers/cosmovisor"
-	nodeStats "main/pkg/queriers/node_stats"
-	"main/pkg/queriers/upgrades"
-	"main/pkg/queriers/versions"
 	"main/pkg/query_info"
-	"main/pkg/tendermint"
 	"main/pkg/types"
-	"main/pkg/utils"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 )
 
 type App struct {
-	Logger   zerolog.Logger
-	Queriers []types.Querier
-	Version  string
+	Logger         zerolog.Logger
+	Config         *configPkg.Config
+	NodeHandlers   []*NodeHandler
+	MetricsManager *metrics.Manager
+	GlobalQueriers []types.Querier
 }
 
 func NewApp(
 	logger *zerolog.Logger,
-	config *config.Config,
+	config *configPkg.Config,
 	version string,
 ) *App {
-	appLogger := logger.With().Str("component", "app").Logger()
+	nodeHandlers := make([]*NodeHandler, len(config.NodeConfigs))
 
-	var tendermintRPC *tendermint.RPC
-	var cosmovisor *cosmovisorPkg.Cosmovisor
-
-	if config.TendermintConfig.Enabled.Bool {
-		tendermintRPC = tendermint.NewRPC(config, logger)
+	for index, nodeConfig := range config.NodeConfigs {
+		nodeHandlers[index] = NewNodeHandler(logger, nodeConfig)
 	}
 
-	if config.CosmovisorConfig.Enabled.Bool {
-		cosmovisor = cosmovisorPkg.NewCosmovisor(config, logger)
-	}
-
-	gitClient := git.GetClient(config, logger)
-
-	queriers := []types.Querier{
-		nodeStats.NewQuerier(logger, tendermintRPC),
-		versions.NewQuerier(logger, gitClient, cosmovisor),
-		upgrades.NewQuerier(config, logger, cosmovisor, tendermintRPC),
-		cosmovisorQuerierPkg.NewQuerier(logger, cosmovisor),
+	globalQueriers := []types.Querier{
 		app.NewQuerier(version),
 	}
 
-	for _, querier := range queriers {
-		if querier.Enabled() {
-			appLogger.Debug().Str("name", querier.Name()).Msg("Querier is enabled")
-		} else {
-			appLogger.Debug().Str("name", querier.Name()).Msg("Querier is disabled")
-		}
-	}
-
 	return &App{
-		Logger:   appLogger,
-		Queriers: queriers,
-		Version:  version,
+		Logger:         logger.With().Str("component", "app").Logger(),
+		Config:         config,
+		NodeHandlers:   nodeHandlers,
+		MetricsManager: metrics.NewManager(config),
+		GlobalQueriers: globalQueriers,
 	}
 }
 
 func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	requestStart := time.Now()
 
-	sublogger := a.Logger.With().
-		Str("request-id", uuid.New().String()).
-		Logger()
+	allResults := make(map[string][]metrics.MetricInfo)
+	allQueries := make(map[string]map[string][]query_info.QueryInfo)
 
-	registry := prometheus.NewRegistry()
-
-	querierEnabled := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: constants.MetricsPrefix + "querier_enabled",
-			Help: "Is querier enabled?",
-		},
-		[]string{"querier"},
-	)
-	registry.MustRegister(querierEnabled)
+	globalResults := make([]metrics.MetricInfo, 0)
 
 	var wg sync.WaitGroup
-	var mu sync.Mutex
-	allResults := map[string][]prometheus.Collector{}
-	allQueries := map[string][]query_info.QueryInfo{}
+	var mutex sync.Mutex
 
-	for _, querier := range a.Queriers {
-		querierEnabled.
-			With(prometheus.Labels{"querier": querier.Name()}).
-			Set(utils.BoolToFloat64(querier.Enabled()))
-
-		if !querier.Enabled() {
-			continue
-		}
-
+	// Global handlers
+	for _, globalQuerier := range a.GlobalQueriers {
 		wg.Add(1)
 		go func(querier types.Querier) {
-			querierResults, queriesInfo := querier.Get()
-			mu.Lock()
-			allResults[querier.Name()] = querierResults
-			allQueries[querier.Name()] = queriesInfo
-			mu.Unlock()
-			wg.Done()
-		}(querier)
+			defer wg.Done()
+
+			results, _ := querier.Get()
+			mutex.Lock()
+			globalResults = append(globalResults, results...)
+			mutex.Unlock()
+		}(globalQuerier)
+	}
+
+	// Per-node handlers
+	for _, nodeHandler := range a.NodeHandlers {
+		wg.Add(1)
+
+		go func(nodeHandler *NodeHandler) {
+			defer wg.Done()
+
+			results, queries := nodeHandler.Process()
+			mutex.Lock()
+			allResults[nodeHandler.Config.Name] = results
+			allQueries[nodeHandler.Config.Name] = queries
+			mutex.Unlock()
+		}(nodeHandler)
 	}
 
 	wg.Wait()
 
-	allResults["query_infos"] = query_info.GetQueryInfoMetrics(allQueries)
+	globalResults = append(globalResults, query_info.GetQueryInfoMetrics(allQueries)...)
 
-	for _, querierResults := range allResults {
-		for _, result := range querierResults {
-			registry.MustRegister(result)
-		}
-	}
+	registry := a.MetricsManager.CollectMetrics(allResults, globalResults)
 
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
 
-	sublogger.Info().
+	a.Logger.Info().
 		Str("method", http.MethodGet).
 		Str("endpoint", "/metrics").
 		Float64("request-time", time.Since(requestStart).Seconds()).

@@ -11,7 +11,7 @@ type Client interface {
 	GetLatestRelease() (string, error)
 }
 
-func GetClient(config *configPkg.Config, logger *zerolog.Logger) Client {
+func GetClient(config configPkg.NodeConfig, logger zerolog.Logger) Client {
 	if constants.GithubRegexp.Match([]byte(config.GitConfig.Repository)) {
 		return NewGithub(config, logger)
 	}
