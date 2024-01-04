@@ -4,6 +4,7 @@ import (
 	configPkg "main/pkg/config"
 	"main/pkg/metrics"
 	"main/pkg/queriers/app"
+	"main/pkg/queriers/uptime"
 	"main/pkg/query_info"
 	"main/pkg/types"
 	"net/http"
@@ -35,6 +36,7 @@ func NewApp(
 
 	globalQueriers := []types.Querier{
 		app.NewQuerier(version),
+		uptime.NewQuerier(),
 	}
 
 	return &App{

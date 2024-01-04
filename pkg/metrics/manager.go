@@ -137,6 +137,14 @@ func NewManager(config *configPkg.Config) *Manager {
 			},
 			[]string{"node", "querier", "module", "action"},
 		),
+
+		MetricNameStartTime: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "start_time",
+				Help: "Unix timestamp on when the app was started. Useful for annotations.",
+			},
+			[]string{},
+		),
 	}
 
 	return &Manager{

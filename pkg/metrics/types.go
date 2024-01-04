@@ -18,6 +18,7 @@ const (
 	MetricNameAppVersion           = "version"
 	MetricNameQuerySuccessful      = "query_successful"
 	MetricNameQuerierEnabled       = "querier_enabled"
+	MetricNameStartTime            = "start_time"
 )
 
 type MetricInfo struct {
