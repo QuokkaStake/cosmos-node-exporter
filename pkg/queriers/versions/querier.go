@@ -1,9 +1,9 @@
 package versions
 
 import (
+	cosmovisorPkg "main/pkg/clients/cosmovisor"
+	"main/pkg/clients/git"
 	"main/pkg/constants"
-	cosmovisorPkg "main/pkg/cosmovisor"
-	"main/pkg/git"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 	"main/pkg/types"

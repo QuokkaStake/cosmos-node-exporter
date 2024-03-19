@@ -1,10 +1,10 @@
 package node_stats
 
 import (
+	"main/pkg/clients/tendermint"
 	"main/pkg/constants"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
-	"main/pkg/tendermint"
 	"main/pkg/utils"
 	"time"
 

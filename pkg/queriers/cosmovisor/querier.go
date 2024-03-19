@@ -1,9 +1,9 @@
 package cosmovisor
 
 import (
+	cosmovisorPkg "main/pkg/clients/cosmovisor"
 	configPkg "main/pkg/config"
 	"main/pkg/constants"
-	cosmovisorPkg "main/pkg/cosmovisor"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 

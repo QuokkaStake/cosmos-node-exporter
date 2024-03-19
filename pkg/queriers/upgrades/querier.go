@@ -1,12 +1,12 @@
 package upgrades
 
 import (
+	cosmovisorPkg "main/pkg/clients/cosmovisor"
+	"main/pkg/clients/tendermint"
 	"main/pkg/config"
 	"main/pkg/constants"
-	cosmovisorPkg "main/pkg/cosmovisor"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
-	"main/pkg/tendermint"
 	"main/pkg/utils"
 	"net/url"
 	"strings"
