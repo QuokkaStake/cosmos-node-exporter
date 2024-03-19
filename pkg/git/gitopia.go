@@ -2,6 +2,7 @@ package git
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"main/pkg/config"
 	"main/pkg/constants"
@@ -70,11 +71,11 @@ func (g *Gitopia) GetLatestRelease() (string, error) {
 	}
 
 	if response.Message != "" {
-		return "", fmt.Errorf(response.Message)
+		return "", errors.New(response.Message)
 	}
 
 	if response.Release == nil {
-		return "", fmt.Errorf("malformed response from Gitopia")
+		return "", errors.New("malformed response from Gitopia")
 	}
 
 	return response.Release.TagName, err

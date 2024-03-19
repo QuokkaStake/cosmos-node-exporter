@@ -59,7 +59,7 @@ func (t *RPC) Status() (StatusResponse, error) {
 }
 
 func (t *RPC) Block(height int64) (BlockResponse, error) {
-	blockUrl := fmt.Sprintf("/block")
+	blockUrl := "/block"
 	if height != 0 {
 		blockUrl = fmt.Sprintf("/block?height=%d", height)
 	}

@@ -47,8 +47,8 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
 	cmd := exec.Command(c.Config.CosmovisorPath, "run", "version", "--long", "--output", "json")
 	cmd.Env = append(
 		os.Environ(),
-		fmt.Sprintf("DAEMON_NAME=%s", c.Config.ChainBinaryName),
-		fmt.Sprintf("DAEMON_HOME=%s", c.Config.ChainFolder),
+		"DAEMON_NAME="+c.Config.ChainBinaryName,
+		"DAEMON_HOME="+c.Config.ChainFolder,
 	)
 
 	out, err := cmd.CombinedOutput()
@@ -72,8 +72,8 @@ func (c *Cosmovisor) GetCosmovisorVersion() (string, error) {
 	cmd := exec.Command(c.Config.CosmovisorPath, "version")
 	cmd.Env = append(
 		os.Environ(),
-		fmt.Sprintf("DAEMON_NAME=%s", c.Config.ChainBinaryName),
-		fmt.Sprintf("DAEMON_HOME=%s", c.Config.ChainFolder),
+		"DAEMON_NAME="+c.Config.ChainBinaryName,
+		"DAEMON_HOME="+c.Config.ChainFolder,
 	)
 
 	out, err := cmd.CombinedOutput()
@@ -92,11 +92,11 @@ func (c *Cosmovisor) GetCosmovisorVersion() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("could not find version in Cosmovisor response")
+	return "", errors.New("could not find version in Cosmovisor response")
 }
 
 func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, error) {
-	upgradesFolder := fmt.Sprintf("%s/cosmovisor/upgrades", c.Config.ChainFolder)
+	upgradesFolder := c.Config.ChainFolder + "/cosmovisor/upgrades"
 	upgradesFolderContent, err := os.ReadDir(upgradesFolder)
 	if err != nil {
 		c.Logger.Error().Err(err).Msg("Could not fetch Cosmovisor upgrades folder content")

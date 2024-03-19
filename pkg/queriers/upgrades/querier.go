@@ -2,6 +2,7 @@ package upgrades
 
 import (
 	"main/pkg/config"
+	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
@@ -44,7 +45,7 @@ func (u *Querier) Name() string {
 
 func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	upgradePlanQuery := query_info.QueryInfo{
-		Module:  "tendermint",
+		Module:  constants.ModuleTendermint,
 		Action:  "get_upgrade_plan",
 		Success: false,
 	}
@@ -87,7 +88,7 @@ func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	}
 
 	upgradeTimeQuery := query_info.QueryInfo{
-		Module:  "tendermint",
+		Module:  constants.ModuleTendermint,
 		Action:  "tendermint_get_upgrade_time",
 		Success: false,
 	}
@@ -115,7 +116,7 @@ func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 
 	cosmovisorGetUpgradesQueryInfo := query_info.QueryInfo{
 		Action:  "cosmovisor_get_upgrades",
-		Module:  "cosmovisor",
+		Module:  constants.ModuleCosmovisor,
 		Success: false,
 	}
 

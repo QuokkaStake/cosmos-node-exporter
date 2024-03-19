@@ -1,6 +1,7 @@
 package node_stats
 
 import (
+	"main/pkg/constants"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 	"main/pkg/tendermint"
@@ -32,7 +33,7 @@ func (n *Querier) Name() string {
 
 func (n *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	queryInfo := query_info.QueryInfo{
-		Module:  "tendermint",
+		Module:  constants.ModuleTendermint,
 		Action:  "node_status",
 		Success: false,
 	}

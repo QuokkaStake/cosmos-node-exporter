@@ -2,6 +2,7 @@ package cosmovisor
 
 import (
 	configPkg "main/pkg/config"
+	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
@@ -35,7 +36,7 @@ func (v *Querier) Name() string {
 
 func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	queryInfo := query_info.QueryInfo{
-		Module:  "cosmovisor",
+		Module:  constants.ModuleCosmovisor,
 		Action:  "get_cosmovisor_version",
 		Success: false,
 	}

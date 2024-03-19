@@ -1,12 +1,13 @@
 package query_info
 
 import (
+	"main/pkg/constants"
 	"main/pkg/metrics"
 	"main/pkg/utils"
 )
 
 type QueryInfo struct {
-	Module  string
+	Module  constants.Module
 	Action  string
 	Success bool
 }
@@ -22,7 +23,7 @@ func GetQueryInfoMetrics(allQueries map[string]map[string][]QueryInfo) []metrics
 					Labels: map[string]string{
 						"node":    node,
 						"querier": name,
-						"module":  queryInfo.Module,
+						"module":  string(queryInfo.Module),
 						"action":  queryInfo.Action,
 					},
 					Value: utils.BoolToFloat64(queryInfo.Success),

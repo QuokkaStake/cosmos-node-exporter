@@ -1,6 +1,7 @@
 package versions
 
 import (
+	"main/pkg/constants"
 	cosmovisorPkg "main/pkg/cosmovisor"
 	"main/pkg/git"
 	"main/pkg/metrics"
@@ -51,7 +52,7 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 
 	if v.GitClient != nil {
 		queriesInfo = append(queriesInfo, query_info.QueryInfo{
-			Module:  "git",
+			Module:  constants.ModuleGit,
 			Action:  "get_latest_release",
 			Success: false,
 		})
@@ -78,7 +79,7 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 
 	if v.Cosmovisor != nil {
 		queriesInfo = append(queriesInfo, query_info.QueryInfo{
-			Module:  "cosmovisor",
+			Module:  constants.ModuleCosmovisor,
 			Action:  "get_version",
 			Success: false,
 		})
