@@ -4,7 +4,6 @@ import (
 	cosmovisorPkg "main/pkg/clients/cosmovisor"
 	"main/pkg/clients/tendermint"
 	"main/pkg/config"
-	"main/pkg/constants"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 	"main/pkg/utils"
@@ -80,20 +79,13 @@ func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 		return metricInfos, queryInfos
 	}
 
-	upgradeTimeQuery := query_info.QueryInfo{
-		Module:  constants.ModuleTendermint,
-		Action:  "tendermint_get_upgrade_time",
-		Success: false,
-	}
-
 	upgradeTime, upgradeTimeQuery, err := u.Tendermint.GetEstimateTimeTillBlock(upgrade.Height)
+	queryInfos = append(queryInfos, upgradeTimeQuery)
+
 	if err != nil {
 		u.Logger.Err(err).Msg("Could not get estimated upgrade time")
-		queryInfos = append(queryInfos, upgradeTimeQuery)
 		return metricInfos, queryInfos
 	}
-	upgradeTimeQuery.Success = true
-	queryInfos = append(queryInfos, upgradeTimeQuery)
 
 	metricInfos = append(metricInfos, metrics.MetricInfo{
 		MetricName: metrics.MetricNameUpgradeEstimatedTime,
