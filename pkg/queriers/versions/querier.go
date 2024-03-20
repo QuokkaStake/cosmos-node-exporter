@@ -3,7 +3,6 @@ package versions
 import (
 	cosmovisorPkg "main/pkg/clients/cosmovisor"
 	"main/pkg/clients/git"
-	"main/pkg/constants"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 	"main/pkg/types"
@@ -45,10 +44,11 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	metricsInfos := []metrics.MetricInfo{}
 
 	var (
-		latestVersion string
-		versionInfo   types.VersionInfo
-		gitQueryInfo  query_info.QueryInfo
-		err           error
+		latestVersion              string
+		versionInfo                types.VersionInfo
+		gitQueryInfo               query_info.QueryInfo
+		cosmovisorVersionQueryInfo query_info.QueryInfo
+		err                        error
 	)
 
 	if v.GitClient != nil {
@@ -72,19 +72,12 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	}
 
 	if v.Cosmovisor != nil {
-		queriesInfo = append(queriesInfo, query_info.QueryInfo{
-			Module:  constants.ModuleCosmovisor,
-			Action:  "get_version",
-			Success: false,
-		})
-
-		versionInfo, err = v.Cosmovisor.GetVersion()
+		versionInfo, cosmovisorVersionQueryInfo, err = v.Cosmovisor.GetVersion()
+		queriesInfo = append(queriesInfo, cosmovisorVersionQueryInfo)
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get app version")
 			return []metrics.MetricInfo{}, queriesInfo
 		}
-
-		queriesInfo[len(queriesInfo)-1].Success = true
 
 		metricsInfos = append(metricsInfos, metrics.MetricInfo{
 			MetricName: metrics.MetricNameRemoteVersion,

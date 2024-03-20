@@ -46,7 +46,13 @@ func getJsonString(input string) string {
 	return input
 }
 
-func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
+func (c *Cosmovisor) GetVersion() (types.VersionInfo, query_info.QueryInfo, error) {
+	queryInfo := query_info.QueryInfo{
+		Module:  constants.ModuleCosmovisor,
+		Action:  "get_version",
+		Success: false,
+	}
+
 	cmd := exec.Command(c.Config.CosmovisorPath, "run", "version", "--long", "--output", "json")
 	cmd.Env = append(
 		os.Environ(),
@@ -60,7 +66,7 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
 			Err(err).
 			Str("output", utils.DecolorifyString(string(out))).
 			Msg("Could not get app version")
-		return types.VersionInfo{}, err
+		return types.VersionInfo{}, queryInfo, err
 	}
 
 	jsonOutput := getJsonString(string(out))
@@ -71,10 +77,11 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
 			Err(err).
 			Str("output", jsonOutput).
 			Msg("Could not unmarshall app version")
-		return versionInfo, err
+		return versionInfo, queryInfo, err
 	}
 
-	return versionInfo, nil
+	queryInfo.Success = true
+	return versionInfo, queryInfo, nil
 }
 
 func (c *Cosmovisor) GetCosmovisorVersion() (string, query_info.QueryInfo, error) {
@@ -93,7 +100,10 @@ func (c *Cosmovisor) GetCosmovisorVersion() (string, query_info.QueryInfo, error
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		c.Logger.Error().Err(err).Str("output", string(out)).Msg("Could not get Cosmovisor version")
+		c.Logger.Error().
+			Err(err).
+			Str("output", utils.DecolorifyString(string(out))).
+			Msg("Could not get Cosmovisor version")
 		return "", queryInfo, err
 	}
 
@@ -111,12 +121,18 @@ func (c *Cosmovisor) GetCosmovisorVersion() (string, query_info.QueryInfo, error
 	return "", queryInfo, errors.New("could not find version in Cosmovisor response")
 }
 
-func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, error) {
+func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, query_info.QueryInfo, error) {
+	cosmovisorGetUpgradesQueryInfo := query_info.QueryInfo{
+		Action:  "cosmovisor_get_upgrades",
+		Module:  constants.ModuleCosmovisor,
+		Success: false,
+	}
+
 	upgradesFolder := c.Config.ChainFolder + "/cosmovisor/upgrades"
 	upgradesFolderContent, err := os.ReadDir(upgradesFolder)
 	if err != nil {
 		c.Logger.Error().Err(err).Msg("Could not fetch Cosmovisor upgrades folder content")
-		return map[string]bool{}, err
+		return map[string]bool{}, cosmovisorGetUpgradesQueryInfo, err
 	}
 
 	upgrades := map[string]bool{}
@@ -143,5 +159,7 @@ func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, error) {
 		}
 	}
 
-	return upgrades, nil
+	cosmovisorGetUpgradesQueryInfo.Success = true
+
+	return upgrades, cosmovisorGetUpgradesQueryInfo, nil
 }

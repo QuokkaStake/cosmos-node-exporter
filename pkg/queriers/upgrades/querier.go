@@ -44,19 +44,12 @@ func (u *Querier) Name() string {
 }
 
 func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
-	upgradePlanQuery := query_info.QueryInfo{
-		Module:  constants.ModuleTendermint,
-		Action:  "get_upgrade_plan",
-		Success: false,
-	}
-
-	upgrade, err := u.Tendermint.GetUpgradePlan()
+	upgrade, upgradePlanQuery, err := u.Tendermint.GetUpgradePlan()
 	if err != nil {
 		u.Logger.Err(err).Msg("Could not get latest upgrade plan from Tendermint")
 		return []metrics.MetricInfo{}, []query_info.QueryInfo{upgradePlanQuery}
 	}
 
-	upgradePlanQuery.Success = true
 	isUpgradePresent := upgrade != nil
 
 	metricInfos := []metrics.MetricInfo{{
@@ -93,7 +86,7 @@ func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 		Success: false,
 	}
 
-	upgradeTime, err := u.Tendermint.GetEstimateTimeTillBlock(upgrade.Height)
+	upgradeTime, upgradeTimeQuery, err := u.Tendermint.GetEstimateTimeTillBlock(upgrade.Height)
 	if err != nil {
 		u.Logger.Err(err).Msg("Could not get estimated upgrade time")
 		queryInfos = append(queryInfos, upgradeTimeQuery)
@@ -114,20 +107,13 @@ func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 		return metricInfos, queryInfos
 	}
 
-	cosmovisorGetUpgradesQueryInfo := query_info.QueryInfo{
-		Action:  "cosmovisor_get_upgrades",
-		Module:  constants.ModuleCosmovisor,
-		Success: false,
-	}
-
-	upgrades, err := u.Cosmovisor.GetUpgrades()
+	upgrades, cosmovisorGetUpgradesQueryInfo, err := u.Cosmovisor.GetUpgrades()
 	if err != nil {
 		u.Logger.Error().Err(err).Msg("Could not get Cosmovisor upgrades")
 		queryInfos = append(queryInfos, cosmovisorGetUpgradesQueryInfo)
 		return metricInfos, queryInfos
 	}
 
-	cosmovisorGetUpgradesQueryInfo.Success = true
 	queryInfos = append(queryInfos, cosmovisorGetUpgradesQueryInfo)
 
 	// From cosmovisor docs:

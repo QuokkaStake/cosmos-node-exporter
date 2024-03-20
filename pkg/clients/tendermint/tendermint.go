@@ -3,7 +3,9 @@ package tendermint
 import (
 	"fmt"
 	"main/pkg/config"
+	"main/pkg/constants"
 	"main/pkg/http"
+	"main/pkg/query_info"
 	"main/pkg/utils"
 	"net/url"
 	"time"
@@ -30,10 +32,21 @@ func NewRPC(config config.NodeConfig, logger zerolog.Logger) *RPC {
 	}
 }
 
-func (t *RPC) Status() (StatusResponse, error) {
+func (t *RPC) Status() (StatusResponse, query_info.QueryInfo, error) {
+	queryInfo := query_info.QueryInfo{
+		Module:  constants.ModuleTendermint,
+		Action:  "node_status",
+		Success: false,
+	}
+
 	res := StatusResponse{}
 	err := t.Client.Query("/status", &res)
-	return res, err
+
+	if err == nil {
+		queryInfo.Success = true
+	}
+
+	return res, queryInfo, err
 }
 
 func (t *RPC) Block(height int64) (BlockResponse, error) {
@@ -72,22 +85,36 @@ func (t *RPC) AbciQuery(
 	return output.Unmarshal(response.Result.Response.Value)
 }
 
-func (t *RPC) GetUpgradePlan() (*upgradeTypes.Plan, error) {
+func (t *RPC) GetUpgradePlan() (*upgradeTypes.Plan, query_info.QueryInfo, error) {
+	upgradePlanQuery := query_info.QueryInfo{
+		Module:  constants.ModuleTendermint,
+		Action:  "get_upgrade_plan",
+		Success: false,
+	}
+
 	query := upgradeTypes.QueryCurrentPlanRequest{}
 
 	var response upgradeTypes.QueryCurrentPlanResponse
 	if err := t.AbciQuery("/cosmos.upgrade.v1beta1.Query/CurrentPlan", &query, &response); err != nil {
-		return nil, err
+		return nil, upgradePlanQuery, err
 	}
 
-	return response.Plan, nil
+	upgradePlanQuery.Success = true
+
+	return response.Plan, upgradePlanQuery, nil
 }
 
-func (t *RPC) GetEstimateTimeTillBlock(height int64) (time.Time, error) {
+func (t *RPC) GetEstimateTimeTillBlock(height int64) (time.Time, query_info.QueryInfo, error) {
+	upgradeTimeQuery := query_info.QueryInfo{
+		Module:  constants.ModuleTendermint,
+		Action:  "tendermint_get_upgrade_time",
+		Success: false,
+	}
+
 	latestBlock, err := t.Block(0)
 	if err != nil {
 		t.Logger.Error().Err(err).Msg("Could not fetch current block")
-		return time.Now(), err
+		return time.Now(), upgradeTimeQuery, err
 	}
 
 	latestBlockHeight, err := utils.StringToInt64(latestBlock.Result.Block.Header.Height)
@@ -95,15 +122,17 @@ func (t *RPC) GetEstimateTimeTillBlock(height int64) (time.Time, error) {
 		t.Logger.Error().
 			Err(err).
 			Msg("Error converting latest block height to int64, which should never happen.")
-		return time.Now(), err
+		return time.Now(), upgradeTimeQuery, err
 	}
 	blockToCheck := latestBlockHeight - t.BlocksBehind
 
 	olderBlock, err := t.Block(blockToCheck)
 	if err != nil {
 		t.Logger.Error().Err(err).Msg("Could not fetch older block")
-		return time.Now(), err
+		return time.Now(), upgradeTimeQuery, err
 	}
+
+	upgradeTimeQuery.Success = true
 
 	blocksDiffTime := latestBlock.Result.Block.Header.Time.Sub(olderBlock.Result.Block.Header.Time)
 	blockTime := blocksDiffTime.Seconds() / float64(t.BlocksBehind)
@@ -111,5 +140,5 @@ func (t *RPC) GetEstimateTimeTillBlock(height int64) (time.Time, error) {
 	secondsTillEstimatedBlock := int64(float64(blocksTillEstimatedBlock) * blockTime)
 	durationTillEstimatedBlock := time.Duration(secondsTillEstimatedBlock * int64(time.Second))
 
-	return time.Now().Add(durationTillEstimatedBlock), nil
+	return time.Now().Add(durationTillEstimatedBlock), upgradeTimeQuery, nil
 }
