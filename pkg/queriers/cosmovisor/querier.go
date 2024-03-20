@@ -3,7 +3,6 @@ package cosmovisor
 import (
 	cosmovisorPkg "main/pkg/clients/cosmovisor"
 	configPkg "main/pkg/config"
-	"main/pkg/constants"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 
@@ -35,19 +34,11 @@ func (v *Querier) Name() string {
 }
 
 func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
-	queryInfo := query_info.QueryInfo{
-		Module:  constants.ModuleCosmovisor,
-		Action:  "get_cosmovisor_version",
-		Success: false,
-	}
-
-	cosmovisorVersion, err := v.Cosmovisor.GetCosmovisorVersion()
+	cosmovisorVersion, queryInfo, err := v.Cosmovisor.GetCosmovisorVersion()
 	if err != nil {
 		v.Logger.Err(err).Msg("Could not get Cosmovisor version")
 		return []metrics.MetricInfo{}, []query_info.QueryInfo{queryInfo}
 	}
-
-	queryInfo.Success = true
 
 	return []metrics.MetricInfo{
 		{

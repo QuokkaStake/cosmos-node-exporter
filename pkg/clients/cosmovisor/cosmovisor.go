@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"main/pkg/config"
+	"main/pkg/constants"
+	"main/pkg/query_info"
 	"main/pkg/types"
 	"main/pkg/utils"
 	"os"
@@ -75,7 +77,13 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
 	return versionInfo, nil
 }
 
-func (c *Cosmovisor) GetCosmovisorVersion() (string, error) {
+func (c *Cosmovisor) GetCosmovisorVersion() (string, query_info.QueryInfo, error) {
+	queryInfo := query_info.QueryInfo{
+		Module:  constants.ModuleCosmovisor,
+		Action:  "get_cosmovisor_version",
+		Success: false,
+	}
+
 	cmd := exec.Command(c.Config.CosmovisorPath, "version")
 	cmd.Env = append(
 		os.Environ(),
@@ -86,7 +94,7 @@ func (c *Cosmovisor) GetCosmovisorVersion() (string, error) {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		c.Logger.Error().Err(err).Str("output", string(out)).Msg("Could not get Cosmovisor version")
-		return "", err
+		return "", queryInfo, err
 	}
 
 	outSplit := strings.Split(string(out), "\n")
@@ -95,11 +103,12 @@ func (c *Cosmovisor) GetCosmovisorVersion() (string, error) {
 
 	for _, outString := range outSplit {
 		if strings.HasPrefix(outString, cosmovisorVersionPrefix) {
-			return outString[len(cosmovisorVersionPrefix):], nil
+			queryInfo.Success = true
+			return outString[len(cosmovisorVersionPrefix):], queryInfo, nil
 		}
 	}
 
-	return "", errors.New("could not find version in Cosmovisor response")
+	return "", queryInfo, errors.New("could not find version in Cosmovisor response")
 }
 
 func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, error) {
