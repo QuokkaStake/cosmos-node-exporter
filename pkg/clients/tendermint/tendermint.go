@@ -35,7 +35,7 @@ func NewRPC(config config.NodeConfig, logger zerolog.Logger) *RPC {
 func (t *RPC) Status() (StatusResponse, query_info.QueryInfo, error) {
 	queryInfo := query_info.QueryInfo{
 		Module:  constants.ModuleTendermint,
-		Action:  "node_status",
+		Action:  constants.ActionTendermintGetNodeStatus,
 		Success: false,
 	}
 
@@ -88,7 +88,7 @@ func (t *RPC) AbciQuery(
 func (t *RPC) GetUpgradePlan() (*upgradeTypes.Plan, query_info.QueryInfo, error) {
 	upgradePlanQuery := query_info.QueryInfo{
 		Module:  constants.ModuleTendermint,
-		Action:  "get_upgrade_plan",
+		Action:  constants.ActionTendermintGetUpgradePlan,
 		Success: false,
 	}
 
@@ -107,7 +107,7 @@ func (t *RPC) GetUpgradePlan() (*upgradeTypes.Plan, query_info.QueryInfo, error)
 func (t *RPC) GetEstimateTimeTillBlock(height int64) (time.Time, query_info.QueryInfo, error) {
 	upgradeTimeQuery := query_info.QueryInfo{
 		Module:  constants.ModuleTendermint,
-		Action:  "tendermint_get_upgrade_time",
+		Action:  constants.ActionTendermintGetUpgradeTime,
 		Success: false,
 	}
 

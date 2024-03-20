@@ -47,7 +47,7 @@ func (g *Gitopia) GetLatestRelease() (string, query_info.QueryInfo, error) {
 
 	queryInfo := query_info.QueryInfo{
 		Module:  constants.ModuleGit,
-		Action:  "get_latest_release",
+		Action:  constants.ActionGitGetLatestRelease,
 		Success: false,
 	}
 

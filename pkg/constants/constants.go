@@ -6,6 +6,7 @@ import (
 )
 
 type Module string
+type Action string
 
 const (
 	MetricsPrefix                  = "cosmos_node_exporter_"
@@ -13,6 +14,14 @@ const (
 	ModuleCosmovisor        Module = "cosmovisor"
 	ModuleTendermint        Module = "tendermint"
 	ModuleGit               Module = "git"
+
+	ActionCosmovisorGetVersion           Action = "get_version"
+	ActionCosmovisorGetCosmovisorVersion Action = "get_cosmovisor_version"
+	ActionCosmovisorGetUpgrades          Action = "get_upgrades"
+	ActionGitGetLatestRelease            Action = "get_latest_release"
+	ActionTendermintGetNodeStatus        Action = "node_status"
+	ActionTendermintGetUpgradePlan       Action = "get_upgrade_plan"
+	ActionTendermintGetUpgradeTime       Action = "get_upgrade_time"
 )
 
 var (

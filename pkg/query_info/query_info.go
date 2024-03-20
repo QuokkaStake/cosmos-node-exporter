@@ -8,7 +8,7 @@ import (
 
 type QueryInfo struct {
 	Module  constants.Module
-	Action  string
+	Action  constants.Action
 	Success bool
 }
 
@@ -24,7 +24,7 @@ func GetQueryInfoMetrics(allQueries map[string]map[string][]QueryInfo) []metrics
 						"node":    node,
 						"querier": name,
 						"module":  string(queryInfo.Module),
-						"action":  queryInfo.Action,
+						"action":  string(queryInfo.Action),
 					},
 					Value: utils.BoolToFloat64(queryInfo.Success),
 				})

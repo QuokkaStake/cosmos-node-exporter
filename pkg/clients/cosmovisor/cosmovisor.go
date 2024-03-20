@@ -49,7 +49,7 @@ func getJsonString(input string) string {
 func (c *Cosmovisor) GetVersion() (types.VersionInfo, query_info.QueryInfo, error) {
 	queryInfo := query_info.QueryInfo{
 		Module:  constants.ModuleCosmovisor,
-		Action:  "get_version",
+		Action:  constants.ActionCosmovisorGetVersion,
 		Success: false,
 	}
 
@@ -87,7 +87,7 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, query_info.QueryInfo, erro
 func (c *Cosmovisor) GetCosmovisorVersion() (string, query_info.QueryInfo, error) {
 	queryInfo := query_info.QueryInfo{
 		Module:  constants.ModuleCosmovisor,
-		Action:  "get_cosmovisor_version",
+		Action:  constants.ActionCosmovisorGetCosmovisorVersion,
 		Success: false,
 	}
 
@@ -123,7 +123,7 @@ func (c *Cosmovisor) GetCosmovisorVersion() (string, query_info.QueryInfo, error
 
 func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, query_info.QueryInfo, error) {
 	cosmovisorGetUpgradesQueryInfo := query_info.QueryInfo{
-		Action:  "cosmovisor_get_upgrades",
+		Action:  constants.ActionCosmovisorGetUpgrades,
 		Module:  constants.ModuleCosmovisor,
 		Success: false,
 	}
