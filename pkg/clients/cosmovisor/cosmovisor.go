@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"main/pkg/config"
 	"main/pkg/types"
+	"main/pkg/utils"
 	"os"
 	"os/exec"
 	"strings"
@@ -53,7 +54,10 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		c.Logger.Error().Err(err).Str("output", string(out)).Msg("Could not get app version")
+		c.Logger.Error().
+			Err(err).
+			Str("output", utils.DecolorifyString(string(out))).
+			Msg("Could not get app version")
 		return types.VersionInfo{}, err
 	}
 
@@ -61,7 +65,10 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, error) {
 
 	var versionInfo types.VersionInfo
 	if err := json.Unmarshal([]byte(jsonOutput), &versionInfo); err != nil {
-		c.Logger.Error().Err(err).Str("output", jsonOutput).Msg("Could not unmarshall app version")
+		c.Logger.Error().
+			Err(err).
+			Str("output", jsonOutput).
+			Msg("Could not unmarshall app version")
 		return versionInfo, err
 	}
 
