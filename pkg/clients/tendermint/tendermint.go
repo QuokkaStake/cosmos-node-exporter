@@ -1,11 +1,10 @@
 package tendermint
 
 import (
-	"encoding/json"
 	"fmt"
 	"main/pkg/config"
+	"main/pkg/http"
 	"main/pkg/utils"
-	"net/http"
 	"net/url"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 )
 
 type RPC struct {
+	Client       *http.Client
 	Logger       zerolog.Logger
 	Address      string
 	BlocksBehind int64
@@ -26,35 +26,13 @@ func NewRPC(config config.NodeConfig, logger zerolog.Logger) *RPC {
 		Logger:       logger.With().Str("component", "tendermint_rpc").Logger(),
 		Address:      config.TendermintConfig.Address,
 		BlocksBehind: 1000,
+		Client:       http.NewClient(logger, config.TendermintConfig.Address),
 	}
-}
-
-func (t *RPC) Query(relativeUrl string, output interface{}) error {
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	fullUrl := fmt.Sprintf("%s%s", t.Address, relativeUrl)
-	req, err := http.NewRequest(http.MethodGet, fullUrl, nil)
-
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("User-Agent", "cosmos-node-exporter")
-
-	res, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	return json.NewDecoder(res.Body).Decode(&output)
 }
 
 func (t *RPC) Status() (StatusResponse, error) {
 	res := StatusResponse{}
-	err := t.Query("/status", &res)
+	err := t.Client.Query("/status", &res)
 	return res, err
 }
 
@@ -65,7 +43,7 @@ func (t *RPC) Block(height int64) (BlockResponse, error) {
 	}
 
 	res := BlockResponse{}
-	err := t.Query(blockUrl, &res)
+	err := t.Client.Query(blockUrl, &res)
 	return res, err
 }
 
@@ -87,7 +65,7 @@ func (t *RPC) AbciQuery(
 	)
 
 	var response AbciQueryResponse
-	if err := t.Query(queryURL, &response); err != nil {
+	if err := t.Client.Query(queryURL, &response); err != nil {
 		return err
 	}
 
