@@ -47,17 +47,13 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	var (
 		latestVersion string
 		versionInfo   types.VersionInfo
+		gitQueryInfo  query_info.QueryInfo
 		err           error
 	)
 
 	if v.GitClient != nil {
-		queriesInfo = append(queriesInfo, query_info.QueryInfo{
-			Module:  constants.ModuleGit,
-			Action:  "get_latest_release",
-			Success: false,
-		})
-
-		latestVersion, err = v.GitClient.GetLatestRelease()
+		latestVersion, gitQueryInfo, err = v.GitClient.GetLatestRelease()
+		queriesInfo = append(queriesInfo, gitQueryInfo)
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get latest Git version")
 			return []metrics.MetricInfo{}, queriesInfo
@@ -67,8 +63,6 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 		if latestVersion[0] == 'v' {
 			latestVersion = latestVersion[1:]
 		}
-
-		queriesInfo[len(queriesInfo)-1].Success = true
 
 		metricsInfos = append(metricsInfos, metrics.MetricInfo{
 			MetricName: metrics.MetricNameRemoteVersion,

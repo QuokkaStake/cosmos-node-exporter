@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"main/pkg/config"
 	"main/pkg/constants"
+	"main/pkg/query_info"
 	"net/http"
 	"time"
 
@@ -37,12 +38,18 @@ func NewGitopia(config config.NodeConfig, logger zerolog.Logger) *Gitopia {
 	}
 }
 
-func (g *Gitopia) GetLatestRelease() (string, error) {
+func (g *Gitopia) GetLatestRelease() (string, query_info.QueryInfo, error) {
 	latestReleaseUrl := fmt.Sprintf(
 		"https://api.gitopia.com/gitopia/gitopia/gitopia/%s/repository/%s/releases/latest",
 		g.Organization,
 		g.Repository,
 	)
+
+	queryInfo := query_info.QueryInfo{
+		Module:  constants.ModuleGit,
+		Action:  "get_latest_release",
+		Success: false,
+	}
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -50,7 +57,7 @@ func (g *Gitopia) GetLatestRelease() (string, error) {
 
 	req, err := http.NewRequest(http.MethodGet, latestReleaseUrl, nil)
 	if err != nil {
-		return "", err
+		return "", queryInfo, err
 	}
 
 	g.Logger.Trace().
@@ -59,7 +66,7 @@ func (g *Gitopia) GetLatestRelease() (string, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return "", queryInfo, err
 	}
 	defer res.Body.Close()
 
@@ -67,16 +74,18 @@ func (g *Gitopia) GetLatestRelease() (string, error) {
 	err = json.NewDecoder(res.Body).Decode(&response)
 
 	if err != nil {
-		return "", err
+		return "", queryInfo, err
 	}
 
 	if response.Message != "" {
-		return "", errors.New(response.Message)
+		return "", queryInfo, errors.New(response.Message)
 	}
 
 	if response.Release == nil {
-		return "", errors.New("malformed response from Gitopia")
+		return "", queryInfo, errors.New("malformed response from Gitopia")
 	}
 
-	return response.Release.TagName, err
+	queryInfo.Success = true
+
+	return response.Release.TagName, queryInfo, err
 }
