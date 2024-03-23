@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"time"
 
+	upgradeTypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	"github.com/rs/zerolog"
 )
