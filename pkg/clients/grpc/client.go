@@ -54,6 +54,7 @@ func (g *Client) GetNodeConfig() (*nodeTypes.ConfigResponse, query_info.QueryInf
 		// some chains do not implement this endpoint due to their cosmos-sdk version
 		// being too old
 		if strings.Contains(err.Error(), "unknown service cosmos.base.node.v1beta1.Service") {
+			queryInfo.Success = true
 			return nil, queryInfo, nil
 		}
 		return nil, queryInfo, err
