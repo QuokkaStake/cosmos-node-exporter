@@ -1,8 +1,8 @@
 package versions
 
 import (
-	cosmovisorPkg "main/pkg/cosmovisor"
-	"main/pkg/git"
+	cosmovisorPkg "main/pkg/clients/cosmovisor"
+	"main/pkg/clients/git"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 	"main/pkg/types"
@@ -44,19 +44,16 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	metricsInfos := []metrics.MetricInfo{}
 
 	var (
-		latestVersion string
-		versionInfo   types.VersionInfo
-		err           error
+		latestVersion              string
+		versionInfo                types.VersionInfo
+		gitQueryInfo               query_info.QueryInfo
+		cosmovisorVersionQueryInfo query_info.QueryInfo
+		err                        error
 	)
 
 	if v.GitClient != nil {
-		queriesInfo = append(queriesInfo, query_info.QueryInfo{
-			Module:  "git",
-			Action:  "get_latest_release",
-			Success: false,
-		})
-
-		latestVersion, err = v.GitClient.GetLatestRelease()
+		latestVersion, gitQueryInfo, err = v.GitClient.GetLatestRelease()
+		queriesInfo = append(queriesInfo, gitQueryInfo)
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get latest Git version")
 			return []metrics.MetricInfo{}, queriesInfo
@@ -67,8 +64,6 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 			latestVersion = latestVersion[1:]
 		}
 
-		queriesInfo[len(queriesInfo)-1].Success = true
-
 		metricsInfos = append(metricsInfos, metrics.MetricInfo{
 			MetricName: metrics.MetricNameRemoteVersion,
 			Labels:     map[string]string{"version": latestVersion},
@@ -77,19 +72,12 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	}
 
 	if v.Cosmovisor != nil {
-		queriesInfo = append(queriesInfo, query_info.QueryInfo{
-			Module:  "cosmovisor",
-			Action:  "get_version",
-			Success: false,
-		})
-
-		versionInfo, err = v.Cosmovisor.GetVersion()
+		versionInfo, cosmovisorVersionQueryInfo, err = v.Cosmovisor.GetVersion()
+		queriesInfo = append(queriesInfo, cosmovisorVersionQueryInfo)
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get app version")
 			return []metrics.MetricInfo{}, queriesInfo
 		}
-
-		queriesInfo[len(queriesInfo)-1].Success = true
 
 		metricsInfos = append(metricsInfos, metrics.MetricInfo{
 			MetricName: metrics.MetricNameRemoteVersion,

@@ -1,9 +1,9 @@
 package node_stats
 
 import (
+	"main/pkg/clients/tendermint"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
-	"main/pkg/tendermint"
 	"main/pkg/utils"
 	"time"
 
@@ -31,13 +31,7 @@ func (n *Querier) Name() string {
 }
 
 func (n *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
-	queryInfo := query_info.QueryInfo{
-		Module:  "tendermint",
-		Action:  "node_status",
-		Success: false,
-	}
-
-	status, err := n.TendermintRPC.Status()
+	status, queryInfo, err := n.TendermintRPC.Status()
 	if err != nil {
 		n.Logger.Error().Err(err).Msg("Could not fetch node status")
 		return []metrics.MetricInfo{}, []query_info.QueryInfo{queryInfo}

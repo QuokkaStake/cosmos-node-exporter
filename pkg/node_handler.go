@@ -1,16 +1,16 @@
 package pkg
 
 import (
+	cosmovisorPkg "main/pkg/clients/cosmovisor"
+	"main/pkg/clients/git"
+	"main/pkg/clients/tendermint"
 	configPkg "main/pkg/config"
-	cosmovisorPkg "main/pkg/cosmovisor"
-	"main/pkg/git"
 	"main/pkg/metrics"
 	cosmovisorQuerierPkg "main/pkg/queriers/cosmovisor"
 	nodeStats "main/pkg/queriers/node_stats"
 	"main/pkg/queriers/upgrades"
 	"main/pkg/queriers/versions"
 	"main/pkg/query_info"
-	"main/pkg/tendermint"
 	"main/pkg/types"
 	"main/pkg/utils"
 	"sync"

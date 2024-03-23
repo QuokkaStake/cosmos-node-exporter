@@ -1,6 +1,9 @@
 package utils
 
-import "strconv"
+import (
+	"main/pkg/constants"
+	"strconv"
+)
 
 func BoolToFloat64(value bool) float64 {
 	if value {
@@ -16,4 +19,8 @@ func StringToFloat64(value string) (float64, error) {
 
 func StringToInt64(value string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
+}
+
+func DecolorifyString(value string) string {
+	return constants.ColorsRegexp.ReplaceAllString(value, "")
 }

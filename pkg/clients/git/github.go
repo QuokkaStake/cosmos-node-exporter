@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"main/pkg/config"
 	"main/pkg/constants"
+	"main/pkg/query_info"
 	"net/http"
 	"time"
 
@@ -51,12 +52,18 @@ func (g *Github) UseCache() bool {
 	return diff < constants.UncachedGithubQueryTime
 }
 
-func (g *Github) GetLatestRelease() (string, error) {
+func (g *Github) GetLatestRelease() (string, query_info.QueryInfo, error) {
 	latestReleaseUrl := fmt.Sprintf(
 		"https://api.github.com/repos/%s/%s/releases/latest",
 		g.Organization,
 		g.Repository,
 	)
+
+	queryInfo := query_info.QueryInfo{
+		Module:  constants.ModuleGit,
+		Action:  constants.ActionGitGetLatestRelease,
+		Success: false,
+	}
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -64,7 +71,7 @@ func (g *Github) GetLatestRelease() (string, error) {
 
 	req, err := http.NewRequest(http.MethodGet, latestReleaseUrl, nil)
 	if err != nil {
-		return "", err
+		return "", queryInfo, err
 	}
 
 	useCache := g.UseCache()
@@ -86,29 +93,32 @@ func (g *Github) GetLatestRelease() (string, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return "", queryInfo, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusNotModified && g.LastResult != "" {
+		queryInfo.Success = true
 		g.Logger.Trace().Msg("Github returned cached response")
-		return g.LastResult, nil
+		return g.LastResult, queryInfo, nil
 	}
 
 	releaseInfo := GithubReleaseInfo{}
 	err = json.NewDecoder(res.Body).Decode(&releaseInfo)
 
 	if err != nil {
-		return "", err
+		return "", queryInfo, err
 	}
 
 	// GitHub returned error, probably rate-limiting
 	if releaseInfo.Message != "" {
-		return "", fmt.Errorf("got error from Github: %s", releaseInfo.Message)
+		return "", queryInfo, fmt.Errorf("got error from Github: %s", releaseInfo.Message)
 	}
 
 	g.LastModified = time.Now()
 	g.LastResult = releaseInfo.TagName
 
-	return releaseInfo.TagName, err
+	queryInfo.Success = true
+
+	return releaseInfo.TagName, queryInfo, err
 }

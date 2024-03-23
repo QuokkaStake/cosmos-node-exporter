@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"main/pkg/constants"
 	"os"
@@ -39,15 +40,15 @@ func (c *CosmovisorConfig) Validate() error {
 	}
 
 	if c.ChainBinaryName == "" {
-		return fmt.Errorf("chain-binary-name is not specified")
+		return errors.New("chain-binary-name is not specified")
 	}
 
 	if c.ChainFolder == "" {
-		return fmt.Errorf("chain-folder is not specified")
+		return errors.New("chain-folder is not specified")
 	}
 
 	if c.CosmovisorPath == "" {
-		return fmt.Errorf("cosmovisor-path is not specified")
+		return errors.New("cosmovisor-path is not specified")
 	}
 
 	return nil
@@ -72,7 +73,7 @@ func (c *GitConfig) Validate() error {
 	}
 
 	if !constants.GithubRegexp.Match([]byte(c.Repository)) && !constants.GitopiaRegexp.Match([]byte(c.Repository)) {
-		return fmt.Errorf("repository is not valid")
+		return errors.New("repository is not valid")
 	}
 
 	return nil
@@ -80,7 +81,7 @@ func (c *GitConfig) Validate() error {
 
 func (c *NodeConfig) Validate() error {
 	if c.Name == "" {
-		return fmt.Errorf("node name is empty")
+		return errors.New("node name is empty")
 	}
 
 	if err := c.GitConfig.Validate(); err != nil {
@@ -96,7 +97,7 @@ func (c *NodeConfig) Validate() error {
 
 func (c *Config) Validate() error {
 	if len(c.NodeConfigs) == 0 {
-		return fmt.Errorf("0 nodes provided")
+		return errors.New("0 nodes provided")
 	}
 
 	for index, nodeConfig := range c.NodeConfigs {
