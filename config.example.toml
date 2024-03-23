@@ -19,12 +19,16 @@ name = "cosmos"
 tendermint = { enabled = true, address = "http://localhost:26657", query-upgrades = true }
 
 # Cosmovisor configuration. Has the following fields:
-# 1. enabled. # If set to false, the metrics related to Cosmovisor would be disabled. Defaults to true.
+# 1. enabled. If set to false, the metrics related to Cosmovisor would be disabled. Defaults to true.
 # 2. chain-folder. Path to folder storing fullnode data and configs (like ~/.gaia for cosmoshub).
 # 3. chain-binary-name. Binary name (like gaiad for cosmoshub)
 # 4. cosmovisor-path. Cosmovisor path (usually located at ~/go/bin/cosmovisor)
 cosmovisor = { enabled = true, chain-folder = "/home/validator/.gaia", chain-binary-name = "gaiad", cosmovisor-path = "/home/validator/go/bin/cosmovisor" }
 
+# gRPC configuration. Has the following fields:
+# 1) enabled. If set to false, the metrics related to upgrades would be disabled. Defaults to true.
+# 2) address. Tendermint RPC address. Omitting it will result in disabling some metrics.
+grpc = { enabled = true, address = "localhost:9090" }
 
 # Git configuration. Has the following fields:
 # 1. repository. Repository path. Omitting it will result in disabling Git metrics.

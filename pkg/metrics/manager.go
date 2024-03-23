@@ -119,6 +119,22 @@ func NewManager(config *configPkg.Config) *Manager {
 			},
 			[]string{"node", "querier"},
 		),
+
+		MetricNameMinimumGasPricesCount: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "minimum_gas_prices_count",
+				Help: "Amount of minimum_gas_prices on a node",
+			},
+			[]string{"node"},
+		),
+
+		MetricNameMinimumGasPrice: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "minimum_gas_price",
+				Help: "Minimum gas price for a specific denom",
+			},
+			[]string{"node", "denom"},
+		),
 	}
 
 	globalCollectors := map[MetricName]*prometheus.GaugeVec{

@@ -17,7 +17,7 @@ type Querier struct {
 
 func NewQuerier(logger zerolog.Logger, tendermintRPC *tendermint.RPC) *Querier {
 	return &Querier{
-		Logger:        logger.With().Str("component", "tendermint_rpc").Logger(),
+		Logger:        logger.With().Str("component", "node-stats-querier").Logger(),
 		TendermintRPC: tendermintRPC,
 	}
 }
@@ -60,8 +60,6 @@ func (n *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 			Value:      value,
 		})
 	}
-
-	queryInfo.Success = true
 
 	return querierMetrics, []query_info.QueryInfo{queryInfo}
 }

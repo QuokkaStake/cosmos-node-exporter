@@ -14,14 +14,16 @@ const (
 	ModuleCosmovisor        Module = "cosmovisor"
 	ModuleTendermint        Module = "tendermint"
 	ModuleGit               Module = "git"
+	ModuleGrpc              Module = "grpc"
 
 	ActionCosmovisorGetVersion           Action = "get_version"
 	ActionCosmovisorGetCosmovisorVersion Action = "get_cosmovisor_version"
 	ActionCosmovisorGetUpgrades          Action = "get_upgrades"
 	ActionGitGetLatestRelease            Action = "get_latest_release"
-	ActionTendermintGetNodeStatus        Action = "node_status"
+	ActionTendermintGetNodeStatus        Action = "get_node_status"
 	ActionTendermintGetUpgradePlan       Action = "get_upgrade_plan"
 	ActionTendermintGetUpgradeTime       Action = "get_upgrade_time"
+	ActionGrpcGetNodeConfig              Action = "get_node_config"
 )
 
 var (
