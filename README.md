@@ -6,7 +6,7 @@
 cosmos-node-exporter is a Prometheus scraper that scrapes some data to monitor your node.
 It exposes the following metrics:
 - node status (voting power, whether the node is catching up or is stuck behind the blockchain)
-- app version (local binary, latest Github/Gitopia release and if you are running the latest version)
+- app version (local binary, latest GitHub/Gitopia release and if you are running the latest version)
 - Cosmovisor metrics (version of Cosmovisor version itself)
 - upgrades metrics (time till upgrade, upgrade version, if you have a binary prepared for the upgrade)
 
@@ -15,6 +15,7 @@ Specifically, if you are a validator or a node operator, you can set up alerting
 - your voting power is 0 for a validator node
 - your node is catching up
 - there are chain upgrades your node does not have binaries for
+- there's an upgrade coming soon
 
 ## How can I set it up?
 
@@ -100,19 +101,29 @@ Each of NodeHandlers has multiple Queriers, each of them querying a node or exte
 in some way, then returns a set of metrics. Each Querier can be enabled or disabled based on the config.
 Here's the list of Queriers:
 
-| Querier          | Metrics returned                                                                                                                   | Requirements                                                                                                                                                                                                            |
-|------------------|------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| NodeStatsQuerier | Voting power, node status<br>(catching up, time since latest block)                                                                | tendermint.address specified in config                                                                                                                                                                                  |
-| VersionsQuerier  | Local node version, remote node version,<br>whether the node is using the latest binary                                            | Cosmovisor config (for local config),<br>Github config (for remote version),<br>both (for checking if the version used is latest)                                                                                       |
-| UpgradesQuerier  | Whether there is an upcoming upgrade,<br>its data, estimated upgrade time and<br>whether the binary for the upgrade<br>is prepared | Tendermint enabled config (for getting the upgrade plan), Cosmovisor config (for getting the built binaries), Tendermint config (for getting<br>the upgrade time if the height upgrade is<br>specified for the upgrade) |
+| Querier           | Metrics returned                                                                                                                   | Requirements                                                                                                                                                                                                    |
+|-------------------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NodeStatsQuerier  | Voting power, node status<br>(catching up, time since latest block)                                                                | Tendermint config                                                                                                                                                                                               |
+| VersionsQuerier   | Local node version, remote node version,<br>whether the node is using the latest binary                                            | Cosmovisor config (for local config),<br>GitHub config (for remote version),<br>both (for checking if the version used is latest)                                                                               |
+| UpgradesQuerier   | Whether there is an upcoming upgrade,<br>its data, estimated upgrade time and<br>whether the binary for the upgrade<br>is prepared | Tendermint config (for getting the upgrade plan), Cosmovisor config (for getting the built binaries), Tendermint config (for getting<br>the upgrade time if the height upgrade is<br>specified for the upgrade) |
+| CosmovisorQuerier | Cosmovisor version                                                                                                                 | Cosmovisor config                                                                                                                                                                                               |
+| NodeConfigQuerier | Node's minimum-gas-prices and halt-height                                                                                          | gRPC config, the chain should implement the `cosmos.base.node.v1beta1/Config` gRPC endpoint.                                                                                                                    |
+| UptimeQuerier     | Global querier, returns the time the app was started at                                                                            | None                                                                                                                                                                                                            |
+| AppQuerier        | Global querier, returns app version                                                                                                | None                                                                                                                                                                                                            |
 
-Additionally, each Querier returns the list of actions it did (like, querying a node, getting GitHub latest release etc.) and whether they were successful a node. The exporter itself should never return an error (if it does, please file an issue), instead it will return all the data it could get, and additionally it'll return a metrics set with all the actions it could or couldn't do. You can set alerts based on that, for example, if `node_status` action is failing for a big period of time, likely the node is down.
+Additionally, each Querier returns the list of actions it did (like, querying a node, getting GitHub latest release etc.)
+and whether they were successful a node. The exporter itself should never return an error (if it does, please file an issue),
+instead it will return all the data it could get, and additionally it'll return a metrics set with all the actions it could
+or couldn't do. You can set alerts based on that, for example, if `node_status` action is failing for a big period of time,
+likely the node is down.
 
-All metrics are prefixed with `cosmos_node_exporter_`, to get the list of all metrics, try something like `curl localhost:9500/metrics` on a fullnode the binary is running at and look at the results.
+All metrics are prefixed with `cosmos_node_exporter_`, to get the list of all metrics, try something like
+`curl localhost:9500/metrics` on a fullnode the binary is running at and look at the results.
 
 ## How does it work?
 
-It fetches some data from the local node by querying Tendermint RPC (listening on port 26657 by default), Cosmovisor binary and GitHub/Gitopia.
+It fetches some data from the local node by querying Tendermint RPC (listening on port 26657 by default),
+Cosmovisor binary, gRPC and GitHub/Gitopia.
 
 ## How can I configure it?
 

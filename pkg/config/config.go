@@ -54,10 +54,16 @@ func (c *CosmovisorConfig) Validate() error {
 	return nil
 }
 
+type GrpcConfig struct {
+	Enabled null.Bool `default:"true"           toml:"enabled"`
+	Address string    `default:"localhost:9090" toml:"address"`
+}
+
 type NodeConfig struct {
 	Name             string           `toml:"name"`
 	TendermintConfig TendermintConfig `toml:"tendermint"`
 	CosmovisorConfig CosmovisorConfig `toml:"cosmovisor"`
+	GrpcConfig       GrpcConfig       `toml:"grpc"`
 	GitConfig        GitConfig        `toml:"git"`
 }
 

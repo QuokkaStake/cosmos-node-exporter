@@ -3,10 +3,12 @@ package pkg
 import (
 	cosmovisorPkg "main/pkg/clients/cosmovisor"
 	"main/pkg/clients/git"
+	grpcPkg "main/pkg/clients/grpc"
 	"main/pkg/clients/tendermint"
 	configPkg "main/pkg/config"
 	"main/pkg/metrics"
 	cosmovisorQuerierPkg "main/pkg/queriers/cosmovisor"
+	nodeConfig "main/pkg/queriers/node_config"
 	nodeStats "main/pkg/queriers/node_stats"
 	"main/pkg/queriers/upgrades"
 	"main/pkg/queriers/versions"
@@ -35,6 +37,7 @@ func NewNodeHandler(
 
 	var tendermintRPC *tendermint.RPC
 	var cosmovisor *cosmovisorPkg.Cosmovisor
+	var grpc *grpcPkg.Client
 
 	if config.TendermintConfig.Enabled.Bool {
 		tendermintRPC = tendermint.NewRPC(config, appLogger)
@@ -44,6 +47,10 @@ func NewNodeHandler(
 		cosmovisor = cosmovisorPkg.NewCosmovisor(config, appLogger)
 	}
 
+	if config.GrpcConfig.Enabled.Bool {
+		grpc = grpcPkg.NewClient(config, appLogger)
+	}
+
 	gitClient := git.GetClient(config, appLogger)
 
 	queriers := []types.Querier{
@@ -51,6 +58,7 @@ func NewNodeHandler(
 		versions.NewQuerier(appLogger, gitClient, cosmovisor),
 		upgrades.NewQuerier(config, appLogger, cosmovisor, tendermintRPC),
 		cosmovisorQuerierPkg.NewQuerier(appLogger, cosmovisor),
+		nodeConfig.NewQuerier(appLogger, grpc),
 	}
 
 	for _, querier := range queriers {
