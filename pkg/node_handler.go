@@ -9,6 +9,7 @@ import (
 	"main/pkg/metrics"
 	cosmovisorQuerierPkg "main/pkg/queriers/cosmovisor"
 	nodeConfig "main/pkg/queriers/node_config"
+	nodeInfo "main/pkg/queriers/node_info"
 	nodeStats "main/pkg/queriers/node_stats"
 	"main/pkg/queriers/upgrades"
 	"main/pkg/queriers/versions"
@@ -59,6 +60,7 @@ func NewNodeHandler(
 		upgrades.NewQuerier(config, appLogger, cosmovisor, tendermintRPC),
 		cosmovisorQuerierPkg.NewQuerier(appLogger, cosmovisor),
 		nodeConfig.NewQuerier(appLogger, grpc),
+		nodeInfo.NewQuerier(appLogger, grpc),
 	}
 
 	for _, querier := range queriers {

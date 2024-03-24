@@ -9,6 +9,8 @@ It exposes the following metrics:
 - app version (local binary, latest GitHub/Gitopia release and if you are running the latest version)
 - Cosmovisor metrics (version of Cosmovisor version itself)
 - upgrades metrics (time till upgrade, upgrade version, if you have a binary prepared for the upgrade)
+- chain metrics (cosmos-sdk version, Tendermint/CometBFT version, Go version/build tags)
+- node params (minimum-gas-prices)
 
 Specifically, if you are a validator or a node operator, you can set up alerting if:
 - your app version does not match the latest on GitHub (can be useful to be notified on new releases)
@@ -108,6 +110,7 @@ Here's the list of Queriers:
 | UpgradesQuerier   | Whether there is an upcoming upgrade,<br>its data, estimated upgrade time and<br>whether the binary for the upgrade<br>is prepared | Tendermint config (for getting the upgrade plan), Cosmovisor config (for getting the built binaries), Tendermint config (for getting<br>the upgrade time if the height upgrade is<br>specified for the upgrade) |
 | CosmovisorQuerier | Cosmovisor version                                                                                                                 | Cosmovisor config                                                                                                                                                                                               |
 | NodeConfigQuerier | Node's minimum-gas-prices and halt-height                                                                                          | gRPC config, the chain should implement the `cosmos.base.node.v1beta1/Config` gRPC endpoint.                                                                                                                    |
+| NodeInfoQuerier   | Running app version/git tag, cosmos-sdk version, Go version/build tags used to build it                                            | gRPC config                                                                                                                                                                                                     |
 | UptimeQuerier     | Global querier, returns the time the app was started at                                                                            | None                                                                                                                                                                                                            |
 | AppQuerier        | Global querier, returns app version                                                                                                | None                                                                                                                                                                                                            |
 

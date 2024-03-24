@@ -151,6 +151,30 @@ func NewManager(config *configPkg.Config) *Manager {
 			},
 			[]string{"node", "denom"},
 		),
+
+		MetricNameCosmosSdkVersion: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "cosmos_sdk_version",
+				Help: "cosmos-sdk version",
+			},
+			[]string{"node", "version"},
+		),
+
+		MetricNameRunningAppVersion: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "running_app_version",
+				Help: "Version of the app that's running",
+			},
+			[]string{"node", "version", "name", "app_name", "git_commit"},
+		),
+
+		MetricNameGoVersion: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "go_version",
+				Help: "Go version that was used to build the app",
+			},
+			[]string{"node", "version", "tags"},
+		),
 	}
 
 	globalCollectors := map[MetricName]*prometheus.GaugeVec{
