@@ -81,7 +81,7 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 
 		metricsInfos = append(metricsInfos, metrics.MetricInfo{
 			MetricName: metrics.MetricNameLocalVersion,
-			Labels:     map[string]string{"version": latestVersion},
+			Labels:     map[string]string{"version": versionInfo.Version},
 			Value:      1,
 		})
 	}
