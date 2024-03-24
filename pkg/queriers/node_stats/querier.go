@@ -49,9 +49,12 @@ func (n *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 			Value:      time.Since(status.Result.SyncInfo.LatestBlockTime).Seconds(),
 		},
 		{
-			MetricName: metrics.MetricNameMoniker,
-			Labels:     map[string]string{"moniker": status.Result.NodeInfo.Moniker},
-			Value:      1,
+			MetricName: metrics.MetricNameNodeInfo,
+			Labels: map[string]string{
+				"moniker": status.Result.NodeInfo.Moniker,
+				"network": status.Result.NodeInfo.Network,
+			},
+			Value: 1,
 		},
 		{
 			MetricName: metrics.MetricNameTendermintVersion,

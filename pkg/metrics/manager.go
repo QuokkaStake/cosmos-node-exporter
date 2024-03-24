@@ -48,12 +48,12 @@ func NewManager(config *configPkg.Config) *Manager {
 			[]string{"node"},
 		),
 
-		MetricNameMoniker: prometheus.NewGaugeVec(
+		MetricNameNodeInfo: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: constants.MetricsPrefix + "moniker",
-				Help: "Node moniker, always 1",
+				Name: constants.MetricsPrefix + "node_info",
+				Help: "Node info (moniker, network, etc.), always 1",
 			},
-			[]string{"node", "moniker"},
+			[]string{"node", "moniker", "network"},
 		),
 
 		MetricNameTendermintVersion: prometheus.NewGaugeVec(

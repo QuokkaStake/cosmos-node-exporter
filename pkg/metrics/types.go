@@ -6,7 +6,7 @@ const (
 	MetricNameCosmovisorVersion     = "cosmovisor_version"
 	MetricNameCatchingUp            = "catching_up"
 	MetricNameTimeSinceLatestBlock  = "time_since_latest_block"
-	MetricNameMoniker               = "Moniker"
+	MetricNameNodeInfo              = "node_info"
 	MetricNameTendermintVersion     = "tendermint_version"
 	MetricNameVotingPower           = "voting_power"
 	MetricNameRemoteVersion         = "remote_version"
