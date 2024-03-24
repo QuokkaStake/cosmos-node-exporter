@@ -24,6 +24,7 @@ const (
 	ActionTendermintGetUpgradePlan       Action = "get_upgrade_plan"
 	ActionTendermintGetUpgradeTime       Action = "get_upgrade_time"
 	ActionGrpcGetNodeConfig              Action = "get_node_config"
+	ActionGrpcGetNodeInfo                Action = "get_node_info"
 )
 
 var (

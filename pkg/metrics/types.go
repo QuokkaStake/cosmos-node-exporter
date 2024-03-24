@@ -23,6 +23,9 @@ const (
 	MetricNameStartTime             = "start_time"
 	MetricNameMinimumGasPricesCount = "minimum_gas_prices_count"
 	MetricNameMinimumGasPrice       = "minimum_gas_price"
+	MetricNameCosmosSdkVersion      = "cosmos_sdk_version"
+	MetricNameRunningAppVersion     = "running_app_version"
+	MetricNameGoVersion             = "go_version"
 )
 
 type MetricInfo struct {

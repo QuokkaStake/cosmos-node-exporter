@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	cmtTypes "github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	nodeTypes "github.com/cosmos/cosmos-sdk/client/grpc/node"
 
 	"github.com/rs/zerolog"
@@ -57,6 +58,28 @@ func (g *Client) GetNodeConfig() (*nodeTypes.ConfigResponse, query_info.QueryInf
 			queryInfo.Success = true
 			return nil, queryInfo, nil
 		}
+		return nil, queryInfo, err
+	}
+
+	queryInfo.Success = true
+
+	return response, queryInfo, nil
+}
+
+func (g *Client) GetNodeInfo() (*cmtTypes.GetNodeInfoResponse, query_info.QueryInfo, error) {
+	queryInfo := query_info.QueryInfo{
+		Module:  constants.ModuleGrpc,
+		Action:  constants.ActionGrpcGetNodeInfo,
+		Success: false,
+	}
+
+	client := cmtTypes.NewServiceClient(g.Client)
+	response, err := client.GetNodeInfo(
+		context.Background(),
+		&cmtTypes.GetNodeInfoRequest{},
+	)
+
+	if err != nil {
 		return nil, queryInfo, err
 	}
 
