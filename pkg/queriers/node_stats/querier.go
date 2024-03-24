@@ -52,7 +52,7 @@ func (n *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 			MetricName: metrics.MetricNameNodeInfo,
 			Labels: map[string]string{
 				"moniker": status.Result.NodeInfo.Moniker,
-				"network": status.Result.NodeInfo.Network,
+				"chain":   status.Result.NodeInfo.Network,
 			},
 			Value: 1,
 		},

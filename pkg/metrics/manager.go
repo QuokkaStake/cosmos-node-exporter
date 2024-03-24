@@ -53,7 +53,7 @@ func NewManager(config *configPkg.Config) *Manager {
 				Name: constants.MetricsPrefix + "node_info",
 				Help: "Node info (moniker, network, etc.), always 1",
 			},
-			[]string{"node", "moniker", "network"},
+			[]string{"node", "moniker", "chain"},
 		),
 
 		MetricNameTendermintVersion: prometheus.NewGaugeVec(
