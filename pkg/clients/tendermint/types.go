@@ -14,6 +14,7 @@ type StatusResult struct {
 
 type NodeInfo struct {
 	Moniker string `json:"moniker"`
+	Version string `json:"version"`
 }
 
 type SyncInfo struct {

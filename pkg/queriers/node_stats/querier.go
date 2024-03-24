@@ -48,6 +48,16 @@ func (n *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 			Labels:     map[string]string{},
 			Value:      time.Since(status.Result.SyncInfo.LatestBlockTime).Seconds(),
 		},
+		{
+			MetricName: metrics.MetricNameMoniker,
+			Labels:     map[string]string{"moniker": status.Result.NodeInfo.Moniker},
+			Value:      1,
+		},
+		{
+			MetricName: metrics.MetricNameTendermintVersion,
+			Labels:     map[string]string{"version": status.Result.NodeInfo.Version},
+			Value:      1,
+		},
 	}
 
 	if value, err := utils.StringToFloat64(status.Result.ValidatorInfo.VotingPower); err != nil {
