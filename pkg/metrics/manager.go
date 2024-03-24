@@ -48,6 +48,22 @@ func NewManager(config *configPkg.Config) *Manager {
 			[]string{"node"},
 		),
 
+		MetricNameMoniker: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "moniker",
+				Help: "Node moniker, always 1",
+			},
+			[]string{"node", "moniker"},
+		),
+
+		MetricNameTendermintVersion: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "tendermint_version",
+				Help: "Tendermint/CometBFT version, always 1",
+			},
+			[]string{"node", "version"},
+		),
+
 		MetricNameRemoteVersion: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: constants.MetricsPrefix + "remote_version",
