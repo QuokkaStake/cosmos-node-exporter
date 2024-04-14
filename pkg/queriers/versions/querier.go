@@ -57,18 +57,18 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get latest Git version")
 			return []metrics.MetricInfo{}, queriesInfo
-		}
+		} else {
+			// stripping first "v" character: "v1.2.3" => "1.2.3"
+			if latestVersion[0] == 'v' {
+				latestVersion = latestVersion[1:]
+			}
 
-		// stripping first "v" character: "v1.2.3" => "1.2.3"
-		if latestVersion[0] == 'v' {
-			latestVersion = latestVersion[1:]
+			metricsInfos = append(metricsInfos, metrics.MetricInfo{
+				MetricName: metrics.MetricNameRemoteVersion,
+				Labels:     map[string]string{"version": latestVersion},
+				Value:      1,
+			})
 		}
-
-		metricsInfos = append(metricsInfos, metrics.MetricInfo{
-			MetricName: metrics.MetricNameRemoteVersion,
-			Labels:     map[string]string{"version": latestVersion},
-			Value:      1,
-		})
 	}
 
 	if v.Cosmovisor != nil {
@@ -76,14 +76,13 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 		queriesInfo = append(queriesInfo, cosmovisorVersionQueryInfo)
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get app version")
-			return []metrics.MetricInfo{}, queriesInfo
+		} else {
+			metricsInfos = append(metricsInfos, metrics.MetricInfo{
+				MetricName: metrics.MetricNameLocalVersion,
+				Labels:     map[string]string{"version": versionInfo.Version},
+				Value:      1,
+			})
 		}
-
-		metricsInfos = append(metricsInfos, metrics.MetricInfo{
-			MetricName: metrics.MetricNameLocalVersion,
-			Labels:     map[string]string{"version": versionInfo.Version},
-			Value:      1,
-		})
 	}
 
 	if v.GitClient != nil && v.Cosmovisor != nil {
