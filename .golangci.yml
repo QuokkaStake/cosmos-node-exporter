@@ -48,3 +48,4 @@ linters:
     - ifshort
     - gci
     - depguard
+    - mnd
