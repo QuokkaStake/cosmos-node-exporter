@@ -4,7 +4,6 @@ import (
 	"main/pkg"
 	"main/pkg/config"
 	"main/pkg/logger"
-	"net/http"
 
 	"github.com/spf13/cobra"
 )
@@ -14,27 +13,8 @@ var (
 )
 
 func ExecuteMain(configPath string) {
-	appConfig, err := config.GetConfig(configPath)
-	if err != nil {
-		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not load config")
-	}
-
-	if err = appConfig.Validate(); err != nil {
-		logger.GetDefaultLogger().Fatal().Err(err).Msg("Provided config is invalid!")
-	}
-
-	log := logger.GetLogger(appConfig.LogConfig)
-	app := pkg.NewApp(log, appConfig, version)
-
-	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		app.HandleRequest(w, r)
-	})
-
-	log.Info().Str("addr", appConfig.ListenAddress).Msg("Listening")
-	err = http.ListenAndServe(appConfig.ListenAddress, nil)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Could not start application")
-	}
+	app := pkg.NewApp(configPath, version)
+	app.Start()
 }
 
 func ExecuteValidateConfig(configPath string) {

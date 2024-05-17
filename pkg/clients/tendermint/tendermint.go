@@ -1,6 +1,7 @@
 package tendermint
 
 import (
+	"context"
 	"fmt"
 	"main/pkg/config"
 	"main/pkg/constants"
@@ -9,6 +10,9 @@ import (
 	"main/pkg/utils"
 	"net/url"
 	"time"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	upgradeTypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -21,18 +25,27 @@ type RPC struct {
 	Logger       zerolog.Logger
 	Address      string
 	BlocksBehind int64
+	Tracer       trace.Tracer
 }
 
-func NewRPC(config config.NodeConfig, logger zerolog.Logger) *RPC {
+func NewRPC(config config.NodeConfig, logger zerolog.Logger, tracer trace.Tracer) *RPC {
 	return &RPC{
 		Logger:       logger.With().Str("component", "tendermint_rpc").Logger(),
 		Address:      config.TendermintConfig.Address,
 		BlocksBehind: 1000,
-		Client:       http.NewClient(logger, config.TendermintConfig.Address),
+		Client:       http.NewClient(logger, config.TendermintConfig.Address, tracer),
+		Tracer:       tracer,
 	}
 }
 
-func (t *RPC) Status() (StatusResponse, query_info.QueryInfo, error) {
+func (t *RPC) Status(ctx context.Context) (StatusResponse, query_info.QueryInfo, error) {
+	childCtx, span := t.Tracer.Start(
+		ctx,
+		"Fetching node status",
+		trace.WithAttributes(attribute.String("address", t.Address)),
+	)
+	defer span.End()
+
 	queryInfo := query_info.QueryInfo{
 		Module:  constants.ModuleTendermint,
 		Action:  constants.ActionTendermintGetNodeStatus,
@@ -40,7 +53,7 @@ func (t *RPC) Status() (StatusResponse, query_info.QueryInfo, error) {
 	}
 
 	res := StatusResponse{}
-	err := t.Client.Query("/status", &res)
+	err := t.Client.Query(childCtx, "/status", &res)
 
 	if err == nil {
 		queryInfo.Success = true
@@ -49,22 +62,43 @@ func (t *RPC) Status() (StatusResponse, query_info.QueryInfo, error) {
 	return res, queryInfo, err
 }
 
-func (t *RPC) Block(height int64) (BlockResponse, error) {
+func (t *RPC) Block(ctx context.Context, height int64) (BlockResponse, error) {
+	childCtx, span := t.Tracer.Start(
+		ctx,
+		"Fetching block",
+		trace.WithAttributes(
+			attribute.String("address", t.Address),
+			attribute.Int64("height", height),
+		),
+	)
+	defer span.End()
+
 	blockUrl := "/block"
 	if height != 0 {
 		blockUrl = fmt.Sprintf("/block?height=%d", height)
 	}
 
 	res := BlockResponse{}
-	err := t.Client.Query(blockUrl, &res)
+	err := t.Client.Query(childCtx, blockUrl, &res)
 	return res, err
 }
 
 func (t *RPC) AbciQuery(
+	ctx context.Context,
 	method string,
 	message codec.ProtoMarshaler,
 	output codec.ProtoMarshaler,
 ) error {
+	childCtx, span := t.Tracer.Start(
+		ctx,
+		"Fetching ABCI query",
+		trace.WithAttributes(
+			attribute.String("address", t.Address),
+			attribute.String("query", method),
+		),
+	)
+	defer span.End()
+
 	dataBytes, err := message.Marshal()
 	if err != nil {
 		return err
@@ -78,14 +112,21 @@ func (t *RPC) AbciQuery(
 	)
 
 	var response AbciQueryResponse
-	if err := t.Client.Query(queryURL, &response); err != nil {
+	if err := t.Client.Query(childCtx, queryURL, &response); err != nil {
 		return err
 	}
 
 	return output.Unmarshal(response.Result.Response.Value)
 }
 
-func (t *RPC) GetUpgradePlan() (*upgradeTypes.Plan, query_info.QueryInfo, error) {
+func (t *RPC) GetUpgradePlan(ctx context.Context) (*upgradeTypes.Plan, query_info.QueryInfo, error) {
+	childCtx, span := t.Tracer.Start(
+		ctx,
+		"Fetching upgrade plan",
+		trace.WithAttributes(attribute.String("address", t.Address)),
+	)
+	defer span.End()
+
 	upgradePlanQuery := query_info.QueryInfo{
 		Module:  constants.ModuleTendermint,
 		Action:  constants.ActionTendermintGetUpgradePlan,
@@ -95,7 +136,7 @@ func (t *RPC) GetUpgradePlan() (*upgradeTypes.Plan, query_info.QueryInfo, error)
 	query := upgradeTypes.QueryCurrentPlanRequest{}
 
 	var response upgradeTypes.QueryCurrentPlanResponse
-	if err := t.AbciQuery("/cosmos.upgrade.v1beta1.Query/CurrentPlan", &query, &response); err != nil {
+	if err := t.AbciQuery(childCtx, "/cosmos.upgrade.v1beta1.Query/CurrentPlan", &query, &response); err != nil {
 		return nil, upgradePlanQuery, err
 	}
 
@@ -104,14 +145,24 @@ func (t *RPC) GetUpgradePlan() (*upgradeTypes.Plan, query_info.QueryInfo, error)
 	return response.Plan, upgradePlanQuery, nil
 }
 
-func (t *RPC) GetEstimateTimeTillBlock(height int64) (time.Time, query_info.QueryInfo, error) {
+func (t *RPC) GetEstimateTimeTillBlock(ctx context.Context, height int64) (time.Time, query_info.QueryInfo, error) {
+	childCtx, span := t.Tracer.Start(
+		ctx,
+		"Fetching estimate time till block",
+		trace.WithAttributes(
+			attribute.String("address", t.Address),
+			attribute.Int64("height", height),
+		),
+	)
+	defer span.End()
+
 	upgradeTimeQuery := query_info.QueryInfo{
 		Module:  constants.ModuleTendermint,
 		Action:  constants.ActionTendermintGetUpgradeTime,
 		Success: false,
 	}
 
-	latestBlock, err := t.Block(0)
+	latestBlock, err := t.Block(childCtx, 0)
 	if err != nil {
 		t.Logger.Error().Err(err).Msg("Could not fetch current block")
 		return time.Now(), upgradeTimeQuery, err
@@ -126,7 +177,7 @@ func (t *RPC) GetEstimateTimeTillBlock(height int64) (time.Time, query_info.Quer
 	}
 	blockToCheck := latestBlockHeight - t.BlocksBehind
 
-	olderBlock, err := t.Block(blockToCheck)
+	olderBlock, err := t.Block(childCtx, blockToCheck)
 	if err != nil {
 		t.Logger.Error().Err(err).Msg("Could not fetch older block")
 		return time.Now(), upgradeTimeQuery, err

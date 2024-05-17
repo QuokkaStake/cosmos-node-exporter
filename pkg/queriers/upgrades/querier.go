@@ -1,6 +1,7 @@
 package upgrades
 
 import (
+	"context"
 	cosmovisorPkg "main/pkg/clients/cosmovisor"
 	"main/pkg/clients/tendermint"
 	"main/pkg/config"
@@ -10,6 +11,9 @@ import (
 	"net/url"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/rs/zerolog"
 )
 
@@ -18,6 +22,7 @@ type Querier struct {
 	Logger     zerolog.Logger
 	Cosmovisor *cosmovisorPkg.Cosmovisor
 	Tendermint *tendermint.RPC
+	Tracer     trace.Tracer
 }
 
 func NewQuerier(
@@ -25,12 +30,14 @@ func NewQuerier(
 	logger zerolog.Logger,
 	cosmovisor *cosmovisorPkg.Cosmovisor,
 	tendermint *tendermint.RPC,
+	tracer trace.Tracer,
 ) *Querier {
 	return &Querier{
 		Config:     nodeConfig,
 		Logger:     logger.With().Str("component", "upgrades_querier").Logger(),
 		Cosmovisor: cosmovisor,
 		Tendermint: tendermint,
+		Tracer:     tracer,
 	}
 }
 
@@ -42,8 +49,15 @@ func (u *Querier) Name() string {
 	return "upgrades-querier"
 }
 
-func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
-	upgrade, upgradePlanQuery, err := u.Tendermint.GetUpgradePlan()
+func (u *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.QueryInfo) {
+	childCtx, span := u.Tracer.Start(
+		ctx,
+		"Querier "+u.Name(),
+		trace.WithAttributes(attribute.String("node", u.Name())),
+	)
+	defer span.End()
+
+	upgrade, upgradePlanQuery, err := u.Tendermint.GetUpgradePlan(childCtx)
 	if err != nil {
 		u.Logger.Err(err).Msg("Could not get latest upgrade plan from Tendermint")
 		return []metrics.MetricInfo{}, []query_info.QueryInfo{upgradePlanQuery}
@@ -79,7 +93,7 @@ func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 		return metricInfos, queryInfos
 	}
 
-	upgradeTime, upgradeTimeQuery, err := u.Tendermint.GetEstimateTimeTillBlock(upgrade.Height)
+	upgradeTime, upgradeTimeQuery, err := u.Tendermint.GetEstimateTimeTillBlock(childCtx, upgrade.Height)
 	queryInfos = append(queryInfos, upgradeTimeQuery)
 
 	if err != nil {
@@ -99,7 +113,7 @@ func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 		return metricInfos, queryInfos
 	}
 
-	upgrades, cosmovisorGetUpgradesQueryInfo, err := u.Cosmovisor.GetUpgrades()
+	upgrades, cosmovisorGetUpgradesQueryInfo, err := u.Cosmovisor.GetUpgrades(childCtx)
 	if err != nil {
 		u.Logger.Error().Err(err).Msg("Could not get Cosmovisor upgrades")
 		queryInfos = append(queryInfos, cosmovisorGetUpgradesQueryInfo)

@@ -1,13 +1,14 @@
 package types
 
 import (
+	"context"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 )
 
 type Querier interface {
 	Enabled() bool
-	Get() ([]metrics.MetricInfo, []query_info.QueryInfo)
+	Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.QueryInfo)
 	Name() string
 }
 

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 )
@@ -23,7 +24,7 @@ func (u *Querier) Name() string {
 	return "app-querier"
 }
 
-func (u *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
+func (u *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	return []metrics.MetricInfo{{
 		MetricName: metrics.MetricNameAppVersion,
 		Labels:     map[string]string{"version": u.Version},

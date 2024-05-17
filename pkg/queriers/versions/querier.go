@@ -1,12 +1,16 @@
 package versions
 
 import (
+	"context"
 	cosmovisorPkg "main/pkg/clients/cosmovisor"
 	"main/pkg/clients/git"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 	"main/pkg/types"
 	"main/pkg/utils"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/rs/zerolog"
 
@@ -17,17 +21,20 @@ type Querier struct {
 	Logger     zerolog.Logger
 	GitClient  git.Client
 	Cosmovisor *cosmovisorPkg.Cosmovisor
+	Tracer     trace.Tracer
 }
 
 func NewQuerier(
 	logger zerolog.Logger,
 	gitClient git.Client,
 	cosmovisor *cosmovisorPkg.Cosmovisor,
+	tracer trace.Tracer,
 ) *Querier {
 	return &Querier{
 		Logger:     logger.With().Str("component", "versions_querier").Logger(),
 		GitClient:  gitClient,
 		Cosmovisor: cosmovisor,
+		Tracer:     tracer,
 	}
 }
 
@@ -39,7 +46,14 @@ func (v *Querier) Name() string {
 	return "versions-querier"
 }
 
-func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
+func (v *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.QueryInfo) {
+	childCtx, span := v.Tracer.Start(
+		ctx,
+		"Querier "+v.Name(),
+		trace.WithAttributes(attribute.String("node", v.Name())),
+	)
+	defer span.End()
+
 	queriesInfo := []query_info.QueryInfo{}
 	metricsInfos := []metrics.MetricInfo{}
 
@@ -52,7 +66,7 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	)
 
 	if v.GitClient != nil {
-		latestVersion, gitQueryInfo, err = v.GitClient.GetLatestRelease()
+		latestVersion, gitQueryInfo, err = v.GitClient.GetLatestRelease(childCtx)
 		queriesInfo = append(queriesInfo, gitQueryInfo)
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get latest Git version")
@@ -72,7 +86,7 @@ func (v *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
 	}
 
 	if v.Cosmovisor != nil {
-		versionInfo, cosmovisorVersionQueryInfo, err = v.Cosmovisor.GetVersion()
+		versionInfo, cosmovisorVersionQueryInfo, err = v.Cosmovisor.GetVersion(childCtx)
 		queriesInfo = append(queriesInfo, cosmovisorVersionQueryInfo)
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get app version")

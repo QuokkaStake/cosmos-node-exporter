@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"context"
 	cosmovisorPkg "main/pkg/clients/cosmovisor"
 	"main/pkg/clients/git"
 	grpcPkg "main/pkg/clients/grpc"
@@ -18,6 +19,9 @@ import (
 	"main/pkg/utils"
 	"sync"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/rs/zerolog"
 )
 
@@ -25,11 +29,13 @@ type NodeHandler struct {
 	Logger   zerolog.Logger
 	Queriers []types.Querier
 	Config   configPkg.NodeConfig
+	Tracer   trace.Tracer
 }
 
 func NewNodeHandler(
 	logger *zerolog.Logger,
 	config configPkg.NodeConfig,
+	tracer trace.Tracer,
 ) *NodeHandler {
 	appLogger := logger.With().
 		Str("component", "node_handler").
@@ -41,26 +47,26 @@ func NewNodeHandler(
 	var grpc *grpcPkg.Client
 
 	if config.TendermintConfig.Enabled.Bool {
-		tendermintRPC = tendermint.NewRPC(config, appLogger)
+		tendermintRPC = tendermint.NewRPC(config, appLogger, tracer)
 	}
 
 	if config.CosmovisorConfig.Enabled.Bool {
-		cosmovisor = cosmovisorPkg.NewCosmovisor(config, appLogger)
+		cosmovisor = cosmovisorPkg.NewCosmovisor(config, appLogger, tracer)
 	}
 
 	if config.GrpcConfig.Enabled.Bool {
-		grpc = grpcPkg.NewClient(config, appLogger)
+		grpc = grpcPkg.NewClient(config, appLogger, tracer)
 	}
 
-	gitClient := git.GetClient(config, appLogger)
+	gitClient := git.GetClient(config, appLogger, tracer)
 
 	queriers := []types.Querier{
-		nodeStats.NewQuerier(appLogger, tendermintRPC),
-		versions.NewQuerier(appLogger, gitClient, cosmovisor),
-		upgrades.NewQuerier(config, appLogger, cosmovisor, tendermintRPC),
-		cosmovisorQuerierPkg.NewQuerier(appLogger, cosmovisor),
-		nodeConfig.NewQuerier(appLogger, grpc),
-		nodeInfo.NewQuerier(appLogger, grpc),
+		nodeStats.NewQuerier(appLogger, tendermintRPC, tracer),
+		versions.NewQuerier(appLogger, gitClient, cosmovisor, tracer),
+		upgrades.NewQuerier(config, appLogger, cosmovisor, tendermintRPC, tracer),
+		cosmovisorQuerierPkg.NewQuerier(appLogger, cosmovisor, tracer),
+		nodeConfig.NewQuerier(appLogger, grpc, tracer),
+		nodeInfo.NewQuerier(appLogger, grpc, tracer),
 	}
 
 	for _, querier := range queriers {
@@ -75,10 +81,18 @@ func NewNodeHandler(
 		Logger:   appLogger,
 		Queriers: queriers,
 		Config:   config,
+		Tracer:   tracer,
 	}
 }
 
-func (a *NodeHandler) Process() ([]metrics.MetricInfo, map[string][]query_info.QueryInfo) {
+func (a *NodeHandler) Process(ctx context.Context) ([]metrics.MetricInfo, map[string][]query_info.QueryInfo) {
+	childCtx, span := a.Tracer.Start(
+		ctx,
+		"Node "+a.Config.Name,
+		trace.WithAttributes(attribute.String("node", a.Config.Name)),
+	)
+	defer span.End()
+
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
@@ -101,7 +115,7 @@ func (a *NodeHandler) Process() ([]metrics.MetricInfo, map[string][]query_info.Q
 
 		wg.Add(1)
 		go func(querier types.Querier) {
-			querierResults, queriesInfo := querier.Get()
+			querierResults, queriesInfo := querier.Get(childCtx)
 			mu.Lock()
 			allResults = append(allResults, querierResults...)
 			allQueries[querier.Name()] = queriesInfo
