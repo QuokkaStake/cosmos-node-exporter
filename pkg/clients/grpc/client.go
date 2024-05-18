@@ -100,7 +100,6 @@ func (g *Client) GetNodeInfo(ctx context.Context) (*cmtTypes.GetNodeInfoResponse
 		span.RecordError(err)
 		return nil, queryInfo, err
 	}
-
 	queryInfo.Success = true
 
 	return response, queryInfo, nil

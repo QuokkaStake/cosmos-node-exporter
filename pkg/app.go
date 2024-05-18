@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -83,8 +85,15 @@ func (a *App) Start() {
 }
 
 func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
+	requestID := uuid.New().String()
+
 	span := trace.SpanFromContext(r.Context())
+	span.SetAttributes(attribute.String("request-id", requestID))
 	rootSpanCtx := r.Context()
+
+	sublogger := a.Logger.With().
+		Str("request-id", requestID).
+		Logger()
 
 	defer span.End()
 
@@ -142,7 +151,7 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
 
-	a.Logger.Info().
+	sublogger.Info().
 		Str("method", http.MethodGet).
 		Str("endpoint", "/metrics").
 		Float64("request-time", time.Since(requestStart).Seconds()).
