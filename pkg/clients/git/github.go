@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"main/pkg/config"
@@ -8,6 +9,9 @@ import (
 	"main/pkg/query_info"
 	"net/http"
 	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/rs/zerolog"
 )
@@ -19,6 +23,7 @@ type Github struct {
 	Logger       zerolog.Logger
 	LastModified time.Time
 	LastResult   string
+	Tracer       trace.Tracer
 }
 
 type GithubReleaseInfo struct {
@@ -27,7 +32,7 @@ type GithubReleaseInfo struct {
 	Message string `json:"message"`
 }
 
-func NewGithub(config config.NodeConfig, logger zerolog.Logger) *Github {
+func NewGithub(config config.NodeConfig, logger zerolog.Logger, tracer trace.Tracer) *Github {
 	value := constants.GithubRegexp.FindStringSubmatch(config.GitConfig.Repository)
 
 	return &Github{
@@ -37,6 +42,7 @@ func NewGithub(config config.NodeConfig, logger zerolog.Logger) *Github {
 		Logger:       logger.With().Str("component", "github").Logger(),
 		LastModified: time.Now(),
 		LastResult:   "",
+		Tracer:       tracer,
 	}
 }
 
@@ -52,7 +58,15 @@ func (g *Github) UseCache() bool {
 	return diff < constants.UncachedGithubQueryTime
 }
 
-func (g *Github) GetLatestRelease() (string, query_info.QueryInfo, error) {
+func (g *Github) GetLatestRelease(ctx context.Context) (string, query_info.QueryInfo, error) {
+	childCtx, span := g.Tracer.Start(ctx, "HTTP request")
+	defer span.End()
+
+	client := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
+	}
+
 	latestReleaseUrl := fmt.Sprintf(
 		"https://api.github.com/repos/%s/%s/releases/latest",
 		g.Organization,
@@ -65,11 +79,7 @@ func (g *Github) GetLatestRelease() (string, query_info.QueryInfo, error) {
 		Success: false,
 	}
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	req, err := http.NewRequest(http.MethodGet, latestReleaseUrl, nil)
+	req, err := http.NewRequestWithContext(childCtx, http.MethodGet, latestReleaseUrl, nil)
 	if err != nil {
 		return "", queryInfo, err
 	}

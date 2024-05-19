@@ -1,24 +1,31 @@
 package git
 
 import (
+	"context"
 	configPkg "main/pkg/config"
 	"main/pkg/constants"
 	"main/pkg/query_info"
+
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/rs/zerolog"
 )
 
 type Client interface {
-	GetLatestRelease() (string, query_info.QueryInfo, error)
+	GetLatestRelease(ctx context.Context) (string, query_info.QueryInfo, error)
 }
 
-func GetClient(config configPkg.NodeConfig, logger zerolog.Logger) Client {
+func GetClient(
+	config configPkg.NodeConfig,
+	logger zerolog.Logger,
+	tracer trace.Tracer,
+) Client {
 	if constants.GithubRegexp.Match([]byte(config.GitConfig.Repository)) {
-		return NewGithub(config, logger)
+		return NewGithub(config, logger, tracer)
 	}
 
 	if constants.GitopiaRegexp.Match([]byte(config.GitConfig.Repository)) {
-		return NewGitopia(config, logger)
+		return NewGitopia(config, logger, tracer)
 	}
 
 	return nil

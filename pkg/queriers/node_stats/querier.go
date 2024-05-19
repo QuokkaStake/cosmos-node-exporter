@@ -1,11 +1,15 @@
 package node_stats
 
 import (
+	"context"
 	"main/pkg/clients/tendermint"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 	"main/pkg/utils"
 	"time"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/rs/zerolog"
 )
@@ -13,12 +17,14 @@ import (
 type Querier struct {
 	TendermintRPC *tendermint.RPC
 	Logger        zerolog.Logger
+	Tracer        trace.Tracer
 }
 
-func NewQuerier(logger zerolog.Logger, tendermintRPC *tendermint.RPC) *Querier {
+func NewQuerier(logger zerolog.Logger, tendermintRPC *tendermint.RPC, tracer trace.Tracer) *Querier {
 	return &Querier{
 		Logger:        logger.With().Str("component", "node-stats-querier").Logger(),
 		TendermintRPC: tendermintRPC,
+		Tracer:        tracer,
 	}
 }
 
@@ -30,8 +36,15 @@ func (n *Querier) Name() string {
 	return "node-stats-querier"
 }
 
-func (n *Querier) Get() ([]metrics.MetricInfo, []query_info.QueryInfo) {
-	status, queryInfo, err := n.TendermintRPC.Status()
+func (n *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.QueryInfo) {
+	childCtx, span := n.Tracer.Start(
+		ctx,
+		"Querier "+n.Name(),
+		trace.WithAttributes(attribute.String("node", n.Name())),
+	)
+	defer span.End()
+
+	status, queryInfo, err := n.TendermintRPC.Status(childCtx)
 	if err != nil {
 		n.Logger.Error().Err(err).Msg("Could not fetch node status")
 		return []metrics.MetricInfo{}, []query_info.QueryInfo{queryInfo}

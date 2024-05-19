@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
+
 	cmtTypes "github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	nodeTypes "github.com/cosmos/cosmos-sdk/client/grpc/node"
 
@@ -18,9 +20,10 @@ import (
 type Client struct {
 	Logger zerolog.Logger
 	Client *grpc.ClientConn
+	Tracer trace.Tracer
 }
 
-func NewClient(config config.NodeConfig, logger zerolog.Logger) *Client {
+func NewClient(config config.NodeConfig, logger zerolog.Logger, tracer trace.Tracer) *Client {
 	grpcLogger := logger.With().Str("component", "grpc").Logger()
 
 	grpcConn, err := grpc.Dial(
@@ -35,10 +38,17 @@ func NewClient(config config.NodeConfig, logger zerolog.Logger) *Client {
 	return &Client{
 		Logger: grpcLogger,
 		Client: grpcConn,
+		Tracer: tracer,
 	}
 }
 
-func (g *Client) GetNodeConfig() (*nodeTypes.ConfigResponse, query_info.QueryInfo, error) {
+func (g *Client) GetNodeConfig(ctx context.Context) (*nodeTypes.ConfigResponse, query_info.QueryInfo, error) {
+	childCtx, span := g.Tracer.Start(
+		ctx,
+		"Fetch gRPC node config",
+	)
+	defer span.End()
+
 	queryInfo := query_info.QueryInfo{
 		Module:  constants.ModuleGrpc,
 		Action:  constants.ActionGrpcGetNodeConfig,
@@ -47,7 +57,7 @@ func (g *Client) GetNodeConfig() (*nodeTypes.ConfigResponse, query_info.QueryInf
 
 	client := nodeTypes.NewServiceClient(g.Client)
 	response, err := client.Config(
-		context.Background(),
+		childCtx,
 		&nodeTypes.ConfigRequest{},
 	)
 
@@ -58,6 +68,7 @@ func (g *Client) GetNodeConfig() (*nodeTypes.ConfigResponse, query_info.QueryInf
 			queryInfo.Success = true
 			return nil, queryInfo, nil
 		}
+		span.RecordError(err)
 		return nil, queryInfo, err
 	}
 
@@ -66,7 +77,13 @@ func (g *Client) GetNodeConfig() (*nodeTypes.ConfigResponse, query_info.QueryInf
 	return response, queryInfo, nil
 }
 
-func (g *Client) GetNodeInfo() (*cmtTypes.GetNodeInfoResponse, query_info.QueryInfo, error) {
+func (g *Client) GetNodeInfo(ctx context.Context) (*cmtTypes.GetNodeInfoResponse, query_info.QueryInfo, error) {
+	childCtx, span := g.Tracer.Start(
+		ctx,
+		"Fetch gRPC node info",
+	)
+	defer span.End()
+
 	queryInfo := query_info.QueryInfo{
 		Module:  constants.ModuleGrpc,
 		Action:  constants.ActionGrpcGetNodeInfo,
@@ -75,14 +92,14 @@ func (g *Client) GetNodeInfo() (*cmtTypes.GetNodeInfoResponse, query_info.QueryI
 
 	client := cmtTypes.NewServiceClient(g.Client)
 	response, err := client.GetNodeInfo(
-		context.Background(),
+		childCtx,
 		&cmtTypes.GetNodeInfoRequest{},
 	)
 
 	if err != nil {
+		span.RecordError(err)
 		return nil, queryInfo, err
 	}
-
 	queryInfo.Success = true
 
 	return response, queryInfo, nil

@@ -6,10 +6,27 @@ import (
 	"main/pkg/constants"
 	"os"
 
+	"gopkg.in/guregu/null.v4"
+
 	"github.com/BurntSushi/toml"
 	"github.com/creasty/defaults"
-	"gopkg.in/guregu/null.v4"
 )
+
+type TracingConfig struct {
+	Enabled                   null.Bool `default:"false"                     toml:"enabled"`
+	OpenTelemetryHTTPHost     string    `toml:"open-telemetry-http-host"`
+	OpenTelemetryHTTPInsecure null.Bool `default:"true"                      toml:"open-telemetry-http-insecure"`
+	OpenTelemetryHTTPUser     string    `toml:"open-telemetry-http-user"`
+	OpenTelemetryHTTPPassword string    `toml:"open-telemetry-http-password"`
+}
+
+func (c *TracingConfig) Validate() error {
+	if c.Enabled.Bool && c.OpenTelemetryHTTPHost == "" {
+		return errors.New("tracing is enabled, but open-telemetry-http-host is not provided")
+	}
+
+	return nil
+}
 
 type LogConfig struct {
 	LogLevel   string    `default:"info"  toml:"level"`
@@ -68,9 +85,10 @@ type NodeConfig struct {
 }
 
 type Config struct {
-	LogConfig     LogConfig    `toml:"log"`
-	NodeConfigs   []NodeConfig `toml:"node"`
-	ListenAddress string       `default:":9500" toml:"listen-address"`
+	LogConfig     LogConfig     `toml:"log"`
+	TracingConfig TracingConfig `toml:"tracing"`
+	NodeConfigs   []NodeConfig  `toml:"node"`
+	ListenAddress string        `default:":9500" toml:"listen-address"`
 }
 
 func (c *GitConfig) Validate() error {
@@ -110,6 +128,10 @@ func (c *Config) Validate() error {
 		if err := nodeConfig.Validate(); err != nil {
 			return fmt.Errorf("invalid config for node %d: %s", index, err)
 		}
+	}
+
+	if err := c.TracingConfig.Validate(); err != nil {
+		return fmt.Errorf("tracing config is invalid: %s", err)
 	}
 
 	return nil

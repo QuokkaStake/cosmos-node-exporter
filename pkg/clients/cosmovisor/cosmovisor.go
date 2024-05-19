@@ -1,6 +1,7 @@
 package cosmovisor
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,21 +14,26 @@ import (
 	"os/exec"
 	"strings"
 
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/rs/zerolog"
 )
 
 type Cosmovisor struct {
 	Logger zerolog.Logger
 	Config config.CosmovisorConfig
+	Tracer trace.Tracer
 }
 
 func NewCosmovisor(
 	config config.NodeConfig,
 	logger zerolog.Logger,
+	tracer trace.Tracer,
 ) *Cosmovisor {
 	return &Cosmovisor{
 		Logger: logger.With().Str("component", "cosmovisor").Logger(),
 		Config: config.CosmovisorConfig,
+		Tracer: tracer,
 	}
 }
 
@@ -46,7 +52,13 @@ func getJsonString(input string) string {
 	return input
 }
 
-func (c *Cosmovisor) GetVersion() (types.VersionInfo, query_info.QueryInfo, error) {
+func (c *Cosmovisor) GetVersion(ctx context.Context) (types.VersionInfo, query_info.QueryInfo, error) {
+	_, span := c.Tracer.Start(
+		ctx,
+		"Fetching cosmovisor app version",
+	)
+	defer span.End()
+
 	queryInfo := query_info.QueryInfo{
 		Module:  constants.ModuleCosmovisor,
 		Action:  constants.ActionCosmovisorGetVersion,
@@ -66,6 +78,7 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, query_info.QueryInfo, erro
 			Err(err).
 			Str("output", utils.DecolorifyString(string(out))).
 			Msg("Could not get app version")
+		span.RecordError(err)
 		return types.VersionInfo{}, queryInfo, err
 	}
 
@@ -77,6 +90,7 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, query_info.QueryInfo, erro
 			Err(err).
 			Str("output", jsonOutput).
 			Msg("Could not unmarshall app version")
+		span.RecordError(err)
 		return versionInfo, queryInfo, err
 	}
 
@@ -84,7 +98,13 @@ func (c *Cosmovisor) GetVersion() (types.VersionInfo, query_info.QueryInfo, erro
 	return versionInfo, queryInfo, nil
 }
 
-func (c *Cosmovisor) GetCosmovisorVersion() (string, query_info.QueryInfo, error) {
+func (c *Cosmovisor) GetCosmovisorVersion(ctx context.Context) (string, query_info.QueryInfo, error) {
+	_, span := c.Tracer.Start(
+		ctx,
+		"Fetching cosmovisor version",
+	)
+	defer span.End()
+
 	queryInfo := query_info.QueryInfo{
 		Module:  constants.ModuleCosmovisor,
 		Action:  constants.ActionCosmovisorGetCosmovisorVersion,
@@ -121,7 +141,13 @@ func (c *Cosmovisor) GetCosmovisorVersion() (string, query_info.QueryInfo, error
 	return "", queryInfo, errors.New("could not find version in Cosmovisor response")
 }
 
-func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, query_info.QueryInfo, error) {
+func (c *Cosmovisor) GetUpgrades(ctx context.Context) (types.UpgradesPresent, query_info.QueryInfo, error) {
+	_, span := c.Tracer.Start(
+		ctx,
+		"Fetching cosmovisor upgrades",
+	)
+	defer span.End()
+
 	cosmovisorGetUpgradesQueryInfo := query_info.QueryInfo{
 		Action:  constants.ActionCosmovisorGetUpgrades,
 		Module:  constants.ModuleCosmovisor,
@@ -131,6 +157,7 @@ func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, query_info.QueryInfo,
 	upgradesFolder := c.Config.ChainFolder + "/cosmovisor/upgrades"
 	upgradesFolderContent, err := os.ReadDir(upgradesFolder)
 	if err != nil {
+		span.RecordError(err)
 		c.Logger.Error().Err(err).Msg("Could not fetch Cosmovisor upgrades folder content")
 		return map[string]bool{}, cosmovisorGetUpgradesQueryInfo, err
 	}
@@ -153,6 +180,7 @@ func (c *Cosmovisor) GetUpgrades() (types.UpgradesPresent, query_info.QueryInfo,
 		if _, err := os.Stat(upgradeBinaryPath); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				c.Logger.Warn().Err(err).Msg("Error fetching Cosmovisor upgrade")
+				span.RecordError(err)
 			}
 		} else {
 			upgrades[upgradeFolder.Name()] = true
