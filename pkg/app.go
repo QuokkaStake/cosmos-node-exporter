@@ -46,11 +46,7 @@ func NewApp(
 	}
 
 	log := logger.GetLogger(appConfig.LogConfig)
-
-	tracer, err := tracing.InitTracer(appConfig.TracingConfig, version)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Error setting up tracing")
-	}
+	tracer := tracing.InitTracer(appConfig.TracingConfig, version)
 
 	nodeHandlers := make([]*NodeHandler, len(appConfig.NodeConfigs))
 
