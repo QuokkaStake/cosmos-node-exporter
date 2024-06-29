@@ -3,9 +3,8 @@ package config
 import (
 	"errors"
 	"fmt"
-	"os"
-
 	"gopkg.in/guregu/null.v4"
+	"main/pkg/fs"
 
 	"github.com/BurntSushi/toml"
 	"github.com/creasty/defaults"
@@ -52,8 +51,8 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func GetConfig(path string) (*Config, error) {
-	configBytes, err := os.ReadFile(path)
+func GetConfig(filesystem fs.FS, path string) (*Config, error) {
+	configBytes, err := filesystem.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +64,6 @@ func GetConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
-	if err := defaults.Set(&configStruct); err != nil {
-		return nil, err
-	}
+	defaults.MustSet(&configStruct)
 	return &configStruct, nil
 }

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"main/pkg/fs"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -42,4 +43,34 @@ func TestConfigValid(t *testing.T) {
 	}
 	err := appConfig.Validate()
 	require.NoError(t, err)
+}
+
+func TestGetConfigErrorLoadingFile(t *testing.T) {
+	t.Parallel()
+
+	filesystem := &fs.TestFS{}
+
+	config, err := GetConfig(filesystem, "config-not-found.toml")
+	require.Error(t, err)
+	require.Nil(t, config)
+}
+
+func TestGetConfigErrorParsing(t *testing.T) {
+	t.Parallel()
+
+	filesystem := &fs.TestFS{}
+
+	config, err := GetConfig(filesystem, "invalid.toml")
+	require.Error(t, err)
+	require.Nil(t, config)
+}
+
+func TestGetConfigValid(t *testing.T) {
+	t.Parallel()
+
+	filesystem := &fs.TestFS{}
+
+	config, err := GetConfig(filesystem, "config-valid.toml")
+	require.NoError(t, err)
+	require.NotNil(t, config)
 }
