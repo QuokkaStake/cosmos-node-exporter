@@ -5,3 +5,4 @@ config2.toml
 cosmos-node-exporter
 dist
 **/.DS_Store
+cover.out
