@@ -2,6 +2,7 @@ package pkg
 
 import (
 	configPkg "main/pkg/config"
+	"main/pkg/fs"
 	"main/pkg/logger"
 	"main/pkg/metrics"
 	"main/pkg/queriers/app"
@@ -33,10 +34,11 @@ type App struct {
 }
 
 func NewApp(
+	filesystem fs.FS,
 	configPath string,
 	version string,
 ) *App {
-	appConfig, err := configPkg.GetConfig(configPath)
+	appConfig, err := configPkg.GetConfig(filesystem, configPath)
 	if err != nil {
 		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not load config")
 	}

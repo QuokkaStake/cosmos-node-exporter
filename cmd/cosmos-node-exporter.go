@@ -4,6 +4,7 @@ import (
 	"main/pkg"
 	"main/pkg/config"
 	"main/pkg/logger"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -12,13 +13,24 @@ var (
 	version = "unknown"
 )
 
+type OsFS struct {
+}
+
+func (fs *OsFS) ReadFile(name string) ([]byte, error) {
+	return os.ReadFile(name)
+}
+
 func ExecuteMain(configPath string) {
-	app := pkg.NewApp(configPath, version)
+	filesystem := &OsFS{}
+
+	app := pkg.NewApp(filesystem, configPath, version)
 	app.Start()
 }
 
 func ExecuteValidateConfig(configPath string) {
-	appConfig, err := config.GetConfig(configPath)
+	filesystem := &OsFS{}
+
+	appConfig, err := config.GetConfig(filesystem, configPath)
 	if err != nil {
 		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not load config!")
 	}
