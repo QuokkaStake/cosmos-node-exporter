@@ -24,7 +24,7 @@ type SyncInfo struct {
 }
 
 type ValidatorInfo struct {
-	VotingPower string `json:"voting_power"`
+	VotingPower int64 `json:"voting_power,string"`
 }
 
 type BlockResponse struct {
@@ -40,7 +40,7 @@ type Block struct {
 }
 
 type BlockHeader struct {
-	Height string    `json:"height"`
+	Height int64     `json:"height,string"`
 	Time   time.Time `json:"time"`
 }
 
