@@ -3,8 +3,9 @@ package config
 import (
 	"errors"
 	"fmt"
-	"gopkg.in/guregu/null.v4"
 	"main/pkg/fs"
+
+	"gopkg.in/guregu/null.v4"
 
 	"github.com/BurntSushi/toml"
 	"github.com/creasty/defaults"
