@@ -1,10 +1,11 @@
 package logger_test
 
 import (
-	"gopkg.in/guregu/null.v4"
 	"main/pkg/config"
 	loggerPkg "main/pkg/logger"
 	"testing"
+
+	"gopkg.in/guregu/null.v4"
 
 	"github.com/stretchr/testify/require"
 )

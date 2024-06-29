@@ -1,9 +1,10 @@
 package tracing
 
 import (
-	"gopkg.in/guregu/null.v4"
 	configPkg "main/pkg/config"
 	"testing"
+
+	"gopkg.in/guregu/null.v4"
 
 	"github.com/stretchr/testify/require"
 )
