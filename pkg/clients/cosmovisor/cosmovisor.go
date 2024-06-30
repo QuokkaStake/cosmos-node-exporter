@@ -30,13 +30,13 @@ type Cosmovisor struct {
 }
 
 func NewCosmovisor(
-	config config.NodeConfig,
+	config config.CosmovisorConfig,
 	logger zerolog.Logger,
 	tracer trace.Tracer,
 ) *Cosmovisor {
 	return &Cosmovisor{
 		Logger:               logger.With().Str("component", "cosmovisor").Logger(),
-		Config:               config.CosmovisorConfig,
+		Config:               config,
 		Tracer:               tracer,
 		CommandExecutor:      &exec.NativeCommandExecutor{},
 		Filesystem:           &fs.OsFS{},
