@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	configPkg "main/pkg/config"
 	"main/pkg/constants"
 	"main/pkg/logger"
 
@@ -9,12 +8,11 @@ import (
 )
 
 type Manager struct {
-	Config           *configPkg.Config
 	NodeCollectors   map[MetricName]*prometheus.GaugeVec
 	GlobalCollectors map[MetricName]*prometheus.GaugeVec
 }
 
-func NewManager(config *configPkg.Config) *Manager {
+func NewManager() *Manager {
 	nodeCollectors := map[MetricName]*prometheus.GaugeVec{
 		MetricNameCosmovisorVersion: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -206,7 +204,6 @@ func NewManager(config *configPkg.Config) *Manager {
 	return &Manager{
 		NodeCollectors:   nodeCollectors,
 		GlobalCollectors: globalCollectors,
-		Config:           config,
 	}
 }
 
@@ -230,7 +227,7 @@ func (m *Manager) CollectMetrics(
 			collector, ok := m.NodeCollectors[metricInfo.MetricName]
 			if !ok {
 				logger.GetDefaultLogger().
-					Fatal().
+					Panic().
 					Str("name", string(metricInfo.MetricName)).
 					Msg("Could not find collector by name!")
 			}
@@ -245,7 +242,7 @@ func (m *Manager) CollectMetrics(
 		collector, ok := m.GlobalCollectors[metricInfo.MetricName]
 		if !ok {
 			logger.GetDefaultLogger().
-				Fatal().
+				Panic().
 				Str("name", string(metricInfo.MetricName)).
 				Msg("Could not find collector by name!")
 		}
