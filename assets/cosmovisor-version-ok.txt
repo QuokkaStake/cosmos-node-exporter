@@ -1,0 +1,3 @@
+cosmovisor version: v1.5.0
+[90m9:33AM[0m [32mINF[0m running app [36margs=[0m["version"] [36mmodule=[0mcosmovisor [36mpath=[0m/home/validator/.decentr/cosmovisor/upgrades/07-tendermint-13/bin/decentrd
+1.6.4
