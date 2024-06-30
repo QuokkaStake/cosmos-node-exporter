@@ -47,7 +47,7 @@ func NewNodeHandler(
 	var grpc *grpcPkg.Client
 
 	if config.TendermintConfig.Enabled.Bool {
-		tendermintRPC = tendermint.NewRPC(config, appLogger, tracer)
+		tendermintRPC = tendermint.NewRPC(config.TendermintConfig, appLogger, tracer)
 	}
 
 	if config.CosmovisorConfig.Enabled.Bool {

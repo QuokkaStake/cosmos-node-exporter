@@ -29,12 +29,12 @@ type RPC struct {
 	Tracer       trace.Tracer
 }
 
-func NewRPC(config config.NodeConfig, logger zerolog.Logger, tracer trace.Tracer) *RPC {
+func NewRPC(config config.TendermintConfig, logger zerolog.Logger, tracer trace.Tracer) *RPC {
 	return &RPC{
 		Logger:       logger.With().Str("component", "tendermint_rpc").Logger(),
-		Address:      config.TendermintConfig.Address,
+		Address:      config.Address,
 		BlocksBehind: 1000,
-		Client:       http.NewClient(logger, config.TendermintConfig.Address, tracer),
+		Client:       http.NewClient(logger, config.Address, tracer),
 		Tracer:       tracer,
 	}
 }
