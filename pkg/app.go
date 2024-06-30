@@ -65,7 +65,7 @@ func NewApp(
 		Logger:         log.With().Str("component", "app").Logger(),
 		Config:         appConfig,
 		NodeHandlers:   nodeHandlers,
-		MetricsManager: metrics.NewManager(appConfig),
+		MetricsManager: metrics.NewManager(),
 		GlobalQueriers: globalQueriers,
 		Tracer:         tracer,
 	}
