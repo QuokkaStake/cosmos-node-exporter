@@ -1,0 +1,67 @@
+{
+  "Release": {
+    "creator": "gitopia1c2zfrmhra3spfrc2m5ft64hef30guf60lvtcm3",
+    "id": "92",
+    "repositoryId": "5",
+    "tagName": "v3.3.0",
+    "target": "master",
+    "name": "gitopiad v3.3.0",
+    "description": "### Upgrade instructions\nThis is a consensus breaking release. So, only upgrade after the Software upgrade proposal is passed.\n\n### Changelog\n- fix ledger signature validation in rewards module\n- update airdrop start time to Sept 29th, UTC 00:00 and reset decay\n",
+    "attachments": [
+      {
+        "name": "gitopiad_3.3.0_darwin_amd64.tar.gz",
+        "size": "25601399",
+        "sha": "1eee60599c680a399581654df7a756aede2ff784662bedb6fe569ce6f6a96d57",
+        "uploader": "gitopia1c2zfrmhra3spfrc2m5ft64hef30guf60lvtcm3"
+      },
+      {
+        "name": "gitopiad_3.3.0_darwin_arm64.tar.gz",
+        "size": "24298948",
+        "sha": "325348bc3533ca2528aa4c1653a3cdcb332cf5a49624d6f66dc0a606d23dbd8a",
+        "uploader": "gitopia1c2zfrmhra3spfrc2m5ft64hef30guf60lvtcm3"
+      },
+      {
+        "name": "gitopiad_3.3.0_linux_386.tar.gz",
+        "size": "23946894",
+        "sha": "270c84796bb86686beb3c6642efba197b8a8be4bcd7494eac82965803eacf368",
+        "uploader": "gitopia1c2zfrmhra3spfrc2m5ft64hef30guf60lvtcm3"
+      },
+      {
+        "name": "gitopiad_3.3.0_linux_amd64.tar.gz",
+        "size": "24797991",
+        "sha": "d6428b047e8e0c160694fe30453a5a3ca5a566f43215063830158d4ac2bce015",
+        "uploader": "gitopia1c2zfrmhra3spfrc2m5ft64hef30guf60lvtcm3"
+      },
+      {
+        "name": "gitopiad_3.3.0_linux_arm.tar.gz",
+        "size": "23693117",
+        "sha": "2ebea2697e5dfc7bbe628c60ccd72837a22bd86ad591001c68bce71db441ff57",
+        "uploader": "gitopia1c2zfrmhra3spfrc2m5ft64hef30guf60lvtcm3"
+      },
+      {
+        "name": "gitopiad_3.3.0_linux_arm64.tar.gz",
+        "size": "22823664",
+        "sha": "5443a10567367a512ee2a95a02499097a38cddc42136dfac09d50de6bca5ca81",
+        "uploader": "gitopia1c2zfrmhra3spfrc2m5ft64hef30guf60lvtcm3"
+      },
+      {
+        "name": "gitopiad-3.3.0.tar.gz",
+        "size": "3612925",
+        "sha": "4ff719c4ec452dad785ca1d6bd70053a276b0aa88889779915cbe962c57f0ed5",
+        "uploader": "gitopia1c2zfrmhra3spfrc2m5ft64hef30guf60lvtcm3"
+      },
+      {
+        "name": "gitopiad-3.3.0.zip",
+        "size": "4945817",
+        "sha": "fc05048669e2426d6dd0ab275dece736a1c9bc5e0d4699dd3a9d9ce321d09ead",
+        "uploader": "gitopia1c2zfrmhra3spfrc2m5ft64hef30guf60lvtcm3"
+      }
+    ],
+    "draft": false,
+    "preRelease": false,
+    "isTag": true,
+    "createdAt": "1695811788",
+    "updatedAt": "1695811788",
+    "publishedAt": "1695811788"
+  }
+}

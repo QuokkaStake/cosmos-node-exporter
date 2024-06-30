@@ -16,7 +16,10 @@ import (
 	"github.com/rs/zerolog"
 )
 
+const API_BASE_URL = "https://api.github.com"
+
 type Github struct {
+	ApiBaseUrl   string
 	Organization string
 	Repository   string
 	Token        string
@@ -32,13 +35,14 @@ type GithubReleaseInfo struct {
 	Message string `json:"message"`
 }
 
-func NewGithub(config config.NodeConfig, logger zerolog.Logger, tracer trace.Tracer) *Github {
-	value := constants.GithubRegexp.FindStringSubmatch(config.GitConfig.Repository)
+func NewGithub(config config.GitConfig, logger zerolog.Logger, tracer trace.Tracer) *Github {
+	value := constants.GithubRegexp.FindStringSubmatch(config.Repository)
 
 	return &Github{
+		ApiBaseUrl:   API_BASE_URL,
 		Organization: value[1],
 		Repository:   value[2],
-		Token:        config.GitConfig.Token,
+		Token:        config.Token,
 		Logger:       logger.With().Str("component", "github").Logger(),
 		LastModified: time.Now(),
 		LastResult:   "",
@@ -68,7 +72,8 @@ func (g *Github) GetLatestRelease(ctx context.Context) (string, query_info.Query
 	}
 
 	latestReleaseUrl := fmt.Sprintf(
-		"https://api.github.com/repos/%s/%s/releases/latest",
+		"%s/repos/%s/%s/releases/latest",
+		g.ApiBaseUrl,
 		g.Organization,
 		g.Repository,
 	)

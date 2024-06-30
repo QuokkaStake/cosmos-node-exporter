@@ -16,15 +16,15 @@ type Client interface {
 }
 
 func GetClient(
-	config configPkg.NodeConfig,
+	config configPkg.GitConfig,
 	logger zerolog.Logger,
 	tracer trace.Tracer,
 ) Client {
-	if constants.GithubRegexp.Match([]byte(config.GitConfig.Repository)) {
+	if constants.GithubRegexp.Match([]byte(config.Repository)) {
 		return NewGithub(config, logger, tracer)
 	}
 
-	if constants.GitopiaRegexp.Match([]byte(config.GitConfig.Repository)) {
+	if constants.GitopiaRegexp.Match([]byte(config.Repository)) {
 		return NewGitopia(config, logger, tracer)
 	}
 

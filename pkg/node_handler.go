@@ -58,7 +58,7 @@ func NewNodeHandler(
 		grpc = grpcPkg.NewClient(config, appLogger, tracer)
 	}
 
-	gitClient := git.GetClient(config, appLogger, tracer)
+	gitClient := git.GetClient(config.GitConfig, appLogger, tracer)
 
 	queriers := []types.Querier{
 		nodeStats.NewQuerier(appLogger, tendermintRPC, tracer),
