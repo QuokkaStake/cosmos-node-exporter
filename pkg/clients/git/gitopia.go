@@ -17,7 +17,10 @@ import (
 	"github.com/rs/zerolog"
 )
 
+const GITOPIA_API_BASE_URL = "https://api.gitopia.com"
+
 type Gitopia struct {
+	ApiBaseUrl   string
 	Organization string
 	Repository   string
 	Logger       zerolog.Logger
@@ -33,10 +36,11 @@ type GitopiaRelease struct {
 	TagName string `json:"tagName"`
 }
 
-func NewGitopia(config config.NodeConfig, logger zerolog.Logger, tracer trace.Tracer) *Gitopia {
-	value := constants.GitopiaRegexp.FindStringSubmatch(config.GitConfig.Repository)
+func NewGitopia(config config.GitConfig, logger zerolog.Logger, tracer trace.Tracer) *Gitopia {
+	value := constants.GitopiaRegexp.FindStringSubmatch(config.Repository)
 
 	return &Gitopia{
+		ApiBaseUrl:   GITOPIA_API_BASE_URL,
 		Organization: value[1],
 		Repository:   value[2],
 		Logger:       logger.With().Str("component", "gitopia").Logger(),
@@ -49,7 +53,8 @@ func (g *Gitopia) GetLatestRelease(ctx context.Context) (string, query_info.Quer
 	defer span.End()
 
 	latestReleaseUrl := fmt.Sprintf(
-		"https://api.gitopia.com/gitopia/gitopia/gitopia/%s/repository/%s/releases/latest",
+		"%s/gitopia/gitopia/gitopia/%s/repository/%s/releases/latest",
+		g.ApiBaseUrl,
 		g.Organization,
 		g.Repository,
 	)
