@@ -51,7 +51,7 @@ func NewNodeHandler(
 	}
 
 	if config.CosmovisorConfig.Enabled.Bool {
-		cosmovisor = cosmovisorPkg.NewCosmovisor(config, appLogger, tracer)
+		cosmovisor = cosmovisorPkg.NewCosmovisor(config.CosmovisorConfig, appLogger, tracer)
 	}
 
 	if config.GrpcConfig.Enabled.Bool {

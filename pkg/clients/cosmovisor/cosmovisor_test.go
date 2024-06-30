@@ -18,13 +18,11 @@ import (
 func TestCosmovisorGetCosmovisorVersionFail(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.NodeConfig{
-		CosmovisorConfig: configPkg.CosmovisorConfig{
-			Enabled:         null.BoolFrom(true),
-			ChainBinaryName: "gaiad",
-			ChainFolder:     "/home/validator/.gaia",
-			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-		},
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "/home/validator/.gaia",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -40,13 +38,11 @@ func TestCosmovisorGetCosmovisorVersionFail(t *testing.T) {
 func TestCosmovisorGetCosmovisorVersionInvalid(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.NodeConfig{
-		CosmovisorConfig: configPkg.CosmovisorConfig{
-			Enabled:         null.BoolFrom(true),
-			ChainBinaryName: "gaiad",
-			ChainFolder:     "/home/validator/.gaia",
-			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-		},
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "/home/validator/.gaia",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -65,13 +61,11 @@ func TestCosmovisorGetCosmovisorVersionInvalid(t *testing.T) {
 func TestCosmovisorGetCosmovisorVersionValid(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.NodeConfig{
-		CosmovisorConfig: configPkg.CosmovisorConfig{
-			Enabled:         null.BoolFrom(true),
-			ChainBinaryName: "gaiad",
-			ChainFolder:     "/home/validator/.gaia",
-			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-		},
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "/home/validator/.gaia",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -89,13 +83,11 @@ func TestCosmovisorGetCosmovisorVersionValid(t *testing.T) {
 func TestCosmovisorGetAppVersionFail(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.NodeConfig{
-		CosmovisorConfig: configPkg.CosmovisorConfig{
-			Enabled:         null.BoolFrom(true),
-			ChainBinaryName: "gaiad",
-			ChainFolder:     "/home/validator/.gaia",
-			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-		},
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "/home/validator/.gaia",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -111,13 +103,11 @@ func TestCosmovisorGetAppVersionFail(t *testing.T) {
 func TestCosmovisorGetAppVersionInvalid(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.NodeConfig{
-		CosmovisorConfig: configPkg.CosmovisorConfig{
-			Enabled:         null.BoolFrom(true),
-			ChainBinaryName: "gaiad",
-			ChainFolder:     "/home/validator/.gaia",
-			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-		},
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "/home/validator/.gaia",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -136,13 +126,11 @@ func TestCosmovisorGetAppVersionInvalid(t *testing.T) {
 func TestCosmovisorGetAppVersionValid(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.NodeConfig{
-		CosmovisorConfig: configPkg.CosmovisorConfig{
-			Enabled:         null.BoolFrom(true),
-			ChainBinaryName: "gaiad",
-			ChainFolder:     "/home/validator/.gaia",
-			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-		},
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "/home/validator/.gaia",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -160,13 +148,11 @@ func TestCosmovisorGetAppVersionValid(t *testing.T) {
 func TestCosmovisorGetUpgradesFail(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.NodeConfig{
-		CosmovisorConfig: configPkg.CosmovisorConfig{
-			Enabled:         null.BoolFrom(true),
-			ChainBinaryName: "gaiad",
-			ChainFolder:     "/home/validator/.gaia",
-			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-		},
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "/home/validator/.gaia",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -182,13 +168,11 @@ func TestCosmovisorGetUpgradesFail(t *testing.T) {
 func TestCosmovisorGetUpgradesIsNotDir(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.NodeConfig{
-		CosmovisorConfig: configPkg.CosmovisorConfig{
-			Enabled:         null.BoolFrom(true),
-			ChainBinaryName: "gaiad",
-			ChainFolder:     "",
-			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-		},
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -205,13 +189,11 @@ func TestCosmovisorGetUpgradesIsNotDir(t *testing.T) {
 func TestCosmovisorGetUpgradesGetFileError(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.NodeConfig{
-		CosmovisorConfig: configPkg.CosmovisorConfig{
-			Enabled:         null.BoolFrom(true),
-			ChainBinaryName: "gaiad",
-			ChainFolder:     "",
-			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-		},
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -228,13 +210,11 @@ func TestCosmovisorGetUpgradesGetFileError(t *testing.T) {
 func TestCosmovisorGetUpgradesGetFileNotFound(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.NodeConfig{
-		CosmovisorConfig: configPkg.CosmovisorConfig{
-			Enabled:         null.BoolFrom(true),
-			ChainBinaryName: "gaiad",
-			ChainFolder:     "",
-			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-		},
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -251,13 +231,11 @@ func TestCosmovisorGetUpgradesGetFileNotFound(t *testing.T) {
 func TestCosmovisorGetUpgradesGetFileOk(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.NodeConfig{
-		CosmovisorConfig: configPkg.CosmovisorConfig{
-			Enabled:         null.BoolFrom(true),
-			ChainBinaryName: "gaiad",
-			ChainFolder:     "",
-			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-		},
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()

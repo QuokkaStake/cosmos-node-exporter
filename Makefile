@@ -13,5 +13,9 @@ lint:
 test:
 	go test -coverpkg=./... -coverprofile cover.out ./...
 
+test-verbose:
+	go test -coverpkg=./... -coverprofile cover.out -v ./...
+
+
 coverage:
 	go tool cover -html=cover.out
