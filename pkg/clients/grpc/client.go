@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/credentials/insecure"
+
 	"go.opentelemetry.io/otel/trace"
 
 	cmtTypes "github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
@@ -26,14 +28,11 @@ type Client struct {
 func NewClient(config config.NodeConfig, logger zerolog.Logger, tracer trace.Tracer) *Client {
 	grpcLogger := logger.With().Str("component", "grpc").Logger()
 
-	grpcConn, err := grpc.Dial(
+	grpcConn, _ := grpc.NewClient(
 		config.GrpcConfig.Address,
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithTimeout(5*time.Second),
 	)
-	if err != nil {
-		grpcLogger.Panic().Err(err).Msg("Could not connect to gRPC node")
-	}
 
 	return &Client{
 		Logger: grpcLogger,

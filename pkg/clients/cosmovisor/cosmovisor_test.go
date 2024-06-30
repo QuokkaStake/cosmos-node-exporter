@@ -213,7 +213,7 @@ func TestCosmovisorGetUpgradesGetFileError(t *testing.T) {
 			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 		},
 	}
-	logger := loggerPkg.GetDefaultLogger()
+	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
 	client := NewCosmovisor(config, *logger, tracer)
 	client.Filesystem = &fs.TestFS{FileError: true}
@@ -236,7 +236,7 @@ func TestCosmovisorGetUpgradesGetFileNotFound(t *testing.T) {
 			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 		},
 	}
-	logger := loggerPkg.GetDefaultLogger()
+	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
 	client := NewCosmovisor(config, *logger, tracer)
 	client.Filesystem = &fs.TestFS{FileNotFound: true}
@@ -259,7 +259,7 @@ func TestCosmovisorGetUpgradesGetFileOk(t *testing.T) {
 			CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
 		},
 	}
-	logger := loggerPkg.GetDefaultLogger()
+	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
 	client := NewCosmovisor(config, *logger, tracer)
 	client.Filesystem = &fs.TestFS{}
