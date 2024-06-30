@@ -25,11 +25,11 @@ type Client struct {
 	Tracer trace.Tracer
 }
 
-func NewClient(config config.NodeConfig, logger zerolog.Logger, tracer trace.Tracer) *Client {
+func NewClient(config config.GrpcConfig, logger zerolog.Logger, tracer trace.Tracer) *Client {
 	grpcLogger := logger.With().Str("component", "grpc").Logger()
 
 	grpcConn, _ := grpc.NewClient(
-		config.GrpcConfig.Address,
+		config.Address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithTimeout(5*time.Second),
 	)

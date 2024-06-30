@@ -25,14 +25,12 @@ func TestGrpcClientInit(t *testing.T) {
 
 	logger := loggerPkg.GetDefaultLogger()
 	tracer := tracing.InitNoopTracer()
-	config := configPkg.NodeConfig{GrpcConfig: configPkg.GrpcConfig{Address: "localhost:9090"}}
+	config := configPkg.GrpcConfig{Address: "localhost:9090"}
 	client := NewClient(config, *logger, tracer)
 	assert.NotNil(t, client)
 }
 func TestGrpcClientNodeConfigFail(t *testing.T) {
 	t.Parallel()
-
-	grpcmock.MockServer()
 
 	_, d := grpcmock.MockServerWithBufConn()(t)
 
@@ -59,8 +57,6 @@ func TestGrpcClientNodeConfigFail(t *testing.T) {
 func TestGrpcClientNodeConfigNotImplemented(t *testing.T) {
 	t.Parallel()
 
-	grpcmock.MockServer()
-
 	_, d := grpcmock.MockServerWithBufConn()(t)
 
 	logger := loggerPkg.GetDefaultLogger()
@@ -85,8 +81,6 @@ func TestGrpcClientNodeConfigNotImplemented(t *testing.T) {
 
 func TestGrpcClientNodeConfigOk(t *testing.T) {
 	t.Parallel()
-
-	grpcmock.MockServer()
 
 	_, d := grpcmock.MockServerWithBufConn(
 		grpcmock.RegisterServiceFromMethods(service.Method{
@@ -126,8 +120,6 @@ func TestGrpcClientNodeConfigOk(t *testing.T) {
 func TestGrpcClientNodeInfoFail(t *testing.T) {
 	t.Parallel()
 
-	grpcmock.MockServer()
-
 	_, d := grpcmock.MockServerWithBufConn()(t)
 
 	logger := loggerPkg.GetDefaultLogger()
@@ -152,8 +144,6 @@ func TestGrpcClientNodeInfoFail(t *testing.T) {
 
 func TestGrpcClientNodeInfoOk(t *testing.T) {
 	t.Parallel()
-
-	grpcmock.MockServer()
 
 	_, d := grpcmock.MockServerWithBufConn(
 		grpcmock.RegisterServiceFromMethods(service.Method{

@@ -55,7 +55,7 @@ func NewNodeHandler(
 	}
 
 	if config.GrpcConfig.Enabled.Bool {
-		grpc = grpcPkg.NewClient(config, appLogger, tracer)
+		grpc = grpcPkg.NewClient(config.GrpcConfig, appLogger, tracer)
 	}
 
 	gitClient := git.GetClient(config.GitConfig, appLogger, tracer)
