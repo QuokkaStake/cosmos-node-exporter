@@ -74,13 +74,12 @@ func (n *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 			Labels:     map[string]string{"version": status.Result.NodeInfo.Version},
 			Value:      1,
 		},
+		{
+			MetricName: metrics.MetricNameVotingPower,
+			Labels:     map[string]string{},
+			Value:      float64(status.Result.ValidatorInfo.VotingPower),
+		},
 	}
-
-	querierMetrics = append(querierMetrics, metrics.MetricInfo{
-		MetricName: metrics.MetricNameVotingPower,
-		Labels:     map[string]string{},
-		Value:      float64(status.Result.ValidatorInfo.VotingPower),
-	})
 
 	return querierMetrics, []query_info.QueryInfo{queryInfo}
 }

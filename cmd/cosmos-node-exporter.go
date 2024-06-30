@@ -3,8 +3,8 @@ package main
 import (
 	"main/pkg"
 	"main/pkg/config"
+	"main/pkg/fs"
 	"main/pkg/logger"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -13,22 +13,15 @@ var (
 	version = "unknown"
 )
 
-type OsFS struct {
-}
-
-func (fs *OsFS) ReadFile(name string) ([]byte, error) {
-	return os.ReadFile(name)
-}
-
 func ExecuteMain(configPath string) {
-	filesystem := &OsFS{}
+	filesystem := &fs.OsFS{}
 
 	app := pkg.NewApp(filesystem, configPath, version)
 	app.Start()
 }
 
 func ExecuteValidateConfig(configPath string) {
-	filesystem := &OsFS{}
+	filesystem := &fs.OsFS{}
 
 	appConfig, err := config.GetConfig(filesystem, configPath)
 	if err != nil {

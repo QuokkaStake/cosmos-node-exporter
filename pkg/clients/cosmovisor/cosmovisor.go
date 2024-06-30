@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"main/pkg/config"
 	"main/pkg/constants"
+	"main/pkg/exec"
+	"main/pkg/fs"
 	"main/pkg/query_info"
 	"main/pkg/types"
 	"main/pkg/utils"
 	"os"
-	"os/exec"
 	"strings"
 
 	"go.opentelemetry.io/otel/trace"
@@ -20,9 +21,12 @@ import (
 )
 
 type Cosmovisor struct {
-	Logger zerolog.Logger
-	Config config.CosmovisorConfig
-	Tracer trace.Tracer
+	Logger               zerolog.Logger
+	Config               config.CosmovisorConfig
+	Tracer               trace.Tracer
+	CommandExecutor      exec.CommandExecutor
+	Filesystem           fs.FS
+	UpgradeSubfolderPath string
 }
 
 func NewCosmovisor(
@@ -31,9 +35,12 @@ func NewCosmovisor(
 	tracer trace.Tracer,
 ) *Cosmovisor {
 	return &Cosmovisor{
-		Logger: logger.With().Str("component", "cosmovisor").Logger(),
-		Config: config.CosmovisorConfig,
-		Tracer: tracer,
+		Logger:               logger.With().Str("component", "cosmovisor").Logger(),
+		Config:               config.CosmovisorConfig,
+		Tracer:               tracer,
+		CommandExecutor:      &exec.NativeCommandExecutor{},
+		Filesystem:           &fs.OsFS{},
+		UpgradeSubfolderPath: "/cosmovisor/upgrades",
 	}
 }
 
@@ -43,8 +50,9 @@ func NewCosmovisor(
 func getJsonString(input string) string {
 	split := strings.Split(input, "\n")
 	for _, line := range split {
-		if strings.HasPrefix(line, "{") && strings.HasSuffix(line, "}") {
-			return line
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "{") && strings.HasSuffix(trimmed, "}") {
+			return trimmed
 		}
 	}
 
@@ -65,14 +73,17 @@ func (c *Cosmovisor) GetVersion(ctx context.Context) (types.VersionInfo, query_i
 		Success: false,
 	}
 
-	cmd := exec.Command(c.Config.CosmovisorPath, "run", "version", "--long", "--output", "json")
-	cmd.Env = append(
+	env := append(
 		os.Environ(),
 		"DAEMON_NAME="+c.Config.ChainBinaryName,
 		"DAEMON_HOME="+c.Config.ChainFolder,
 	)
 
-	out, err := cmd.CombinedOutput()
+	out, err := c.CommandExecutor.RunWithEnv(
+		c.Config.CosmovisorPath,
+		[]string{"run", "version", "--long", "--output", "json"},
+		env,
+	)
 	if err != nil {
 		c.Logger.Error().
 			Err(err).
@@ -111,14 +122,13 @@ func (c *Cosmovisor) GetCosmovisorVersion(ctx context.Context) (string, query_in
 		Success: false,
 	}
 
-	cmd := exec.Command(c.Config.CosmovisorPath, "version")
-	cmd.Env = append(
+	env := append(
 		os.Environ(),
 		"DAEMON_NAME="+c.Config.ChainBinaryName,
 		"DAEMON_HOME="+c.Config.ChainFolder,
 	)
 
-	out, err := cmd.CombinedOutput()
+	out, err := c.CommandExecutor.RunWithEnv(c.Config.CosmovisorPath, []string{"version"}, env)
 	if err != nil {
 		c.Logger.Error().
 			Err(err).
@@ -154,8 +164,8 @@ func (c *Cosmovisor) GetUpgrades(ctx context.Context) (types.UpgradesPresent, qu
 		Success: false,
 	}
 
-	upgradesFolder := c.Config.ChainFolder + "/cosmovisor/upgrades"
-	upgradesFolderContent, err := os.ReadDir(upgradesFolder)
+	upgradesFolder := c.Config.ChainFolder + c.UpgradeSubfolderPath
+	upgradesFolderContent, err := c.Filesystem.ReadDir(upgradesFolder)
 	if err != nil {
 		span.RecordError(err)
 		c.Logger.Error().Err(err).Msg("Could not fetch Cosmovisor upgrades folder content")
@@ -166,7 +176,6 @@ func (c *Cosmovisor) GetUpgrades(ctx context.Context) (types.UpgradesPresent, qu
 
 	for _, upgradeFolder := range upgradesFolderContent {
 		if !upgradeFolder.IsDir() {
-			upgrades[upgradeFolder.Name()] = false
 			continue
 		}
 
@@ -177,11 +186,14 @@ func (c *Cosmovisor) GetUpgrades(ctx context.Context) (types.UpgradesPresent, qu
 			c.Config.ChainBinaryName,
 		)
 
-		if _, err := os.Stat(upgradeBinaryPath); err != nil {
-			if errors.Is(err, os.ErrNotExist) {
+		if _, err := c.Filesystem.Stat(upgradeBinaryPath); err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
 				c.Logger.Warn().Err(err).Msg("Error fetching Cosmovisor upgrade")
 				span.RecordError(err)
+				return upgrades, cosmovisorGetUpgradesQueryInfo, err
 			}
+
+			upgrades[upgradeFolder.Name()] = false
 		} else {
 			upgrades[upgradeFolder.Name()] = true
 		}
