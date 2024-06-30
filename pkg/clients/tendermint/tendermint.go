@@ -7,9 +7,10 @@ import (
 	"main/pkg/constants"
 	"main/pkg/http"
 	"main/pkg/query_info"
-	"main/pkg/utils"
 	"net/url"
 	"time"
+
+	"github.com/cosmos/gogoproto/proto"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -86,7 +87,7 @@ func (t *RPC) Block(ctx context.Context, height int64) (BlockResponse, error) {
 func (t *RPC) AbciQuery(
 	ctx context.Context,
 	method string,
-	message codec.ProtoMarshaler,
+	message proto.Message,
 	output codec.ProtoMarshaler,
 ) error {
 	childCtx, span := t.Tracer.Start(
@@ -99,11 +100,7 @@ func (t *RPC) AbciQuery(
 	)
 	defer span.End()
 
-	dataBytes, err := message.Marshal()
-	if err != nil {
-		return err
-	}
-
+	dataBytes := message.String()
 	methodName := fmt.Sprintf("\"%s\"", method)
 	queryURL := fmt.Sprintf(
 		"/abci_query?path=%s&data=0x%x",
@@ -168,13 +165,7 @@ func (t *RPC) GetEstimateTimeTillBlock(ctx context.Context, height int64) (time.
 		return time.Now(), upgradeTimeQuery, err
 	}
 
-	latestBlockHeight, err := utils.StringToInt64(latestBlock.Result.Block.Header.Height)
-	if err != nil {
-		t.Logger.Error().
-			Err(err).
-			Msg("Error converting latest block height to int64, which should never happen.")
-		return time.Now(), upgradeTimeQuery, err
-	}
+	latestBlockHeight := latestBlock.Result.Block.Header.Height
 	blockToCheck := latestBlockHeight - t.BlocksBehind
 
 	olderBlock, err := t.Block(childCtx, blockToCheck)
@@ -188,6 +179,7 @@ func (t *RPC) GetEstimateTimeTillBlock(ctx context.Context, height int64) (time.
 	blocksDiffTime := latestBlock.Result.Block.Header.Time.Sub(olderBlock.Result.Block.Header.Time)
 	blockTime := blocksDiffTime.Seconds() / float64(t.BlocksBehind)
 	blocksTillEstimatedBlock := height - latestBlockHeight
+
 	secondsTillEstimatedBlock := int64(float64(blocksTillEstimatedBlock) * blockTime)
 	durationTillEstimatedBlock := time.Duration(secondsTillEstimatedBlock * int64(time.Second))
 

@@ -2,6 +2,7 @@
 
 ![Latest release](https://img.shields.io/github/v/release/QuokkaStake/cosmos-node-exporter)
 [![Actions Status](https://github.com/QuokkaStake/cosmos-node-exporter/workflows/test/badge.svg)](https://github.com/QuokkaStake/cosmos-node-exporter/actions)
+[![codecov](https://codecov.io/gh/QuokkaStake/cosmos-node-exporter/graph/badge.svg?token=O7WAAKM6YM)](https://codecov.io/gh/QuokkaStake/cosmos-node-exporter)
 
 cosmos-node-exporter is a Prometheus scraper that scrapes some data to monitor your node.
 It exposes the following metrics:
