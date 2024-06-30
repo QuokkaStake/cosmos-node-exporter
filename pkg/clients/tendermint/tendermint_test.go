@@ -27,11 +27,9 @@ func TestTendermintStatusFail(t *testing.T) {
 		httpmock.NewErrorResponder(errors.New("custom error")),
 	)
 
-	config := configPkg.NodeConfig{
-		TendermintConfig: configPkg.TendermintConfig{
-			Enabled: null.BoolFrom(true),
-			Address: "https://example.com:443",
-		},
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -55,11 +53,9 @@ func TestTendermintStatusSuccess(t *testing.T) {
 		httpmock.NewBytesResponder(200, assets.GetBytesOrPanic("status.json")),
 	)
 
-	config := configPkg.NodeConfig{
-		TendermintConfig: configPkg.TendermintConfig{
-			Enabled: null.BoolFrom(true),
-			Address: "https://example.com:443",
-		},
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -83,11 +79,9 @@ func TestTendermintBlockFail(t *testing.T) {
 		httpmock.NewErrorResponder(errors.New("custom error")),
 	)
 
-	config := configPkg.NodeConfig{
-		TendermintConfig: configPkg.TendermintConfig{
-			Enabled: null.BoolFrom(true),
-			Address: "https://example.com:443",
-		},
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -110,11 +104,9 @@ func TestTendermintBlockSuccessLatest(t *testing.T) {
 		httpmock.NewBytesResponder(200, assets.GetBytesOrPanic("block.json")),
 	)
 
-	config := configPkg.NodeConfig{
-		TendermintConfig: configPkg.TendermintConfig{
-			Enabled: null.BoolFrom(true),
-			Address: "https://example.com:443",
-		},
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -136,11 +128,9 @@ func TestTendermintBlockSpecific(t *testing.T) {
 		httpmock.NewBytesResponder(200, assets.GetBytesOrPanic("block.json")),
 	)
 
-	config := configPkg.NodeConfig{
-		TendermintConfig: configPkg.TendermintConfig{
-			Enabled: null.BoolFrom(true),
-			Address: "https://example.com:443",
-		},
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -162,11 +152,9 @@ func TestTendermintTimeSinceLatestBlockFailCurrent(t *testing.T) {
 		httpmock.NewErrorResponder(errors.New("custom error")),
 	)
 
-	config := configPkg.NodeConfig{
-		TendermintConfig: configPkg.TendermintConfig{
-			Enabled: null.BoolFrom(true),
-			Address: "https://example.com:443",
-		},
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -195,11 +183,9 @@ func TestTendermintTimeSinceLatestBlockFailOlder(t *testing.T) {
 		httpmock.NewErrorResponder(errors.New("custom error")),
 	)
 
-	config := configPkg.NodeConfig{
-		TendermintConfig: configPkg.TendermintConfig{
-			Enabled: null.BoolFrom(true),
-			Address: "https://example.com:443",
-		},
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -228,11 +214,9 @@ func TestTendermintTimeSinceLatestBlockSuccess(t *testing.T) {
 		httpmock.NewBytesResponder(200, assets.GetBytesOrPanic("block2.json")),
 	)
 
-	config := configPkg.NodeConfig{
-		TendermintConfig: configPkg.TendermintConfig{
-			Enabled: null.BoolFrom(true),
-			Address: "https://example.com:443",
-		},
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -256,11 +240,9 @@ func TestTendermintGetUpgradePlanError(t *testing.T) {
 		httpmock.NewErrorResponder(errors.New("custom error")),
 	)
 
-	config := configPkg.NodeConfig{
-		TendermintConfig: configPkg.TendermintConfig{
-			Enabled: null.BoolFrom(true),
-			Address: "https://example.com:443",
-		},
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
@@ -283,11 +265,9 @@ func TestTendermintGetUpgradePlanSuccess(t *testing.T) {
 		httpmock.NewBytesResponder(200, assets.GetBytesOrPanic("upgrade-plan.json")),
 	)
 
-	config := configPkg.NodeConfig{
-		TendermintConfig: configPkg.TendermintConfig{
-			Enabled: null.BoolFrom(true),
-			Address: "https://example.com:443",
-		},
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
 	}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
