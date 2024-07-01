@@ -4,7 +4,6 @@ import (
 	"context"
 	cosmovisorPkg "main/pkg/clients/cosmovisor"
 	"main/pkg/clients/tendermint"
-	"main/pkg/config"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 	"main/pkg/utils"
@@ -18,31 +17,31 @@ import (
 )
 
 type Querier struct {
-	Config     config.NodeConfig
-	Logger     zerolog.Logger
-	Cosmovisor *cosmovisorPkg.Cosmovisor
-	Tendermint *tendermint.RPC
-	Tracer     trace.Tracer
+	QueryUpgrades bool
+	Logger        zerolog.Logger
+	Cosmovisor    *cosmovisorPkg.Cosmovisor
+	Tendermint    *tendermint.RPC
+	Tracer        trace.Tracer
 }
 
 func NewQuerier(
-	nodeConfig config.NodeConfig,
+	queryUpgrades bool,
 	logger zerolog.Logger,
 	cosmovisor *cosmovisorPkg.Cosmovisor,
 	tendermint *tendermint.RPC,
 	tracer trace.Tracer,
 ) *Querier {
 	return &Querier{
-		Config:     nodeConfig,
-		Logger:     logger.With().Str("component", "upgrades_querier").Logger(),
-		Cosmovisor: cosmovisor,
-		Tendermint: tendermint,
-		Tracer:     tracer,
+		QueryUpgrades: queryUpgrades,
+		Logger:        logger.With().Str("component", "upgrades_querier").Logger(),
+		Cosmovisor:    cosmovisor,
+		Tendermint:    tendermint,
+		Tracer:        tracer,
 	}
 }
 
 func (u *Querier) Enabled() bool {
-	return u.Tendermint != nil && u.Config.TendermintConfig.QueryUpgrades.Bool
+	return u.Tendermint != nil && u.QueryUpgrades
 }
 
 func (u *Querier) Name() string {
@@ -87,12 +86,6 @@ func (u *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 	})
 
 	// Calculate upgrade estimated time
-	if u.Tendermint == nil {
-		u.Logger.Warn().
-			Msg("Tendermint RPC not initialized and upgrade time is not specified, not returning upgrade time.")
-		return metricInfos, queryInfos
-	}
-
 	upgradeTime, upgradeTimeQuery, err := u.Tendermint.GetEstimateTimeTillBlock(childCtx, upgrade.Height)
 	queryInfos = append(queryInfos, upgradeTimeQuery)
 

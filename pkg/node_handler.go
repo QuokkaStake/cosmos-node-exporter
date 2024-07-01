@@ -63,7 +63,7 @@ func NewNodeHandler(
 	queriers := []types.Querier{
 		nodeStats.NewQuerier(appLogger, tendermintRPC, tracer),
 		versions.NewQuerier(appLogger, gitClient, cosmovisor, tracer),
-		upgrades.NewQuerier(config, appLogger, cosmovisor, tendermintRPC, tracer),
+		upgrades.NewQuerier(config.TendermintConfig.QueryUpgrades.Bool, appLogger, cosmovisor, tendermintRPC, tracer),
 		cosmovisorQuerierPkg.NewQuerier(appLogger, cosmovisor, tracer),
 		nodeConfig.NewQuerier(appLogger, grpc, tracer),
 		nodeInfo.NewQuerier(appLogger, grpc, tracer),
