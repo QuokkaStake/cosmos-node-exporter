@@ -142,7 +142,7 @@ func (t *RPC) GetUpgradePlan(ctx context.Context) (*upgradeTypes.Plan, query_inf
 	return response.Plan, upgradePlanQuery, nil
 }
 
-func (t *RPC) GetEstimateTimeTillBlock(ctx context.Context, height int64) (time.Time, query_info.QueryInfo, error) {
+func (t *RPC) GetEstimateBlockTime(ctx context.Context, height int64) (time.Time, query_info.QueryInfo, error) {
 	childCtx, span := t.Tracer.Start(
 		ctx,
 		"Fetching estimate time till block",
@@ -183,5 +183,5 @@ func (t *RPC) GetEstimateTimeTillBlock(ctx context.Context, height int64) (time.
 	secondsTillEstimatedBlock := int64(float64(blocksTillEstimatedBlock) * blockTime)
 	durationTillEstimatedBlock := time.Duration(secondsTillEstimatedBlock * int64(time.Second))
 
-	return time.Now().Add(durationTillEstimatedBlock), upgradeTimeQuery, nil
+	return latestBlock.Result.Block.Header.Time.Add(durationTillEstimatedBlock), upgradeTimeQuery, nil
 }

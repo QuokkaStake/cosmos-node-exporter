@@ -6,7 +6,6 @@ import (
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 	"main/pkg/utils"
-	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -57,9 +56,9 @@ func (n *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 			Value:      utils.BoolToFloat64(status.Result.SyncInfo.CatchingUp),
 		},
 		{
-			MetricName: metrics.MetricNameTimeSinceLatestBlock,
+			MetricName: metrics.MetricNameLatestBlockTime,
 			Labels:     map[string]string{},
-			Value:      time.Since(status.Result.SyncInfo.LatestBlockTime).Seconds(),
+			Value:      float64(status.Result.SyncInfo.LatestBlockTime.Unix()),
 		},
 		{
 			MetricName: metrics.MetricNameNodeInfo,

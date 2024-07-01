@@ -304,6 +304,7 @@ func TestUpgradesQuerierTendermintCosmovisorOk(t *testing.T) {
 	upgradeTime := metrics[3]
 	assert.NotEmpty(t, upgradeTime.Labels["info"])
 	assert.Equal(t, "v1.5.0", upgradeTime.Labels["name"])
+	assert.InDelta(t, 1642330177, upgradeTime.Value, 0.01)
 
 	upgradePresent := metrics[4]
 	assert.NotEmpty(t, upgradePresent.Labels["info"])
