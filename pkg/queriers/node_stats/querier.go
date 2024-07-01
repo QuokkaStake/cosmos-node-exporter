@@ -2,12 +2,13 @@ package node_stats
 
 import (
 	"context"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	"main/pkg/clients/tendermint"
 	"main/pkg/metrics"
 	"main/pkg/query_info"
 	"main/pkg/utils"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/rs/zerolog"
 )
