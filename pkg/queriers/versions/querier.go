@@ -62,16 +62,20 @@ func (v *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 		versionInfo                types.VersionInfo
 		gitQueryInfo               query_info.QueryInfo
 		cosmovisorVersionQueryInfo query_info.QueryInfo
-		err                        error
+		latestVersionError         error
+		cosmovisorErr              error
+
+		latestVersionFetched     bool
+		cosmovisorVersionFetched bool
 	)
 
 	if v.GitClient != nil {
-		latestVersion, gitQueryInfo, err = v.GitClient.GetLatestRelease(childCtx)
+		latestVersion, gitQueryInfo, latestVersionError = v.GitClient.GetLatestRelease(childCtx)
 		queriesInfo = append(queriesInfo, gitQueryInfo)
-		if err != nil {
-			v.Logger.Err(err).Msg("Could not get latest Git version")
-			return []metrics.MetricInfo{}, queriesInfo
+		if latestVersionError != nil {
+			v.Logger.Err(latestVersionError).Msg("Could not get latest Git version")
 		} else {
+			latestVersionFetched = true
 			// stripping first "v" character: "v1.2.3" => "1.2.3"
 			if latestVersion[0] == 'v' {
 				latestVersion = latestVersion[1:]
@@ -86,11 +90,13 @@ func (v *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 	}
 
 	if v.Cosmovisor != nil {
-		versionInfo, cosmovisorVersionQueryInfo, err = v.Cosmovisor.GetVersion(childCtx)
+		versionInfo, cosmovisorVersionQueryInfo, cosmovisorErr = v.Cosmovisor.GetVersion(childCtx)
 		queriesInfo = append(queriesInfo, cosmovisorVersionQueryInfo)
-		if err != nil {
-			v.Logger.Err(err).Msg("Could not get app version")
+		if cosmovisorErr != nil {
+			v.Logger.Err(cosmovisorErr).Msg("Could not get app version")
 		} else {
+			cosmovisorVersionFetched = true
+
 			metricsInfos = append(metricsInfos, metrics.MetricInfo{
 				MetricName: metrics.MetricNameLocalVersion,
 				Labels:     map[string]string{"version": versionInfo.Version},
@@ -99,7 +105,7 @@ func (v *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 		}
 	}
 
-	if v.GitClient != nil && v.Cosmovisor != nil {
+	if latestVersionFetched && cosmovisorVersionFetched {
 		semverLocal, err := semver.NewVersion(versionInfo.Version)
 		if err != nil {
 			v.Logger.Err(err).Msg("Could not get local app version")
