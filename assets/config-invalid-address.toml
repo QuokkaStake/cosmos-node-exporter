@@ -1,0 +1,8 @@
+listen-address = "invalid"
+
+[[node]]
+name = "cosmos"
+tendermint = { address = "https://rpc.cosmos.quokkastake.io:443" }
+cosmovisor = { chain-folder = "/home/validator/.gaia", chain-binary-name = "gaia", cosmovisor-path = "/home/validator/go/bin/cosmovisor" }
+grpc = { address = "rpc.cosmos.quokkastake.io:9090" }
+git = { repository = "https://github.com/cosmos/gaia" }

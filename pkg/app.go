@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"context"
 	configPkg "main/pkg/config"
 	"main/pkg/fs"
 	"main/pkg/logger"
@@ -14,13 +15,14 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
 	"github.com/google/uuid"
 
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -31,6 +33,7 @@ type App struct {
 	MetricsManager *metrics.Manager
 	GlobalQueriers []types.Querier
 	Tracer         trace.Tracer
+	Server         *http.Server
 }
 
 func NewApp(
@@ -40,11 +43,11 @@ func NewApp(
 ) *App {
 	appConfig, err := configPkg.GetConfig(filesystem, configPath)
 	if err != nil {
-		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not load config")
+		logger.GetDefaultLogger().Panic().Err(err).Msg("Could not load config")
 	}
 
 	if err = appConfig.Validate(); err != nil {
-		logger.GetDefaultLogger().Fatal().Err(err).Msg("Provided config is invalid!")
+		logger.GetDefaultLogger().Panic().Err(err).Msg("Provided config is invalid!")
 	}
 
 	log := logger.GetLogger(appConfig.LogConfig)
@@ -61,6 +64,8 @@ func NewApp(
 		uptime.NewQuerier(),
 	}
 
+	server := &http.Server{Addr: appConfig.ListenAddress, Handler: nil}
+
 	return &App{
 		Logger:         log.With().Str("component", "app").Logger(),
 		Config:         appConfig,
@@ -68,18 +73,30 @@ func NewApp(
 		MetricsManager: metrics.NewManager(),
 		GlobalQueriers: globalQueriers,
 		Tracer:         tracer,
+		Server:         server,
 	}
 }
 
 func (a *App) Start() {
 	otelHandler := otelhttp.NewHandler(http.HandlerFunc(a.HandleRequest), "prometheus")
-	http.Handle("/metrics", otelHandler)
+	handler := http.NewServeMux()
+	handler.Handle("/metrics", otelHandler)
+	handler.HandleFunc("/healthcheck", a.Healthcheck)
+	a.Server.Handler = handler
 
 	a.Logger.Info().Str("addr", a.Config.ListenAddress).Msg("Listening")
-	err := http.ListenAndServe(a.Config.ListenAddress, nil)
+
+	err := a.Server.ListenAndServe()
 	if err != nil {
-		a.Logger.Fatal().Err(err).Msg("Could not start application")
+		a.Logger.Panic().Err(err).Msg("Could not start application")
 	}
+}
+
+func (a *App) Stop() {
+	a.Logger.Info().Str("addr", a.Config.ListenAddress).Msg("Shutting down server...")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = a.Server.Shutdown(ctx)
 }
 
 func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
@@ -154,4 +171,8 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 		Str("endpoint", "/metrics").
 		Float64("request-time", time.Since(requestStart).Seconds()).
 		Msg("Request processed")
+}
+
+func (a *App) Healthcheck(w http.ResponseWriter, r *http.Request) {
+	_, _ = w.Write([]byte("ok"))
 }
