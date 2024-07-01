@@ -160,7 +160,7 @@ func TestTendermintTimeSinceLatestBlockFailCurrent(t *testing.T) {
 	tracer := tracing.InitNoopTracer()
 	rpc := NewRPC(config, *logger, tracer)
 
-	_, queryInfo, err := rpc.GetEstimateTimeTillBlock(context.Background(), 21078108)
+	_, queryInfo, err := rpc.GetEstimateBlockTime(context.Background(), 21078108)
 	require.Error(t, err)
 	assert.False(t, queryInfo.Success)
 	require.ErrorContains(t, err, "custom error")
@@ -191,7 +191,7 @@ func TestTendermintTimeSinceLatestBlockFailOlder(t *testing.T) {
 	tracer := tracing.InitNoopTracer()
 	rpc := NewRPC(config, *logger, tracer)
 
-	_, queryInfo, err := rpc.GetEstimateTimeTillBlock(context.Background(), 21078108)
+	_, queryInfo, err := rpc.GetEstimateBlockTime(context.Background(), 21078108)
 	require.Error(t, err)
 	assert.False(t, queryInfo.Success)
 	require.ErrorContains(t, err, "custom error")
@@ -222,11 +222,10 @@ func TestTendermintTimeSinceLatestBlockSuccess(t *testing.T) {
 	tracer := tracing.InitNoopTracer()
 	rpc := NewRPC(config, *logger, tracer)
 
-	currentTime := time.Now()
-	timeTillBlock, queryInfo, err := rpc.GetEstimateTimeTillBlock(context.Background(), 21078108)
+	timeTillBlock, queryInfo, err := rpc.GetEstimateBlockTime(context.Background(), 21078108)
 	require.NoError(t, err)
 	require.True(t, queryInfo.Success)
-	assert.Equal(t, "1h41m29s", timeTillBlock.Sub(currentTime).Round(time.Second).String())
+	assert.Equal(t, "2024-06-29T19:21:21Z", timeTillBlock.UTC().Format(time.RFC3339))
 }
 
 //nolint:paralleltest // disabled due to httpmock usage

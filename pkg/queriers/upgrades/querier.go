@@ -86,7 +86,7 @@ func (u *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 	})
 
 	// Calculate upgrade estimated time
-	upgradeTime, upgradeTimeQuery, err := u.Tendermint.GetEstimateTimeTillBlock(childCtx, upgrade.Height)
+	upgradeTime, upgradeTimeQuery, err := u.Tendermint.GetEstimateBlockTime(childCtx, upgrade.Height)
 	queryInfos = append(queryInfos, upgradeTimeQuery)
 
 	if err != nil {
