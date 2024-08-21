@@ -10,7 +10,7 @@ type Action string
 
 const (
 	MetricsPrefix                  = "cosmos_node_exporter_"
-	UncachedGithubQueryTime        = 30 * time.Second
+	UncachedGithubQueryTime        = 120 * time.Second
 	ModuleCosmovisor        Module = "cosmovisor"
 	ModuleTendermint        Module = "tendermint"
 	ModuleGit               Module = "git"

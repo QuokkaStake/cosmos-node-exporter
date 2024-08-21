@@ -10,6 +10,7 @@ import (
 	"main/pkg/exec"
 	loggerPkg "main/pkg/logger"
 	"main/pkg/tracing"
+	"net/http"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
@@ -58,7 +59,9 @@ func TestVersionsQuerierGitOk(t *testing.T) {
 	httpmock.RegisterResponder(
 		"GET",
 		"https://api.github.com/repos/cosmos/gaia/releases/latest",
-		httpmock.NewBytesResponder(200, assets.GetBytesOrPanic("github-valid.json")),
+		httpmock.
+			NewBytesResponder(200, assets.GetBytesOrPanic("github-valid.json")).
+			HeaderAdd(http.Header{"x-ratelimit-reset": []string{"12345"}}),
 	)
 
 	config := configPkg.GitConfig{Repository: "https://github.com/cosmos/gaia"}
@@ -137,7 +140,9 @@ func TestVersionsQuerierLocalSemverInvalid(t *testing.T) {
 	httpmock.RegisterResponder(
 		"GET",
 		"https://api.github.com/repos/cosmos/gaia/releases/latest",
-		httpmock.NewBytesResponder(200, assets.GetBytesOrPanic("github-valid.json")),
+		httpmock.
+			NewBytesResponder(200, assets.GetBytesOrPanic("github-valid.json")).
+			HeaderAdd(http.Header{"x-ratelimit-reset": []string{"12345"}}),
 	)
 
 	gitConfig := configPkg.GitConfig{Repository: "https://github.com/cosmos/gaia"}
@@ -183,7 +188,9 @@ func TestVersionsQuerierRemoteSemverInvalid(t *testing.T) {
 	httpmock.RegisterResponder(
 		"GET",
 		"https://api.github.com/repos/cosmos/gaia/releases/latest",
-		httpmock.NewBytesResponder(200, assets.GetBytesOrPanic("github-invalid.json")),
+		httpmock.
+			NewBytesResponder(200, assets.GetBytesOrPanic("github-invalid.json")).
+			HeaderAdd(http.Header{"x-ratelimit-reset": []string{"12345"}}),
 	)
 
 	gitConfig := configPkg.GitConfig{Repository: "https://github.com/cosmos/gaia"}
@@ -229,7 +236,9 @@ func TestVersionsQuerierAllOk(t *testing.T) {
 	httpmock.RegisterResponder(
 		"GET",
 		"https://api.github.com/repos/cosmos/gaia/releases/latest",
-		httpmock.NewBytesResponder(200, assets.GetBytesOrPanic("github-valid.json")),
+		httpmock.
+			NewBytesResponder(200, assets.GetBytesOrPanic("github-valid.json")).
+			HeaderAdd(http.Header{"x-ratelimit-reset": []string{"12345"}}),
 	)
 
 	gitConfig := configPkg.GitConfig{Repository: "https://github.com/cosmos/gaia"}
