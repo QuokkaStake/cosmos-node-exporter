@@ -128,15 +128,7 @@ func (c *Cosmovisor) GetCosmovisorVersion(ctx context.Context) (string, query_in
 		"DAEMON_HOME="+c.Config.ChainFolder,
 	)
 
-	out, err := c.CommandExecutor.RunWithEnv(c.Config.CosmovisorPath, []string{"version"}, env)
-	if err != nil {
-		c.Logger.Error().
-			Err(err).
-			Str("output", utils.DecolorifyString(string(out))).
-			Msg("Could not get Cosmovisor version")
-		return "", queryInfo, err
-	}
-
+	out, _ := c.CommandExecutor.RunWithEnv(c.Config.CosmovisorPath, []string{"version"}, env)
 	outSplit := strings.Split(string(out), "\n")
 
 	cosmovisorVersionPrefix := "cosmovisor version: "

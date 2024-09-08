@@ -28,7 +28,8 @@ const (
 	ActionGrpcGetNodeConfig              Action = "get_node_config"
 	ActionGrpcGetNodeInfo                Action = "get_node_info"
 
-	FetcherNameNodeStatus FetcherName = "node_status"
+	FetcherNameNodeStatus        FetcherName = "node_status"
+	FetcherNameCosmovisorVersion FetcherName = "cosmovisor_version"
 )
 
 var (

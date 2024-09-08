@@ -73,7 +73,9 @@ func (c *Controller) Fetch(ctx context.Context) (
 
 		for _, fetcher := range c.Fetchers {
 			if _, ok := fetchersStatus[fetcher.Name()]; ok {
-				c.Logger.Trace().Msg("Fetcher is already being processed or is processed, skipping.")
+				c.Logger.Trace().
+					Str("name", string(fetcher.Name())).
+					Msg("Fetcher is already being processed or is processed, skipping.")
 				continue
 			}
 

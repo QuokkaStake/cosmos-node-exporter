@@ -1,10 +1,10 @@
-package cosmovisor
+package fetchers
 
 import (
 	"context"
 	cosmovisorPkg "main/pkg/clients/cosmovisor"
 	configPkg "main/pkg/config"
-	"main/pkg/metrics"
+	"main/pkg/constants"
 	"main/pkg/query_info"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -13,52 +13,50 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type Querier struct {
+type CosmovisorVersionFetcher struct {
 	Config     configPkg.NodeConfig
 	Logger     zerolog.Logger
 	Cosmovisor *cosmovisorPkg.Cosmovisor
 	Tracer     trace.Tracer
 }
 
-func NewQuerier(
+func NewCosmovisorVersionFetcher(
 	logger zerolog.Logger,
 	cosmovisor *cosmovisorPkg.Cosmovisor,
 	tracer trace.Tracer,
-) *Querier {
-	return &Querier{
+) *CosmovisorVersionFetcher {
+	return &CosmovisorVersionFetcher{
 		Logger:     logger.With().Str("component", "cosmovisor_querier").Logger(),
 		Cosmovisor: cosmovisor,
 		Tracer:     tracer,
 	}
 }
 
-func (v *Querier) Enabled() bool {
+func (v *CosmovisorVersionFetcher) Enabled() bool {
 	return v.Cosmovisor != nil
 }
 
-func (v *Querier) Name() string {
-	return "cosmovisor-querier"
+func (v *CosmovisorVersionFetcher) Name() constants.FetcherName {
+	return constants.FetcherNameCosmovisorVersion
 }
 
-func (v *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.QueryInfo) {
+func (v *CosmovisorVersionFetcher) Dependencies() []constants.FetcherName {
+	return []constants.FetcherName{}
+}
+
+func (v *CosmovisorVersionFetcher) Get(ctx context.Context) (interface{}, []query_info.QueryInfo) {
 	childCtx, span := v.Tracer.Start(
 		ctx,
-		"Querier "+v.Name(),
-		trace.WithAttributes(attribute.String("node", v.Name())),
+		"CosmovisorVersionFetcher "+string(v.Name()),
+		trace.WithAttributes(attribute.String("node", string(v.Name()))),
 	)
 	defer span.End()
 
 	cosmovisorVersion, queryInfo, err := v.Cosmovisor.GetCosmovisorVersion(childCtx)
 	if err != nil {
 		v.Logger.Err(err).Msg("Could not get Cosmovisor version")
-		return []metrics.MetricInfo{}, []query_info.QueryInfo{queryInfo}
+		return nil, []query_info.QueryInfo{queryInfo}
 	}
 
-	return []metrics.MetricInfo{
-		{
-			MetricName: metrics.MetricNameCosmovisorVersion,
-			Labels:     map[string]string{"version": cosmovisorVersion},
-			Value:      1,
-		},
-	}, []query_info.QueryInfo{queryInfo}
+	return cosmovisorVersion, []query_info.QueryInfo{queryInfo}
 }

@@ -10,7 +10,6 @@ import (
 	fetchersPkg "main/pkg/fetchers"
 	generatorsPkg "main/pkg/generators"
 	metricsPkg "main/pkg/metrics"
-	cosmovisorQuerierPkg "main/pkg/queriers/cosmovisor"
 	nodeConfig "main/pkg/queriers/node_config"
 	nodeInfo "main/pkg/queriers/node_info"
 	"main/pkg/queriers/upgrades"
@@ -66,17 +65,18 @@ func NewNodeHandler(
 	queriers := []types.Querier{
 		versions.NewQuerier(appLogger, gitClient, cosmovisor, tracer),
 		upgrades.NewQuerier(config.TendermintConfig.QueryUpgrades.Bool, appLogger, cosmovisor, tendermintRPC, tracer),
-		cosmovisorQuerierPkg.NewQuerier(appLogger, cosmovisor, tracer),
 		nodeConfig.NewQuerier(appLogger, grpc, tracer),
 		nodeInfo.NewQuerier(appLogger, grpc, tracer),
 	}
 
 	fetchers := fetchersPkg.Fetchers{
 		fetchersPkg.NewNodeStatusFetcher(appLogger, tendermintRPC, tracer),
+		fetchersPkg.NewCosmovisorVersionFetcher(appLogger, cosmovisor, tracer),
 	}
 
 	generators := []generatorsPkg.Generator{
 		generatorsPkg.NewNodeStatsGenerator(),
+		generatorsPkg.NewCosmovisorVersionGenerator(),
 	}
 
 	controller := fetchersPkg.NewController(fetchers, appLogger, config.Name)
@@ -86,6 +86,14 @@ func NewNodeHandler(
 			appLogger.Debug().Str("name", querier.Name()).Msg("Querier is enabled")
 		} else {
 			appLogger.Debug().Str("name", querier.Name()).Msg("Querier is disabled")
+		}
+	}
+
+	for _, fetcher := range fetchers {
+		if fetcher.Enabled() {
+			appLogger.Debug().Str("name", string(fetcher.Name())).Msg("Fetcher is enabled")
+		} else {
+			appLogger.Debug().Str("name", string(fetcher.Name())).Msg("Fetcher is disabled")
 		}
 	}
 
