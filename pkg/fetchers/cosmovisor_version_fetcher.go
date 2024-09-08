@@ -26,7 +26,7 @@ func NewCosmovisorVersionFetcher(
 	tracer trace.Tracer,
 ) *CosmovisorVersionFetcher {
 	return &CosmovisorVersionFetcher{
-		Logger:     logger.With().Str("component", "cosmovisor_querier").Logger(),
+		Logger:     logger.With().Str("component", "cosmovisor_fetcher").Logger(),
 		Cosmovisor: cosmovisor,
 		Tracer:     tracer,
 	}
