@@ -161,7 +161,7 @@ func TestNodeConfigQuerierOk(t *testing.T) {
 		}),
 		func(s *grpcmock.Server) {
 			s.ExpectUnary("cosmos.base.node.v1beta1.Service/Config").
-				Return(&nodeTypes.ConfigResponse{MinimumGasPrice: "0.1uatom,0.2ustake"})
+				Return(&nodeTypes.ConfigResponse{MinimumGasPrice: "0.1uatom,0.2ustake", HaltHeight: 123})
 		},
 	)(t)
 
@@ -183,7 +183,7 @@ func TestNodeConfigQuerierOk(t *testing.T) {
 	metrics, queryInfos := querier.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
 	assert.True(t, queryInfos[0].Success)
-	assert.Len(t, metrics, 3)
+	assert.Len(t, metrics, 4)
 
 	pricesCount := metrics[0]
 	assert.Empty(t, pricesCount.Labels)
@@ -200,4 +200,8 @@ func TestNodeConfigQuerierOk(t *testing.T) {
 		"denom": "ustake",
 	}, secondPrice.Labels)
 	assert.InDelta(t, 0.2, secondPrice.Value, 0.01)
+
+	haltHeight := metrics[3]
+	assert.Equal(t, map[string]string{}, haltHeight.Labels)
+	assert.InDelta(t, 123, haltHeight.Value, 0.01)
 }

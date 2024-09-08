@@ -173,6 +173,14 @@ func NewManager() *Manager {
 			},
 			[]string{"node", "version", "tags"},
 		),
+
+		MetricNameHaltHeight: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "halt_height",
+				Help: "Node's halt-height, if it's set.",
+			},
+			[]string{"node"},
+		),
 	}
 
 	globalCollectors := map[MetricName]*prometheus.GaugeVec{

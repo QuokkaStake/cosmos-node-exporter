@@ -8,6 +8,8 @@ import (
 type Module string
 type Action string
 
+type FetcherName string
+
 const (
 	MetricsPrefix                  = "cosmos_node_exporter_"
 	UncachedGithubQueryTime        = 120 * time.Second
@@ -25,6 +27,8 @@ const (
 	ActionTendermintGetUpgradeTime       Action = "get_upgrade_time"
 	ActionGrpcGetNodeConfig              Action = "get_node_config"
 	ActionGrpcGetNodeInfo                Action = "get_node_info"
+
+	FetcherNameNodeStatus FetcherName = "node_status"
 )
 
 var (

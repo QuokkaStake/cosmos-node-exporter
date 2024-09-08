@@ -61,19 +61,27 @@ func (n *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 		return []metrics.MetricInfo{}, []query_info.QueryInfo{queryInfo}
 	}
 
-	querierMetrics := make([]metrics.MetricInfo, 1+len(coinsParsed))
-	querierMetrics[0] = metrics.MetricInfo{
+	querierMetrics := []metrics.MetricInfo{}
+	querierMetrics = append(querierMetrics, metrics.MetricInfo{
 		MetricName: metrics.MetricNameMinimumGasPricesCount,
 		Labels:     map[string]string{},
 		Value:      float64(len(coinsParsed)),
-	}
+	})
 
-	for index, amount := range coinsParsed {
-		querierMetrics[index+1] = metrics.MetricInfo{
+	for _, amount := range coinsParsed {
+		querierMetrics = append(querierMetrics, metrics.MetricInfo{
 			MetricName: metrics.MetricNameMinimumGasPrice,
 			Labels:     map[string]string{"denom": amount.Denom},
 			Value:      amount.Amount.MustFloat64(),
-		}
+		})
+	}
+
+	if config.HaltHeight > 0 {
+		querierMetrics = append(querierMetrics, metrics.MetricInfo{
+			MetricName: metrics.MetricNameHaltHeight,
+			Labels:     map[string]string{},
+			Value:      float64(config.HaltHeight),
+		})
 	}
 
 	return querierMetrics, []query_info.QueryInfo{queryInfo}

@@ -26,6 +26,7 @@ const (
 	MetricNameCosmosSdkVersion      MetricName = "cosmos_sdk_version"
 	MetricNameRunningAppVersion     MetricName = "running_app_version"
 	MetricNameGoVersion             MetricName = "go_version"
+	MetricNameHaltHeight            MetricName = "halt_height"
 	MetricNameNotExisting           MetricName = "not_existing" // for tests only
 )
 
