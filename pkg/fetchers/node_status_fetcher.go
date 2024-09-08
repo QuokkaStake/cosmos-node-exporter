@@ -20,7 +20,7 @@ type NodeStatusFetcher struct {
 
 func NewNodeStatusFetcher(logger zerolog.Logger, tendermintRPC *tendermint.RPC, tracer trace.Tracer) *NodeStatusFetcher {
 	return &NodeStatusFetcher{
-		Logger:        logger.With().Str("component", "node-stats-querier").Logger(),
+		Logger:        logger.With().Str("component", "node_status_fetcher").Logger(),
 		TendermintRPC: tendermintRPC,
 		Tracer:        tracer,
 	}

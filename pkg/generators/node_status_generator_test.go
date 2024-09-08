@@ -17,18 +17,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNodeStatsGeneratorEmpty(t *testing.T) {
+func TestNodeStatusGeneratorEmpty(t *testing.T) {
 	t.Parallel()
 
 	state := fetchers.State{}
 
-	generator := NewNodeStatsGenerator()
+	generator := NewNodeStatusGenerator()
 
 	metrics := generator.Get(state)
 	assert.Empty(t, metrics)
 }
 
-func TestNodeStatsGeneratorInvalid(t *testing.T) {
+func TestNodeStatusGeneratorInvalid(t *testing.T) {
 	t.Parallel()
 
 	defer func() {
@@ -41,12 +41,12 @@ func TestNodeStatsGeneratorInvalid(t *testing.T) {
 		constants.FetcherNameNodeStatus: 3,
 	}
 
-	generator := NewNodeStatsGenerator()
+	generator := NewNodeStatusGenerator()
 	generator.Get(state)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
-func TestNodeStatsGeneratorOk(t *testing.T) {
+func TestNodeStatusGeneratorOk(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
@@ -71,7 +71,7 @@ func TestNodeStatsGeneratorOk(t *testing.T) {
 		constants.FetcherNameNodeStatus: data,
 	}
 
-	generator := NewNodeStatsGenerator()
+	generator := NewNodeStatusGenerator()
 
 	metrics := generator.Get(state)
 	assert.Len(t, metrics, 5)

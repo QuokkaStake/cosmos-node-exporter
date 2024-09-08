@@ -8,13 +8,13 @@ import (
 	"main/pkg/utils"
 )
 
-type NodeStatsGenerator struct{}
+type NodeStatusGenerator struct{}
 
-func NewNodeStatsGenerator() *NodeStatsGenerator {
-	return &NodeStatsGenerator{}
+func NewNodeStatusGenerator() *NodeStatusGenerator {
+	return &NodeStatusGenerator{}
 }
 
-func (g *NodeStatsGenerator) Get(state fetchers.State) []metrics.MetricInfo {
+func (g *NodeStatusGenerator) Get(state fetchers.State) []metrics.MetricInfo {
 	statusRaw, ok := state[constants.FetcherNameNodeStatus]
 	if !ok || statusRaw == nil {
 		return []metrics.MetricInfo{}

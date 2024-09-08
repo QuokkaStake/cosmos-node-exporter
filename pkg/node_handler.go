@@ -75,7 +75,7 @@ func NewNodeHandler(
 	}
 
 	generators := []generatorsPkg.Generator{
-		generatorsPkg.NewNodeStatsGenerator(),
+		generatorsPkg.NewNodeStatusGenerator(),
 		generatorsPkg.NewCosmovisorVersionGenerator(),
 	}
 
