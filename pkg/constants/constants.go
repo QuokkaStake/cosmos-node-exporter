@@ -30,6 +30,7 @@ const (
 
 	FetcherNameNodeStatus        FetcherName = "node_status"
 	FetcherNameCosmovisorVersion FetcherName = "cosmovisor_version"
+	FetcherNameNodeConfig        FetcherName = "node_config"
 )
 
 var (

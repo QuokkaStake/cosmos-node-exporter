@@ -10,7 +10,6 @@ import (
 	fetchersPkg "main/pkg/fetchers"
 	generatorsPkg "main/pkg/generators"
 	metricsPkg "main/pkg/metrics"
-	nodeConfig "main/pkg/queriers/node_config"
 	nodeInfo "main/pkg/queriers/node_info"
 	"main/pkg/queriers/upgrades"
 	"main/pkg/queriers/versions"
@@ -65,18 +64,19 @@ func NewNodeHandler(
 	queriers := []types.Querier{
 		versions.NewQuerier(appLogger, gitClient, cosmovisor, tracer),
 		upgrades.NewQuerier(config.TendermintConfig.QueryUpgrades.Bool, appLogger, cosmovisor, tendermintRPC, tracer),
-		nodeConfig.NewQuerier(appLogger, grpc, tracer),
 		nodeInfo.NewQuerier(appLogger, grpc, tracer),
 	}
 
 	fetchers := fetchersPkg.Fetchers{
 		fetchersPkg.NewNodeStatusFetcher(appLogger, tendermintRPC, tracer),
 		fetchersPkg.NewCosmovisorVersionFetcher(appLogger, cosmovisor, tracer),
+		fetchersPkg.NewNodeConfigFetcher(appLogger, grpc, tracer),
 	}
 
 	generators := []generatorsPkg.Generator{
 		generatorsPkg.NewNodeStatusGenerator(),
 		generatorsPkg.NewCosmovisorVersionGenerator(),
+		generatorsPkg.NewNodeConfigGenerator(),
 	}
 
 	controller := fetchersPkg.NewController(fetchers, appLogger, config.Name)

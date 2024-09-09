@@ -106,7 +106,9 @@ func (c *Controller) Fetch(ctx context.Context) (
 
 		c.Logger.Trace().Str("name", string(fetcher.Name())).Msg("Processing fetcher...")
 
+		mutex.Lock()
 		fetchersStatus[fetcher.Name()] = FetcherProcessStatusProcessing
+		mutex.Unlock()
 
 		fetcherData, fetcherQueries := fetcher.Get(ctx)
 

@@ -1,9 +1,10 @@
-package node_stats
+package fetchers
 
 import (
 	"context"
 	grpcPkg "main/pkg/clients/grpc"
 	configPkg "main/pkg/config"
+	"main/pkg/constants"
 	loggerPkg "main/pkg/logger"
 	"main/pkg/tracing"
 	"testing"
@@ -19,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNodeConfigQuerierBase(t *testing.T) {
+func TestNodeConfigFetcherBase(t *testing.T) {
 	t.Parallel()
 
 	config := configPkg.GrpcConfig{
@@ -28,11 +29,12 @@ func TestNodeConfigQuerierBase(t *testing.T) {
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
 	client := grpcPkg.NewClient(config, *logger, tracer)
-	querier := NewQuerier(*logger, client, tracer)
-	assert.True(t, querier.Enabled())
-	assert.Equal(t, "node-config-querier", querier.Name())
+	fetcher := NewNodeConfigFetcher(*logger, client, tracer)
+	assert.True(t, fetcher.Enabled())
+	assert.Equal(t, constants.FetcherNameNodeConfig, fetcher.Name())
+	assert.Empty(t, fetcher.Dependencies())
 }
-func TestNodeConfigQuerierFail(t *testing.T) {
+func TestNodeConfigFetcherFail(t *testing.T) {
 	t.Parallel()
 
 	_, d := grpcmock.MockServerWithBufConn()(t)
@@ -51,14 +53,14 @@ func TestNodeConfigQuerierFail(t *testing.T) {
 		Tracer: tracer,
 	}
 
-	querier := NewQuerier(*logger, client, tracer)
-	metrics, queryInfos := querier.Get(context.Background())
+	fetcher := NewNodeConfigFetcher(*logger, client, tracer)
+	data, queryInfos := fetcher.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
 	assert.False(t, queryInfos[0].Success)
-	assert.Empty(t, metrics)
+	assert.Nil(t, data)
 }
 
-func TestNodeConfigQuerierError(t *testing.T) {
+func TestNodeConfigFetcherError(t *testing.T) {
 	t.Parallel()
 
 	_, d := grpcmock.MockServerWithBufConn()(t)
@@ -77,14 +79,14 @@ func TestNodeConfigQuerierError(t *testing.T) {
 		Tracer: tracer,
 	}
 
-	querier := NewQuerier(*logger, client, tracer)
-	metrics, queryInfos := querier.Get(context.Background())
+	fetcher := NewNodeConfigFetcher(*logger, client, tracer)
+	data, queryInfos := fetcher.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
 	assert.False(t, queryInfos[0].Success)
-	assert.Empty(t, metrics)
+	assert.Nil(t, data)
 }
 
-func TestNodeConfigQuerierNotImplemented(t *testing.T) {
+func TestNodeConfigFetcherNotImplemented(t *testing.T) {
 	t.Parallel()
 
 	_, d := grpcmock.MockServerWithBufConn()(t)
@@ -103,52 +105,14 @@ func TestNodeConfigQuerierNotImplemented(t *testing.T) {
 		Tracer: tracer,
 	}
 
-	querier := NewQuerier(*logger, client, tracer)
-	metrics, queryInfos := querier.Get(context.Background())
+	fetcher := NewNodeConfigFetcher(*logger, client, tracer)
+	data, queryInfos := fetcher.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
 	assert.True(t, queryInfos[0].Success)
-	assert.Empty(t, metrics)
+	assert.Nil(t, data)
 }
 
-func TestNodeConfigQuerierInvalidResponse(t *testing.T) {
-	t.Parallel()
-
-	_, d := grpcmock.MockServerWithBufConn(
-		grpcmock.RegisterServiceFromMethods(service.Method{
-			ServiceName: "cosmos.base.node.v1beta1.Service",
-			MethodName:  "Config",
-			MethodType:  service.TypeUnary,
-			Input:       &nodeTypes.ConfigRequest{},
-			Output:      &nodeTypes.ConfigResponse{},
-		}),
-		func(s *grpcmock.Server) {
-			s.ExpectUnary("cosmos.base.node.v1beta1.Service/Config").
-				Return(&nodeTypes.ConfigResponse{MinimumGasPrice: "test"})
-		},
-	)(t)
-
-	logger := loggerPkg.GetNopLogger()
-	tracer := tracing.InitNoopTracer()
-	grpcConn, err := grpc.NewClient(
-		"localhost:9090",
-		grpc.WithContextDialer(d),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	require.NoError(t, err)
-	client := &grpcPkg.Client{
-		Logger: *logger,
-		Client: grpcConn,
-		Tracer: tracer,
-	}
-
-	querier := NewQuerier(*logger, client, tracer)
-	metrics, queryInfos := querier.Get(context.Background())
-	assert.Len(t, queryInfos, 1)
-	assert.True(t, queryInfos[0].Success)
-	assert.Empty(t, metrics)
-}
-
-func TestNodeConfigQuerierOk(t *testing.T) {
+func TestNodeConfigFetcherOk(t *testing.T) {
 	t.Parallel()
 
 	_, d := grpcmock.MockServerWithBufConn(
@@ -179,29 +143,9 @@ func TestNodeConfigQuerierOk(t *testing.T) {
 		Tracer: tracer,
 	}
 
-	querier := NewQuerier(*logger, client, tracer)
-	metrics, queryInfos := querier.Get(context.Background())
+	fetcher := NewNodeConfigFetcher(*logger, client, tracer)
+	data, queryInfos := fetcher.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
 	assert.True(t, queryInfos[0].Success)
-	assert.Len(t, metrics, 4)
-
-	pricesCount := metrics[0]
-	assert.Empty(t, pricesCount.Labels)
-	assert.InDelta(t, 2, pricesCount.Value, 0.01)
-
-	firstPrice := metrics[1]
-	assert.Equal(t, map[string]string{
-		"denom": "uatom",
-	}, firstPrice.Labels)
-	assert.InDelta(t, 0.1, firstPrice.Value, 0.01)
-
-	secondPrice := metrics[2]
-	assert.Equal(t, map[string]string{
-		"denom": "ustake",
-	}, secondPrice.Labels)
-	assert.InDelta(t, 0.2, secondPrice.Value, 0.01)
-
-	haltHeight := metrics[3]
-	assert.Equal(t, map[string]string{}, haltHeight.Labels)
-	assert.InDelta(t, 123, haltHeight.Value, 0.01)
+	assert.NotNil(t, data)
 }
