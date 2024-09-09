@@ -1,9 +1,10 @@
-package node_stats
+package fetchers
 
 import (
 	"context"
 	grpcPkg "main/pkg/clients/grpc"
 	configPkg "main/pkg/config"
+	"main/pkg/constants"
 	loggerPkg "main/pkg/logger"
 	"main/pkg/tracing"
 	"testing"
@@ -18,7 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNodeInfoQuerierBase(t *testing.T) {
+func TestNodeInfoFetcherBase(t *testing.T) {
 	t.Parallel()
 
 	config := configPkg.GrpcConfig{
@@ -27,11 +28,12 @@ func TestNodeInfoQuerierBase(t *testing.T) {
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
 	client := grpcPkg.NewClient(config, *logger, tracer)
-	querier := NewQuerier(*logger, client, tracer)
-	assert.True(t, querier.Enabled())
-	assert.Equal(t, "node-info-querier", querier.Name())
+	fetcher := NewNodeInfoFetcher(*logger, client, tracer)
+	assert.True(t, fetcher.Enabled())
+	assert.Equal(t, constants.FetcherNameNodeInfo, fetcher.Name())
+	assert.Empty(t, fetcher.Dependencies())
 }
-func TestNodeInfoQuerierFail(t *testing.T) {
+func TestNodeInfoFetcherFail(t *testing.T) {
 	t.Parallel()
 
 	_, d := grpcmock.MockServerWithBufConn()(t)
@@ -50,14 +52,14 @@ func TestNodeInfoQuerierFail(t *testing.T) {
 		Tracer: tracer,
 	}
 
-	querier := NewQuerier(*logger, client, tracer)
-	metrics, queryInfos := querier.Get(context.Background())
+	fetcher := NewNodeInfoFetcher(*logger, client, tracer)
+	data, queryInfos := fetcher.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
 	assert.False(t, queryInfos[0].Success)
-	assert.Empty(t, metrics)
+	assert.Empty(t, data)
 }
 
-func TestNodeInfoQuerierError(t *testing.T) {
+func TestNodeInfoFetcherError(t *testing.T) {
 	t.Parallel()
 
 	_, d := grpcmock.MockServerWithBufConn()(t)
@@ -76,14 +78,14 @@ func TestNodeInfoQuerierError(t *testing.T) {
 		Tracer: tracer,
 	}
 
-	querier := NewQuerier(*logger, client, tracer)
-	metrics, queryInfos := querier.Get(context.Background())
+	fetcher := NewNodeInfoFetcher(*logger, client, tracer)
+	data, queryInfos := fetcher.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
 	assert.False(t, queryInfos[0].Success)
-	assert.Empty(t, metrics)
+	assert.Empty(t, data)
 }
 
-func TestNodeInfoQuerierOk(t *testing.T) {
+func TestNodeInfoFetcherOk(t *testing.T) {
 	t.Parallel()
 
 	_, d := grpcmock.MockServerWithBufConn(
@@ -124,31 +126,9 @@ func TestNodeInfoQuerierOk(t *testing.T) {
 		Tracer: tracer,
 	}
 
-	querier := NewQuerier(*logger, client, tracer)
-	metrics, queryInfos := querier.Get(context.Background())
+	fetcher := NewNodeInfoFetcher(*logger, client, tracer)
+	data, queryInfos := fetcher.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
 	assert.True(t, queryInfos[0].Success)
-	assert.Len(t, metrics, 3)
-
-	cosmosSdkVersion := metrics[0]
-	assert.Equal(t, map[string]string{
-		"version": "0.50.7",
-	}, cosmosSdkVersion.Labels)
-	assert.InDelta(t, 1, cosmosSdkVersion.Value, 0.01)
-
-	appInfo := metrics[1]
-	assert.Equal(t, map[string]string{
-		"name":       "appd",
-		"app_name":   "app",
-		"git_commit": "123abc",
-		"version":    "1.2.3",
-	}, appInfo.Labels)
-	assert.InDelta(t, 1, appInfo.Value, 0.01)
-
-	goVersion := metrics[2]
-	assert.Equal(t, map[string]string{
-		"tags":    "netgo,ledger",
-		"version": "1.22.3",
-	}, goVersion.Labels)
-	assert.InDelta(t, 1, goVersion.Value, 0.01)
+	assert.NotEmpty(t, data)
 }

@@ -72,10 +72,12 @@ func (c *Controller) Fetch(ctx context.Context) (
 		}
 
 		for _, fetcher := range c.Fetchers {
+			mutex.Lock()
 			if _, ok := fetchersStatus[fetcher.Name()]; ok {
 				c.Logger.Trace().
 					Str("name", string(fetcher.Name())).
 					Msg("Fetcher is already being processed or is processed, skipping.")
+				mutex.Unlock()
 				continue
 			}
 
@@ -83,8 +85,11 @@ func (c *Controller) Fetch(ctx context.Context) (
 				c.Logger.Trace().
 					Str("name", string(fetcher.Name())).
 					Msg("Fetcher's dependencies are not yet processed, skipping for now.")
+				mutex.Unlock()
 				continue
 			}
+
+			mutex.Unlock()
 
 			wg.Add(1)
 			go processFetcher(fetcher)
