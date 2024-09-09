@@ -1,102 +1,91 @@
-package versions
+package generators
 
 import (
 	"context"
-	"errors"
 	"main/assets"
 	cosmovisorPkg "main/pkg/clients/cosmovisor"
 	githubPkg "main/pkg/clients/git"
 	configPkg "main/pkg/config"
+	"main/pkg/constants"
 	"main/pkg/exec"
+	"main/pkg/fetchers"
 	loggerPkg "main/pkg/logger"
 	"main/pkg/tracing"
+	"main/pkg/types"
 	"net/http"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/guregu/null.v4"
 )
 
-func TestVersionsQuerierBase(t *testing.T) {
+func TestLocalVersionGeneratorLocalEmpty(t *testing.T) {
 	t.Parallel()
 
+	state := fetchers.State{}
+
 	logger := loggerPkg.GetNopLogger()
-	tracer := tracing.InitNoopTracer()
-	querier := NewQuerier(*logger, nil, nil, tracer)
-	assert.False(t, querier.Enabled())
-	assert.Equal(t, "versions-querier", querier.Name())
+	generator := NewIsLatestGenerator(*logger)
+
+	metrics := generator.Get(state)
+	assert.Empty(t, metrics)
+}
+
+func TestLocalVersionGeneratorLocalInvalid(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		if r := recover(); r == nil {
+			require.Fail(t, "Expected to have a panic here!")
+		}
+	}()
+
+	state := fetchers.State{
+		constants.FetcherNameLocalVersion: 3,
+	}
+
+	logger := loggerPkg.GetNopLogger()
+	generator := NewIsLatestGenerator(*logger)
+	generator.Get(state)
+}
+
+func TestLocalVersionGeneratorRemoteEmpty(t *testing.T) {
+	t.Parallel()
+
+	state := fetchers.State{
+		constants.FetcherNameLocalVersion: types.VersionInfo{Version: "1.2.3", Name: "gaiad"},
+	}
+
+	logger := loggerPkg.GetNopLogger()
+	generator := NewIsLatestGenerator(*logger)
+
+	metrics := generator.Get(state)
+	assert.Empty(t, metrics)
+}
+
+func TestLocalVersionGeneratorRemoteInvalid(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		if r := recover(); r == nil {
+			require.Fail(t, "Expected to have a panic here!")
+		}
+	}()
+
+	state := fetchers.State{
+		constants.FetcherNameLocalVersion:  types.VersionInfo{Version: "1.2.3", Name: "gaiad"},
+		constants.FetcherNameRemoteVersion: 3,
+	}
+
+	logger := loggerPkg.GetNopLogger()
+	generator := NewIsLatestGenerator(*logger)
+	generator.Get(state)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
-func TestVersionsQuerierGitFail(t *testing.T) {
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder(
-		"GET",
-		"https://api.github.com/repos/cosmos/gaia/releases/latest",
-		httpmock.NewErrorResponder(errors.New("custom error")),
-	)
-
-	config := configPkg.GitConfig{Repository: "https://github.com/cosmos/gaia"}
-	logger := loggerPkg.GetNopLogger()
-	tracer := tracing.InitNoopTracer()
-	githubClient := githubPkg.NewGithub(config, *logger, tracer)
-	querier := NewQuerier(*logger, githubClient, nil, tracer)
-
-	metrics, queryInfos := querier.Get(context.Background())
-	assert.Len(t, queryInfos, 1)
-	assert.False(t, queryInfos[0].Success)
-	assert.Empty(t, metrics)
-}
-
-func TestVersionsQuerierCosmovisorFail(t *testing.T) {
-	t.Parallel()
-
-	config := configPkg.CosmovisorConfig{
-		Enabled:         null.BoolFrom(true),
-		ChainBinaryName: "gaiad",
-		ChainFolder:     "/home/validator/.gaia",
-		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-	}
-	logger := loggerPkg.GetNopLogger()
-	tracer := tracing.InitNoopTracer()
-	cosmovisor := cosmovisorPkg.NewCosmovisor(config, *logger, tracer)
-	cosmovisor.CommandExecutor = &exec.TestCommandExecutor{Expected: assets.GetBytesOrPanic("invalid.toml")}
-
-	querier := NewQuerier(*logger, nil, cosmovisor, tracer)
-
-	metrics, queryInfos := querier.Get(context.Background())
-	assert.Len(t, queryInfos, 1)
-	assert.False(t, queryInfos[0].Success)
-	assert.Empty(t, metrics)
-}
-
-func TestVersionsQuerierCosmovisorOk(t *testing.T) {
-	t.Parallel()
-
-	config := configPkg.CosmovisorConfig{
-		Enabled:         null.BoolFrom(true),
-		ChainBinaryName: "gaiad",
-		ChainFolder:     "/home/validator/.gaia",
-		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
-	}
-	logger := loggerPkg.GetNopLogger()
-	tracer := tracing.InitNoopTracer()
-	cosmovisor := cosmovisorPkg.NewCosmovisor(config, *logger, tracer)
-	cosmovisor.CommandExecutor = &exec.TestCommandExecutor{Expected: assets.GetBytesOrPanic("cosmovisor-app-version-ok.txt")}
-
-	querier := NewQuerier(*logger, nil, cosmovisor, tracer)
-
-	metrics, queryInfos := querier.Get(context.Background())
-	assert.Len(t, queryInfos, 1)
-	assert.True(t, queryInfos[0].Success)
-	assert.Empty(t, metrics)
-}
-
-//nolint:paralleltest // disabled due to httpmock usage
-func TestVersionsQuerierLocalSemverInvalid(t *testing.T) {
+func TestIsLatestGeneratorLocalSemverInvalid(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
@@ -122,17 +111,23 @@ func TestVersionsQuerierLocalSemverInvalid(t *testing.T) {
 	cosmovisor := cosmovisorPkg.NewCosmovisor(cosmovisorConfig, *logger, tracer)
 	cosmovisor.CommandExecutor = &exec.TestCommandExecutor{Expected: assets.GetBytesOrPanic("cosmovisor-app-version-invalid.txt")}
 
-	querier := NewQuerier(*logger, githubClient, cosmovisor, tracer)
+	localFetcher := fetchers.NewLocalVersionFetcher(*logger, cosmovisor, tracer)
+	localData, _ := localFetcher.Get(context.Background())
 
-	metrics, queryInfos := querier.Get(context.Background())
-	assert.Len(t, queryInfos, 2)
-	assert.True(t, queryInfos[0].Success)
-	assert.True(t, queryInfos[1].Success)
+	remoteFetcher := fetchers.NewRemoteVersionFetcher(*logger, githubClient, tracer)
+	remoteData, _ := remoteFetcher.Get(context.Background())
+
+	state := fetchers.State{
+		constants.FetcherNameLocalVersion:  localData,
+		constants.FetcherNameRemoteVersion: remoteData,
+	}
+	generator := NewIsLatestGenerator(*logger)
+	metrics := generator.Get(state)
 	assert.Empty(t, metrics)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
-func TestVersionsQuerierRemoteSemverInvalid(t *testing.T) {
+func TestIsLatestGeneratorRemoteSemverInvalid(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
@@ -158,17 +153,23 @@ func TestVersionsQuerierRemoteSemverInvalid(t *testing.T) {
 	cosmovisor := cosmovisorPkg.NewCosmovisor(cosmovisorConfig, *logger, tracer)
 	cosmovisor.CommandExecutor = &exec.TestCommandExecutor{Expected: assets.GetBytesOrPanic("cosmovisor-app-version-ok.txt")}
 
-	querier := NewQuerier(*logger, githubClient, cosmovisor, tracer)
+	localFetcher := fetchers.NewLocalVersionFetcher(*logger, cosmovisor, tracer)
+	localData, _ := localFetcher.Get(context.Background())
 
-	metrics, queryInfos := querier.Get(context.Background())
-	assert.Len(t, queryInfos, 2)
-	assert.True(t, queryInfos[0].Success)
-	assert.True(t, queryInfos[1].Success)
+	remoteFetcher := fetchers.NewRemoteVersionFetcher(*logger, githubClient, tracer)
+	remoteData, _ := remoteFetcher.Get(context.Background())
+
+	state := fetchers.State{
+		constants.FetcherNameLocalVersion:  localData,
+		constants.FetcherNameRemoteVersion: remoteData,
+	}
+	generator := NewIsLatestGenerator(*logger)
+	metrics := generator.Get(state)
 	assert.Empty(t, metrics)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
-func TestVersionsQuerierAllOk(t *testing.T) {
+func TestIsLatestGeneratorAllOk(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
@@ -194,12 +195,18 @@ func TestVersionsQuerierAllOk(t *testing.T) {
 	cosmovisor := cosmovisorPkg.NewCosmovisor(cosmovisorConfig, *logger, tracer)
 	cosmovisor.CommandExecutor = &exec.TestCommandExecutor{Expected: assets.GetBytesOrPanic("cosmovisor-app-version-ok.txt")}
 
-	querier := NewQuerier(*logger, githubClient, cosmovisor, tracer)
+	localFetcher := fetchers.NewLocalVersionFetcher(*logger, cosmovisor, tracer)
+	localData, _ := localFetcher.Get(context.Background())
 
-	metrics, queryInfos := querier.Get(context.Background())
-	assert.Len(t, queryInfos, 2)
-	assert.True(t, queryInfos[0].Success)
-	assert.True(t, queryInfos[1].Success)
+	remoteFetcher := fetchers.NewRemoteVersionFetcher(*logger, githubClient, tracer)
+	remoteData, _ := remoteFetcher.Get(context.Background())
+
+	state := fetchers.State{
+		constants.FetcherNameLocalVersion:  localData,
+		constants.FetcherNameRemoteVersion: remoteData,
+	}
+	generator := NewIsLatestGenerator(*logger)
+	metrics := generator.Get(state)
 	assert.Len(t, metrics, 1)
 
 	isLatest := metrics[0]

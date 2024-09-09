@@ -11,7 +11,6 @@ import (
 	generatorsPkg "main/pkg/generators"
 	metricsPkg "main/pkg/metrics"
 	"main/pkg/queriers/upgrades"
-	"main/pkg/queriers/versions"
 	"main/pkg/query_info"
 	"main/pkg/types"
 	"main/pkg/utils"
@@ -61,7 +60,6 @@ func NewNodeHandler(
 	gitClient := git.GetClient(config.GitConfig, appLogger, tracer)
 
 	queriers := []types.Querier{
-		versions.NewQuerier(appLogger, gitClient, cosmovisor, tracer),
 		upgrades.NewQuerier(config.TendermintConfig.QueryUpgrades.Bool, appLogger, cosmovisor, tendermintRPC, tracer),
 	}
 
@@ -81,6 +79,7 @@ func NewNodeHandler(
 		generatorsPkg.NewNodeInfoGenerator(),
 		generatorsPkg.NewRemoteVersionGenerator(),
 		generatorsPkg.NewLocalVersionGenerator(),
+		generatorsPkg.NewIsLatestGenerator(appLogger),
 	}
 
 	controller := fetchersPkg.NewController(fetchers, appLogger, config.Name)
