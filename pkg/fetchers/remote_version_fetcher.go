@@ -19,7 +19,7 @@ type RemoteVersionFetcher struct {
 
 func NewRemoteVersionFetcher(logger zerolog.Logger, gitClient git.Client, tracer trace.Tracer) *RemoteVersionFetcher {
 	return &RemoteVersionFetcher{
-		Logger:    logger.With().Str("component", "node_status_fetcher").Logger(),
+		Logger:    logger.With().Str("component", "remote_version_fetcher").Logger(),
 		GitClient: gitClient,
 		Tracer:    tracer,
 	}

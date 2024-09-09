@@ -90,12 +90,6 @@ func (v *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 			v.Logger.Err(cosmovisorErr).Msg("Could not get app version")
 		} else {
 			cosmovisorVersionFetched = true
-
-			metricsInfos = append(metricsInfos, metrics.MetricInfo{
-				MetricName: metrics.MetricNameLocalVersion,
-				Labels:     map[string]string{"version": versionInfo.Version},
-				Value:      1,
-			})
 		}
 	}
 

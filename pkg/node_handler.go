@@ -71,6 +71,7 @@ func NewNodeHandler(
 		fetchersPkg.NewNodeConfigFetcher(appLogger, grpc, tracer),
 		fetchersPkg.NewNodeInfoFetcher(appLogger, grpc, tracer),
 		fetchersPkg.NewRemoteVersionFetcher(appLogger, gitClient, tracer),
+		fetchersPkg.NewLocalVersionFetcher(appLogger, cosmovisor, tracer),
 	}
 
 	generators := []generatorsPkg.Generator{
@@ -79,6 +80,7 @@ func NewNodeHandler(
 		generatorsPkg.NewNodeConfigGenerator(),
 		generatorsPkg.NewNodeInfoGenerator(),
 		generatorsPkg.NewRemoteVersionGenerator(),
+		generatorsPkg.NewLocalVersionGenerator(),
 	}
 
 	controller := fetchersPkg.NewController(fetchers, appLogger, config.Name)

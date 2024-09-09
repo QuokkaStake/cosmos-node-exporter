@@ -92,13 +92,7 @@ func TestVersionsQuerierCosmovisorOk(t *testing.T) {
 	metrics, queryInfos := querier.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
 	assert.True(t, queryInfos[0].Success)
-	assert.Len(t, metrics, 1)
-
-	localVersion := metrics[0]
-	assert.Equal(t, map[string]string{
-		"version": "1.6.4",
-	}, localVersion.Labels)
-	assert.InDelta(t, 1, localVersion.Value, 0.01)
+	assert.Empty(t, metrics)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
@@ -134,13 +128,7 @@ func TestVersionsQuerierLocalSemverInvalid(t *testing.T) {
 	assert.Len(t, queryInfos, 2)
 	assert.True(t, queryInfos[0].Success)
 	assert.True(t, queryInfos[1].Success)
-	assert.Len(t, metrics, 1)
-
-	localVersion := metrics[0]
-	assert.Equal(t, map[string]string{
-		"version": "test",
-	}, localVersion.Labels)
-	assert.InDelta(t, 1, localVersion.Value, 0.01)
+	assert.Empty(t, metrics)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
@@ -176,13 +164,7 @@ func TestVersionsQuerierRemoteSemverInvalid(t *testing.T) {
 	assert.Len(t, queryInfos, 2)
 	assert.True(t, queryInfos[0].Success)
 	assert.True(t, queryInfos[1].Success)
-	assert.Len(t, metrics, 1)
-
-	localVersion := metrics[0]
-	assert.Equal(t, map[string]string{
-		"version": "1.6.4",
-	}, localVersion.Labels)
-	assert.InDelta(t, 1, localVersion.Value, 0.01)
+	assert.Empty(t, metrics)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
@@ -218,15 +200,9 @@ func TestVersionsQuerierAllOk(t *testing.T) {
 	assert.Len(t, queryInfos, 2)
 	assert.True(t, queryInfos[0].Success)
 	assert.True(t, queryInfos[1].Success)
-	assert.Len(t, metrics, 2)
+	assert.Len(t, metrics, 1)
 
-	localVersion := metrics[0]
-	assert.Equal(t, map[string]string{
-		"version": "1.6.4",
-	}, localVersion.Labels)
-	assert.InDelta(t, 1, localVersion.Value, 0.01)
-
-	isLatest := metrics[1]
+	isLatest := metrics[0]
 	assert.Equal(t, map[string]string{
 		"local_version":  "1.6.4",
 		"remote_version": "17.2.0",
