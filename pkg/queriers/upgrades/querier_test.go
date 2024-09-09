@@ -85,21 +85,7 @@ func TestUpgradesQuerierTendermintFailBlock(t *testing.T) {
 	assert.Len(t, queryInfos, 2)
 	assert.True(t, queryInfos[0].Success)
 	assert.False(t, queryInfos[1].Success)
-	assert.Len(t, metrics, 3)
-
-	upgradeComing := metrics[0]
-	assert.Empty(t, upgradeComing.Labels)
-	assert.InDelta(t, 1, upgradeComing.Value, 0.01)
-
-	upgradeInfo := metrics[1]
-	assert.NotEmpty(t, upgradeInfo.Labels["info"])
-	assert.Equal(t, "v1.5.0", upgradeInfo.Labels["name"])
-	assert.InDelta(t, 1, upgradeInfo.Value, 0.01)
-
-	upgradeHeight := metrics[2]
-	assert.NotEmpty(t, upgradeHeight.Labels["info"])
-	assert.Equal(t, "v1.5.0", upgradeHeight.Labels["name"])
-	assert.InDelta(t, 8375044, upgradeHeight.Value, 0.01)
+	assert.Empty(t, metrics)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
@@ -124,11 +110,7 @@ func TestUpgradesQuerierNoUpgrade(t *testing.T) {
 	metrics, queryInfos := querier.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
 	assert.True(t, queryInfos[0].Success)
-	assert.Len(t, metrics, 1)
-
-	upgradeComing := metrics[0]
-	assert.Empty(t, upgradeComing.Labels)
-	assert.Zero(t, upgradeComing.Value)
+	assert.Empty(t, metrics)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
@@ -166,24 +148,9 @@ func TestUpgradesQuerierTendermintOk(t *testing.T) {
 	assert.Len(t, queryInfos, 2)
 	assert.True(t, queryInfos[0].Success)
 	assert.True(t, queryInfos[1].Success)
-	assert.Len(t, metrics, 4)
+	assert.Len(t, metrics, 1)
 
-	upgradeComing := metrics[0]
-	assert.Empty(t, upgradeComing.Labels)
-	assert.InDelta(t, 1, upgradeComing.Value, 0.01)
-
-	upgradeInfo := metrics[1]
-	assert.NotEmpty(t, upgradeInfo.Labels["info"])
-	assert.Equal(t, "v1.5.0", upgradeInfo.Labels["name"])
-	assert.InDelta(t, 1, upgradeInfo.Value, 0.01)
-
-	upgradeHeight := metrics[2]
-	assert.NotEmpty(t, upgradeHeight.Labels["info"])
-	assert.Equal(t, "v1.5.0", upgradeHeight.Labels["name"])
-	assert.InDelta(t, 8375044, upgradeHeight.Value, 0.01)
-
-	upgradeTime := metrics[3]
-	assert.NotEmpty(t, upgradeTime.Labels["info"])
+	upgradeTime := metrics[0]
 	assert.Equal(t, "v1.5.0", upgradeTime.Labels["name"])
 }
 
@@ -225,24 +192,9 @@ func TestUpgradesQuerierTendermintCosmovisorFail(t *testing.T) {
 	assert.True(t, queryInfos[0].Success)
 	assert.True(t, queryInfos[1].Success)
 	assert.False(t, queryInfos[2].Success)
-	assert.Len(t, metrics, 4)
+	assert.Len(t, metrics, 1)
 
-	upgradeComing := metrics[0]
-	assert.Empty(t, upgradeComing.Labels)
-	assert.InDelta(t, 1, upgradeComing.Value, 0.01)
-
-	upgradeInfo := metrics[1]
-	assert.NotEmpty(t, upgradeInfo.Labels["info"])
-	assert.Equal(t, "v1.5.0", upgradeInfo.Labels["name"])
-	assert.InDelta(t, 1, upgradeInfo.Value, 0.01)
-
-	upgradeHeight := metrics[2]
-	assert.NotEmpty(t, upgradeHeight.Labels["info"])
-	assert.Equal(t, "v1.5.0", upgradeHeight.Labels["name"])
-	assert.InDelta(t, 8375044, upgradeHeight.Value, 0.01)
-
-	upgradeTime := metrics[3]
-	assert.NotEmpty(t, upgradeTime.Labels["info"])
+	upgradeTime := metrics[0]
 	assert.Equal(t, "v1.5.0", upgradeTime.Labels["name"])
 }
 
@@ -285,29 +237,13 @@ func TestUpgradesQuerierTendermintCosmovisorOk(t *testing.T) {
 	assert.True(t, queryInfos[0].Success)
 	assert.True(t, queryInfos[1].Success)
 	assert.True(t, queryInfos[2].Success)
-	assert.Len(t, metrics, 5)
+	assert.Len(t, metrics, 2)
 
-	upgradeComing := metrics[0]
-	assert.Empty(t, upgradeComing.Labels)
-	assert.InDelta(t, 1, upgradeComing.Value, 0.01)
-
-	upgradeInfo := metrics[1]
-	assert.NotEmpty(t, upgradeInfo.Labels["info"])
-	assert.Equal(t, "v1.5.0", upgradeInfo.Labels["name"])
-	assert.InDelta(t, 1, upgradeInfo.Value, 0.01)
-
-	upgradeHeight := metrics[2]
-	assert.NotEmpty(t, upgradeHeight.Labels["info"])
-	assert.Equal(t, "v1.5.0", upgradeHeight.Labels["name"])
-	assert.InDelta(t, 8375044, upgradeHeight.Value, 0.01)
-
-	upgradeTime := metrics[3]
-	assert.NotEmpty(t, upgradeTime.Labels["info"])
+	upgradeTime := metrics[0]
 	assert.Equal(t, "v1.5.0", upgradeTime.Labels["name"])
 	assert.InDelta(t, 1642330177, upgradeTime.Value, 0.01)
 
-	upgradePresent := metrics[4]
-	assert.NotEmpty(t, upgradePresent.Labels["info"])
+	upgradePresent := metrics[1]
 	assert.Equal(t, "v1.5.0", upgradePresent.Labels["name"])
 	assert.Zero(t, upgradePresent.Value)
 }

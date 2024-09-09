@@ -64,26 +64,12 @@ func (u *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 
 	isUpgradePresent := upgrade != nil
 
-	metricInfos := []metrics.MetricInfo{{
-		MetricName: metrics.MetricNameUpgradeComing,
-		Labels:     map[string]string{},
-		Value:      utils.BoolToFloat64(isUpgradePresent),
-	}}
+	metricInfos := []metrics.MetricInfo{}
 	queryInfos := []query_info.QueryInfo{upgradePlanQuery}
 
 	if !isUpgradePresent {
 		return metricInfos, queryInfos
 	}
-
-	metricInfos = append(metricInfos, metrics.MetricInfo{
-		MetricName: metrics.MetricNameUpgradeInfo,
-		Labels:     map[string]string{"name": upgrade.Name, "info": upgrade.Info},
-		Value:      utils.BoolToFloat64(isUpgradePresent),
-	}, metrics.MetricInfo{
-		MetricName: metrics.MetricNameUpgradeHeight,
-		Labels:     map[string]string{"name": upgrade.Name, "info": upgrade.Info},
-		Value:      float64(upgrade.Height),
-	})
 
 	// Calculate upgrade estimated time
 	upgradeTime, upgradeTimeQuery, err := u.Tendermint.GetEstimateBlockTime(childCtx, upgrade.Height)
@@ -96,7 +82,7 @@ func (u *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 
 	metricInfos = append(metricInfos, metrics.MetricInfo{
 		MetricName: metrics.MetricNameUpgradeEstimatedTime,
-		Labels:     map[string]string{"name": upgrade.Name, "info": upgrade.Info},
+		Labels:     map[string]string{"name": upgrade.Name},
 		Value:      float64(upgradeTime.Unix()),
 	})
 
@@ -123,7 +109,7 @@ func (u *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 
 	metricInfos = append(metricInfos, metrics.MetricInfo{
 		MetricName: metrics.MetricNameUpgradeBinaryPresent,
-		Labels:     map[string]string{"name": upgrade.Name, "info": upgrade.Info},
+		Labels:     map[string]string{"name": upgrade.Name},
 		Value:      utils.BoolToFloat64(upgrades.HasUpgrade(upgradeName)),
 	})
 

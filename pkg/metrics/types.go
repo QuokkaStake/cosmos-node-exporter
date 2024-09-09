@@ -12,7 +12,6 @@ const (
 	MetricNameRemoteVersion         MetricName = "remote_version"
 	MetricNameLocalVersion          MetricName = "local_version"
 	MetricNameIsLatest              MetricName = "is_latest"
-	MetricNameUpgradeComing         MetricName = "upgrade_coming"
 	MetricNameUpgradeInfo           MetricName = "upgrade_info"
 	MetricNameUpgradeHeight         MetricName = "upgrade_height"
 	MetricNameUpgradeEstimatedTime  MetricName = "upgrade_estimated_time"

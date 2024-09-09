@@ -36,6 +36,7 @@ const (
 	FetcherNameAppVersion        FetcherName = "app_version"
 	FetcherNameRemoteVersion     FetcherName = "remote_version"
 	FetcherNameLocalVersion      FetcherName = "local_version"
+	FetcherNameUpgrades          FetcherName = "upgrades"
 )
 
 var (
