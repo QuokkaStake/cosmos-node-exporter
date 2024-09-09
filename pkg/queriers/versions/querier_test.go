@@ -51,37 +51,6 @@ func TestVersionsQuerierGitFail(t *testing.T) {
 	assert.Empty(t, metrics)
 }
 
-//nolint:paralleltest // disabled due to httpmock usage
-func TestVersionsQuerierGitOk(t *testing.T) {
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder(
-		"GET",
-		"https://api.github.com/repos/cosmos/gaia/releases/latest",
-		httpmock.
-			NewBytesResponder(200, assets.GetBytesOrPanic("github-valid.json")).
-			HeaderAdd(http.Header{"x-ratelimit-reset": []string{"12345"}}),
-	)
-
-	config := configPkg.GitConfig{Repository: "https://github.com/cosmos/gaia"}
-	logger := loggerPkg.GetNopLogger()
-	tracer := tracing.InitNoopTracer()
-	githubClient := githubPkg.NewGithub(config, *logger, tracer)
-	querier := NewQuerier(*logger, githubClient, nil, tracer)
-
-	metrics, queryInfos := querier.Get(context.Background())
-	assert.Len(t, queryInfos, 1)
-	assert.True(t, queryInfos[0].Success)
-	assert.Len(t, metrics, 1)
-
-	remoteVersion := metrics[0]
-	assert.Equal(t, map[string]string{
-		"version": "17.2.0",
-	}, remoteVersion.Labels)
-	assert.InDelta(t, 1, remoteVersion.Value, 0.01)
-}
-
 func TestVersionsQuerierCosmovisorFail(t *testing.T) {
 	t.Parallel()
 
@@ -165,15 +134,9 @@ func TestVersionsQuerierLocalSemverInvalid(t *testing.T) {
 	assert.Len(t, queryInfos, 2)
 	assert.True(t, queryInfos[0].Success)
 	assert.True(t, queryInfos[1].Success)
-	assert.Len(t, metrics, 2)
+	assert.Len(t, metrics, 1)
 
-	remoteVersion := metrics[0]
-	assert.Equal(t, map[string]string{
-		"version": "17.2.0",
-	}, remoteVersion.Labels)
-	assert.InDelta(t, 1, remoteVersion.Value, 0.01)
-
-	localVersion := metrics[1]
+	localVersion := metrics[0]
 	assert.Equal(t, map[string]string{
 		"version": "test",
 	}, localVersion.Labels)
@@ -213,15 +176,9 @@ func TestVersionsQuerierRemoteSemverInvalid(t *testing.T) {
 	assert.Len(t, queryInfos, 2)
 	assert.True(t, queryInfos[0].Success)
 	assert.True(t, queryInfos[1].Success)
-	assert.Len(t, metrics, 2)
+	assert.Len(t, metrics, 1)
 
-	remoteVersion := metrics[0]
-	assert.Equal(t, map[string]string{
-		"version": "test",
-	}, remoteVersion.Labels)
-	assert.InDelta(t, 1, remoteVersion.Value, 0.01)
-
-	localVersion := metrics[1]
+	localVersion := metrics[0]
 	assert.Equal(t, map[string]string{
 		"version": "1.6.4",
 	}, localVersion.Labels)
@@ -261,21 +218,15 @@ func TestVersionsQuerierAllOk(t *testing.T) {
 	assert.Len(t, queryInfos, 2)
 	assert.True(t, queryInfos[0].Success)
 	assert.True(t, queryInfos[1].Success)
-	assert.Len(t, metrics, 3)
+	assert.Len(t, metrics, 2)
 
-	remoteVersion := metrics[0]
-	assert.Equal(t, map[string]string{
-		"version": "17.2.0",
-	}, remoteVersion.Labels)
-	assert.InDelta(t, 1, remoteVersion.Value, 0.01)
-
-	localVersion := metrics[1]
+	localVersion := metrics[0]
 	assert.Equal(t, map[string]string{
 		"version": "1.6.4",
 	}, localVersion.Labels)
 	assert.InDelta(t, 1, localVersion.Value, 0.01)
 
-	isLatest := metrics[2]
+	isLatest := metrics[1]
 	assert.Equal(t, map[string]string{
 		"local_version":  "1.6.4",
 		"remote_version": "17.2.0",

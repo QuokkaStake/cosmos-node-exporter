@@ -80,12 +80,6 @@ func (v *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 			if latestVersion[0] == 'v' {
 				latestVersion = latestVersion[1:]
 			}
-
-			metricsInfos = append(metricsInfos, metrics.MetricInfo{
-				MetricName: metrics.MetricNameRemoteVersion,
-				Labels:     map[string]string{"version": latestVersion},
-				Value:      1,
-			})
 		}
 	}
 

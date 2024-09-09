@@ -34,6 +34,7 @@ const (
 	FetcherNameNodeInfo          FetcherName = "node_info"
 	FetcherNameUptime            FetcherName = "uptime"
 	FetcherNameAppVersion        FetcherName = "app_version"
+	FetcherNameRemoteVersion     FetcherName = "remote_version"
 )
 
 var (
