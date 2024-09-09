@@ -33,6 +33,7 @@ const (
 	FetcherNameNodeConfig        FetcherName = "node_config"
 	FetcherNameNodeInfo          FetcherName = "node_info"
 	FetcherNameUptime            FetcherName = "uptime"
+	FetcherNameAppVersion        FetcherName = "app_version"
 )
 
 var (

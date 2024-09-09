@@ -9,10 +9,8 @@ import (
 	"main/pkg/logger"
 	"main/pkg/metrics"
 
-	"main/pkg/queriers/app"
 	"main/pkg/query_info"
 	"main/pkg/tracing"
-	"main/pkg/types"
 	"net/http"
 	"sync"
 	"time"
@@ -33,7 +31,6 @@ type App struct {
 	Config         *configPkg.Config
 	NodeHandlers   []*NodeHandler
 	MetricsManager *metrics.Manager
-	GlobalQueriers []types.Querier
 	Controller     *fetchersPkg.Controller
 	Generators     []generatorsPkg.Generator
 	Tracer         trace.Tracer
@@ -63,16 +60,14 @@ func NewApp(
 		nodeHandlers[index] = NewNodeHandler(log, nodeConfig, tracer)
 	}
 
-	globalQueriers := []types.Querier{
-		app.NewQuerier(version),
-	}
-
 	fetchers := fetchersPkg.Fetchers{
 		fetchersPkg.NewUptimeFetcher(),
+		fetchersPkg.NewAppVersionFetcher(version),
 	}
 
 	generators := []generatorsPkg.Generator{
 		generatorsPkg.NewUptimeGenerator(),
+		generatorsPkg.NewAppVersionGenerator(),
 	}
 
 	controller := fetchersPkg.NewController(fetchers, *log, "global")
@@ -84,7 +79,6 @@ func NewApp(
 		Config:         appConfig,
 		NodeHandlers:   nodeHandlers,
 		MetricsManager: metrics.NewManager(),
-		GlobalQueriers: globalQueriers,
 		Tracer:         tracer,
 		Server:         server,
 		Controller:     controller,

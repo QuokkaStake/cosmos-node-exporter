@@ -8,15 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUptimeFetcher(t *testing.T) {
+func TestAppVersionFetcher(t *testing.T) {
 	t.Parallel()
 
-	fetchers := NewUptimeFetcher()
+	fetchers := NewAppVersionFetcher("1.2.3")
 	assert.True(t, fetchers.Enabled())
-	assert.Equal(t, constants.FetcherNameUptime, fetchers.Name())
+	assert.Equal(t, constants.FetcherNameAppVersion, fetchers.Name())
 	assert.Empty(t, fetchers.Dependencies())
 
 	data, queryInfos := fetchers.Get(context.Background())
 	assert.Empty(t, queryInfos)
-	assert.NotEmpty(t, data)
+	assert.Equal(t, "1.2.3", data)
 }
