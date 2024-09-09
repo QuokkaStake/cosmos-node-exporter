@@ -3,11 +3,13 @@ package pkg
 import (
 	"context"
 	configPkg "main/pkg/config"
+	fetchersPkg "main/pkg/fetchers"
 	"main/pkg/fs"
+	generatorsPkg "main/pkg/generators"
 	"main/pkg/logger"
 	"main/pkg/metrics"
+
 	"main/pkg/queriers/app"
-	"main/pkg/queriers/uptime"
 	"main/pkg/query_info"
 	"main/pkg/tracing"
 	"main/pkg/types"
@@ -32,6 +34,8 @@ type App struct {
 	NodeHandlers   []*NodeHandler
 	MetricsManager *metrics.Manager
 	GlobalQueriers []types.Querier
+	Controller     *fetchersPkg.Controller
+	Generators     []generatorsPkg.Generator
 	Tracer         trace.Tracer
 	Server         *http.Server
 }
@@ -61,8 +65,17 @@ func NewApp(
 
 	globalQueriers := []types.Querier{
 		app.NewQuerier(version),
-		uptime.NewQuerier(),
 	}
+
+	fetchers := fetchersPkg.Fetchers{
+		fetchersPkg.NewUptimeFetcher(),
+	}
+
+	generators := []generatorsPkg.Generator{
+		generatorsPkg.NewUptimeGenerator(),
+	}
+
+	controller := fetchersPkg.NewController(fetchers, *log, "global")
 
 	server := &http.Server{Addr: appConfig.ListenAddress, Handler: nil}
 
@@ -74,6 +87,8 @@ func NewApp(
 		GlobalQueriers: globalQueriers,
 		Tracer:         tracer,
 		Server:         server,
+		Controller:     controller,
+		Generators:     generators,
 	}
 }
 
@@ -123,24 +138,18 @@ func (a *App) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	var mutex sync.Mutex
 
 	// Global handlers
-	for _, globalQuerier := range a.GlobalQueriers {
-		wg.Add(1)
-		go func(querier types.Querier) {
-			_, fetcherSpan := a.Tracer.Start(
-				rootSpanCtx,
-				"Querier "+querier.Name(),
-				trace.WithAttributes(attribute.String("querier", querier.Name())),
-			)
-			defer fetcherSpan.End()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		state, _ := a.Controller.Fetch(rootSpanCtx)
 
-			defer wg.Done()
-
-			results, _ := querier.Get(rootSpanCtx)
-			mutex.Lock()
-			globalResults = append(globalResults, results...)
-			mutex.Unlock()
-		}(globalQuerier)
-	}
+		mutex.Lock()
+		for _, generator := range a.Generators {
+			generatorMetrics := generator.Get(state)
+			globalResults = append(globalResults, generatorMetrics...)
+		}
+		mutex.Unlock()
+	}()
 
 	// Per-node handlers
 	for _, nodeHandler := range a.NodeHandlers {

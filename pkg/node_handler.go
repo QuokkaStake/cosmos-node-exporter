@@ -128,8 +128,8 @@ func (a *NodeHandler) Process(ctx context.Context) ([]metricsPkg.MetricInfo, map
 		allResults = append(allResults, metrics...)
 	}
 
-	for key, queries := range queries {
-		allQueries[string(key)] = queries
+	for key, fetcherQueries := range queries {
+		allQueries[string(key)] = fetcherQueries
 	}
 
 	for _, querier := range a.Queriers {
