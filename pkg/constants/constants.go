@@ -25,6 +25,7 @@ const (
 	ActionTendermintGetNodeStatus        Action = "get_node_status"
 	ActionTendermintGetUpgradePlan       Action = "get_upgrade_plan"
 	ActionTendermintGetUpgradeTime       Action = "get_upgrade_time"
+	ActionTendermintGetBlockTime         Action = "get_block_time"
 	ActionGrpcGetNodeConfig              Action = "get_node_config"
 	ActionGrpcGetNodeInfo                Action = "get_node_info"
 
@@ -37,6 +38,7 @@ const (
 	FetcherNameRemoteVersion     FetcherName = "remote_version"
 	FetcherNameLocalVersion      FetcherName = "local_version"
 	FetcherNameUpgrades          FetcherName = "upgrades"
+	FetcherNameBlockTime         FetcherName = "block_time"
 )
 
 var (

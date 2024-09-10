@@ -57,7 +57,7 @@ func TestUpgradesGeneratorNotPresent(t *testing.T) {
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
 	client := tendermint.NewRPC(config, *logger, tracer)
-	fetcher := fetchers.NewUpgradesFetcher(*logger, client, tracer)
+	fetcher := fetchers.NewUpgradesFetcher(*logger, client, true, tracer)
 
 	data, _ := fetcher.Get(context.Background())
 	assert.Nil(t, data)
@@ -86,7 +86,7 @@ func TestUpgradesGeneratorOk(t *testing.T) {
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
 	client := tendermint.NewRPC(config, *logger, tracer)
-	fetcher := fetchers.NewUpgradesFetcher(*logger, client, tracer)
+	fetcher := fetchers.NewUpgradesFetcher(*logger, client, true, tracer)
 
 	data, _ := fetcher.Get(context.Background())
 	assert.NotNil(t, data)

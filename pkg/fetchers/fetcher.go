@@ -24,3 +24,13 @@ func (f Fetchers) GetNames() []constants.FetcherName {
 
 	return names
 }
+
+func (f Fetchers) GetNamesAsString() []string {
+	names := make([]string, len(f))
+
+	for index, fetcher := range f {
+		names[index] = string(fetcher.Name())
+	}
+
+	return names
+}

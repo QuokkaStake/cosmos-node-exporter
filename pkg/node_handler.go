@@ -70,7 +70,8 @@ func NewNodeHandler(
 		fetchersPkg.NewNodeInfoFetcher(appLogger, grpc, tracer),
 		fetchersPkg.NewRemoteVersionFetcher(appLogger, gitClient, tracer),
 		fetchersPkg.NewLocalVersionFetcher(appLogger, cosmovisor, tracer),
-		fetchersPkg.NewUpgradesFetcher(appLogger, tendermintRPC, tracer),
+		fetchersPkg.NewUpgradesFetcher(appLogger, tendermintRPC, config.TendermintConfig.QueryUpgrades.Bool, tracer),
+		fetchersPkg.NewBlockTimeFetcher(appLogger, tendermintRPC, tracer),
 	}
 
 	generators := []generatorsPkg.Generator{

@@ -14,20 +14,27 @@ import (
 
 type UpgradesFetcher struct {
 	TendermintRPC *tendermint.RPC
+	QueryUpgrades bool
 	Logger        zerolog.Logger
 	Tracer        trace.Tracer
 }
 
-func NewUpgradesFetcher(logger zerolog.Logger, tendermintRPC *tendermint.RPC, tracer trace.Tracer) *UpgradesFetcher {
+func NewUpgradesFetcher(
+	logger zerolog.Logger,
+	tendermintRPC *tendermint.RPC,
+	queryUpgrades bool,
+	tracer trace.Tracer,
+) *UpgradesFetcher {
 	return &UpgradesFetcher{
 		Logger:        logger.With().Str("component", "upgrades_fetcher").Logger(),
 		TendermintRPC: tendermintRPC,
+		QueryUpgrades: queryUpgrades,
 		Tracer:        tracer,
 	}
 }
 
 func (n *UpgradesFetcher) Enabled() bool {
-	return n.TendermintRPC != nil
+	return n.TendermintRPC != nil && n.QueryUpgrades
 }
 
 func (n *UpgradesFetcher) Name() constants.FetcherName {

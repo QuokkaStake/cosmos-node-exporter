@@ -185,3 +185,38 @@ func (t *RPC) GetEstimateBlockTime(ctx context.Context, height int64) (time.Time
 
 	return latestBlock.Result.Block.Header.Time.Add(durationTillEstimatedBlock), upgradeTimeQuery, nil
 }
+
+func (t *RPC) GetBlockTime(ctx context.Context) (float64, query_info.QueryInfo, error) {
+	childCtx, span := t.Tracer.Start(
+		ctx,
+		"Fetching block time",
+		trace.WithAttributes(attribute.String("address", t.Address)),
+	)
+	defer span.End()
+
+	blockTimeQuery := query_info.QueryInfo{
+		Module:  constants.ModuleTendermint,
+		Action:  constants.ActionTendermintGetBlockTime,
+		Success: false,
+	}
+
+	latestBlock, err := t.Block(childCtx, 0)
+	if err != nil {
+		t.Logger.Error().Err(err).Msg("Could not fetch current block")
+		return 0, blockTimeQuery, err
+	}
+
+	latestBlockHeight := latestBlock.Result.Block.Header.Height
+	blockToCheck := latestBlockHeight - t.BlocksBehind
+
+	olderBlock, err := t.Block(childCtx, blockToCheck)
+	if err != nil {
+		t.Logger.Error().Err(err).Msg("Could not fetch older block")
+		return 0, blockTimeQuery, err
+	}
+
+	blockTimeQuery.Success = true
+
+	blocksDiffTime := latestBlock.Result.Block.Header.Time.Sub(olderBlock.Result.Block.Header.Time)
+	return blocksDiffTime.Seconds() / float64(t.BlocksBehind), blockTimeQuery, nil
+}

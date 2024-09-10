@@ -19,13 +19,11 @@ import (
 func TestUpgradesFetcherBase(t *testing.T) {
 	t.Parallel()
 
-	config := configPkg.TendermintConfig{
-		Address: "https://example.com",
-	}
+	config := configPkg.TendermintConfig{Address: "https://example.com"}
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
 	client := tendermint.NewRPC(config, *logger, tracer)
-	fetcher := NewUpgradesFetcher(*logger, client, tracer)
+	fetcher := NewUpgradesFetcher(*logger, client, true, tracer)
 	assert.True(t, fetcher.Enabled())
 	assert.Equal(t, constants.FetcherNameUpgrades, fetcher.Name())
 	assert.Empty(t, fetcher.Dependencies())
@@ -46,7 +44,7 @@ func TestUpgradesFetcherFail(t *testing.T) {
 	logger := loggerPkg.GetNopLogger()
 	tracer := tracing.InitNoopTracer()
 	client := tendermint.NewRPC(config, *logger, tracer)
-	fetcher := NewUpgradesFetcher(*logger, client, tracer)
+	fetcher := NewUpgradesFetcher(*logger, client, true, tracer)
 
 	data, queryInfos := fetcher.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
@@ -69,7 +67,7 @@ func TestUpgradesFetcherOk(t *testing.T) {
 	logger := loggerPkg.GetDefaultLogger()
 	tracer := tracing.InitNoopTracer()
 	client := tendermint.NewRPC(config, *logger, tracer)
-	fetcher := NewUpgradesFetcher(*logger, client, tracer)
+	fetcher := NewUpgradesFetcher(*logger, client, true, tracer)
 
 	data, queryInfos := fetcher.Get(context.Background())
 	assert.Len(t, queryInfos, 1)

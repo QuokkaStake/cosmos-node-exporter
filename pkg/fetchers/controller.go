@@ -9,18 +9,11 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type FetcherProcessStatus string
-
-const (
-	FetcherProcessStatusProcessing FetcherProcessStatus = "processing"
-	FetcherProcessStatusDone       FetcherProcessStatus = "done"
-)
-
-type FetchersStatuses map[constants.FetcherName]FetcherProcessStatus
+type FetchersStatuses map[constants.FetcherName]bool
 
 func (s FetchersStatuses) IsAllDone(fetcherNames []constants.FetcherName) bool {
 	for _, fetcherName := range fetcherNames {
-		if value, ok := s[fetcherName]; !ok || value != FetcherProcessStatusDone {
+		if _, ok := s[fetcherName]; !ok {
 			return false
 		}
 	}
@@ -70,59 +63,22 @@ func (c *Controller) Fetch(ctx context.Context) (
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
 
-	var startAllPendingFetchers func()
-	var processFetcher func(fetcher Fetcher)
+	processFetcher := func(fetcher Fetcher) {
+		defer wg.Done()
 
-	startAllPendingFetchers = func() {
-		c.Logger.Trace().Msg("Processing all pending fetchers...")
-
-		if fetchersStatus.IsAllDone(c.Fetchers.GetNames()) {
-			c.Logger.Trace().Msg("All fetchers are fetched.")
-			return
-		}
-
-		for _, fetcher := range c.Fetchers {
-			mutex.Lock()
-			if _, ok := fetchersStatus[fetcher.Name()]; ok {
-				c.Logger.Trace().
-					Str("name", string(fetcher.Name())).
-					Msg("Fetcher is already being processed or is processed, skipping.")
-				mutex.Unlock()
-				continue
-			}
-
-			if !fetchersStatus.IsAllDone(fetcher.Dependencies()) {
-				c.Logger.Trace().
-					Str("name", string(fetcher.Name())).
-					Msg("Fetcher's dependencies are not yet processed, skipping for now.")
-				mutex.Unlock()
-				continue
-			}
-
-			mutex.Unlock()
-
-			wg.Add(1)
-			go processFetcher(fetcher)
-		}
-	}
-
-	processFetcher = func(fetcher Fetcher) {
 		if !fetcher.Enabled() {
 			c.Logger.Trace().Str("name", string(fetcher.Name())).Msg("Fetcher is disabled, skipping.")
 
 			mutex.Lock()
-			fetchersStatus[fetcher.Name()] = FetcherProcessStatusDone
+			fetchersStatus[fetcher.Name()] = true
 			mutex.Unlock()
 
-			startAllPendingFetchers()
-			wg.Done()
 			return
 		}
 
 		c.Logger.Trace().Str("name", string(fetcher.Name())).Msg("Processing fetcher...")
 
 		mutex.Lock()
-		fetchersStatus[fetcher.Name()] = FetcherProcessStatusProcessing
 		fetcherDependenciesData := data.GetData(fetcher.Dependencies())
 		mutex.Unlock()
 
@@ -131,18 +87,54 @@ func (c *Controller) Fetch(ctx context.Context) (
 		mutex.Lock()
 		data[fetcher.Name()] = fetcherData
 		queries[fetcher.Name()] = fetcherQueries
-		fetchersStatus[fetcher.Name()] = FetcherProcessStatusDone
+		fetchersStatus[fetcher.Name()] = true
 		mutex.Unlock()
 
 		c.Logger.Trace().
 			Str("name", string(fetcher.Name())).
 			Msg("Processed fetcher")
-
-		startAllPendingFetchers()
-		wg.Done()
 	}
 
-	startAllPendingFetchers()
-	wg.Wait()
+	for {
+		c.Logger.Trace().Msg("Processing all pending fetchers...")
+
+		if fetchersStatus.IsAllDone(c.Fetchers.GetNames()) {
+			c.Logger.Trace().Msg("All fetchers are fetched.")
+			break
+		}
+
+		fetchersToStart := Fetchers{}
+
+		for _, fetcher := range c.Fetchers {
+			if _, ok := fetchersStatus[fetcher.Name()]; ok {
+				c.Logger.Trace().
+					Str("name", string(fetcher.Name())).
+					Msg("Fetcher is already being processed or is processed, skipping.")
+				continue
+			}
+
+			if !fetchersStatus.IsAllDone(fetcher.Dependencies()) {
+				c.Logger.Trace().
+					Str("name", string(fetcher.Name())).
+					Msg("Fetcher's dependencies are not yet processed, skipping for now.")
+				continue
+			}
+
+			fetchersToStart = append(fetchersToStart, fetcher)
+		}
+
+		c.Logger.Trace().
+			Strs("names", fetchersToStart.GetNamesAsString()).
+			Msg("Starting the following fetchers")
+
+		wg.Add(len(fetchersToStart))
+
+		for _, fetcher := range fetchersToStart {
+			go processFetcher(fetcher)
+		}
+
+		wg.Wait()
+	}
+
 	return data, queries
 }
