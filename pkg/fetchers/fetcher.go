@@ -8,7 +8,7 @@ import (
 
 type Fetcher interface {
 	Enabled() bool
-	Get(ctx context.Context) (interface{}, []query_info.QueryInfo)
+	Get(ctx context.Context, data ...interface{}) (interface{}, []query_info.QueryInfo)
 	Dependencies() []constants.FetcherName
 	Name() constants.FetcherName
 }

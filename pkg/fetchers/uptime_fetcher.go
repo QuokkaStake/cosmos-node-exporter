@@ -29,6 +29,6 @@ func (u *UptimeFetcher) Dependencies() []constants.FetcherName {
 	return []constants.FetcherName{}
 }
 
-func (u *UptimeFetcher) Get(ctx context.Context) (interface{}, []query_info.QueryInfo) {
+func (u *UptimeFetcher) Get(ctx context.Context, data ...interface{}) (interface{}, []query_info.QueryInfo) {
 	return u.StartTime, []query_info.QueryInfo{}
 }

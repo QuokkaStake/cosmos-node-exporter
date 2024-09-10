@@ -37,7 +37,7 @@ func (n *RemoteVersionFetcher) Dependencies() []constants.FetcherName {
 	return []constants.FetcherName{}
 }
 
-func (f *RemoteVersionFetcher) Get(ctx context.Context) (interface{}, []query_info.QueryInfo) {
+func (f *RemoteVersionFetcher) Get(ctx context.Context, data ...interface{}) (interface{}, []query_info.QueryInfo) {
 	childCtx, span := f.Tracer.Start(
 		ctx,
 		"Fetcher "+string(f.Name()),

@@ -28,6 +28,6 @@ func (u *AppVersionFetcher) Dependencies() []constants.FetcherName {
 	return []constants.FetcherName{}
 }
 
-func (u *AppVersionFetcher) Get(ctx context.Context) (interface{}, []query_info.QueryInfo) {
+func (u *AppVersionFetcher) Get(ctx context.Context, data ...interface{}) (interface{}, []query_info.QueryInfo) {
 	return u.Version, []query_info.QueryInfo{}
 }

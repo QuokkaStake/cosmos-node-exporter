@@ -38,7 +38,7 @@ func (n *NodeConfigFetcher) Dependencies() []constants.FetcherName {
 	return []constants.FetcherName{}
 }
 
-func (n *NodeConfigFetcher) Get(ctx context.Context) (interface{}, []query_info.QueryInfo) {
+func (n *NodeConfigFetcher) Get(ctx context.Context, data ...interface{}) (interface{}, []query_info.QueryInfo) {
 	childCtx, span := n.Tracer.Start(
 		ctx,
 		"NodeConfigFetcher "+string(n.Name()),

@@ -30,6 +30,16 @@ func (s FetchersStatuses) IsAllDone(fetcherNames []constants.FetcherName) bool {
 
 type State map[constants.FetcherName]interface{}
 
+func (s State) GetData(fetcherNames []constants.FetcherName) []interface{} {
+	data := make([]interface{}, len(fetcherNames))
+
+	for index, fetcherName := range fetcherNames {
+		data[index] = s[fetcherName]
+	}
+
+	return data
+}
+
 type Controller struct {
 	Fetchers Fetchers
 	Logger   zerolog.Logger
@@ -53,7 +63,7 @@ func (c *Controller) Fetch(ctx context.Context) (
 	State,
 	map[constants.FetcherName][]query_info.QueryInfo,
 ) {
-	data := map[constants.FetcherName]interface{}{}
+	data := State{}
 	queries := map[constants.FetcherName][]query_info.QueryInfo{}
 	fetchersStatus := FetchersStatuses{}
 
@@ -113,9 +123,10 @@ func (c *Controller) Fetch(ctx context.Context) (
 
 		mutex.Lock()
 		fetchersStatus[fetcher.Name()] = FetcherProcessStatusProcessing
+		fetcherDependenciesData := data.GetData(fetcher.Dependencies())
 		mutex.Unlock()
 
-		fetcherData, fetcherQueries := fetcher.Get(ctx)
+		fetcherData, fetcherQueries := fetcher.Get(ctx, fetcherDependenciesData...)
 
 		mutex.Lock()
 		data[fetcher.Name()] = fetcherData

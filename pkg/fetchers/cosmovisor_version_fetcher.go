@@ -44,7 +44,7 @@ func (v *CosmovisorVersionFetcher) Dependencies() []constants.FetcherName {
 	return []constants.FetcherName{}
 }
 
-func (v *CosmovisorVersionFetcher) Get(ctx context.Context) (interface{}, []query_info.QueryInfo) {
+func (v *CosmovisorVersionFetcher) Get(ctx context.Context, data ...interface{}) (interface{}, []query_info.QueryInfo) {
 	childCtx, span := v.Tracer.Start(
 		ctx,
 		"CosmovisorVersionFetcher "+string(v.Name()),
