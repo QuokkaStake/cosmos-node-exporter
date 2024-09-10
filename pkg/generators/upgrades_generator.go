@@ -25,6 +25,10 @@ func (g *UpgradesGenerator) Get(state fetchers.State) []metrics.MetricInfo {
 		panic("expected the state entry to be string")
 	}
 
+	if upgradeInfo == nil {
+		return []metrics.MetricInfo{}
+	}
+
 	return []metrics.MetricInfo{
 		{
 			MetricName: metrics.MetricNameUpgradeInfo,

@@ -21,9 +21,7 @@ func TestUpgradesGeneratorEmpty(t *testing.T) {
 	t.Parallel()
 
 	state := fetchers.State{}
-
 	generator := NewUpgradesGenerator()
-
 	metrics := generator.Get(state)
 	assert.Empty(t, metrics)
 }
@@ -37,12 +35,38 @@ func TestUpgradesGeneratorInvalid(t *testing.T) {
 		}
 	}()
 
-	state := fetchers.State{
-		constants.FetcherNameUpgrades: 3,
-	}
-
+	state := fetchers.State{constants.FetcherNameUpgrades: 3}
 	generator := NewUpgradesGenerator()
 	generator.Get(state)
+}
+
+//nolint:paralleltest // disabled due to httpmock usage
+func TestUpgradesGeneratorNotPresent(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder(
+		"GET",
+		"https://example.com/abci_query?path=%22%2Fcosmos.upgrade.v1beta1.Query%2FCurrentPlan%22&data=0x",
+		httpmock.NewBytesResponder(200, assets.GetBytesOrPanic("upgrade-plan-empty.json")),
+	)
+
+	config := configPkg.TendermintConfig{
+		Address: "https://example.com",
+	}
+	logger := loggerPkg.GetNopLogger()
+	tracer := tracing.InitNoopTracer()
+	client := tendermint.NewRPC(config, *logger, tracer)
+	fetcher := fetchers.NewUpgradesFetcher(*logger, client, tracer)
+
+	data, _ := fetcher.Get(context.Background())
+	assert.Nil(t, data)
+
+	state := fetchers.State{constants.FetcherNameUpgrades: data}
+	generator := NewUpgradesGenerator()
+
+	metrics := generator.Get(state)
+	assert.Empty(t, metrics)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
@@ -67,9 +91,7 @@ func TestUpgradesGeneratorOk(t *testing.T) {
 	data, _ := fetcher.Get(context.Background())
 	assert.NotNil(t, data)
 
-	state := fetchers.State{
-		constants.FetcherNameUpgrades: data,
-	}
+	state := fetchers.State{constants.FetcherNameUpgrades: data}
 
 	generator := NewUpgradesGenerator()
 
