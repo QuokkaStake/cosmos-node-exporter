@@ -19,8 +19,9 @@ type NodeInfo struct {
 }
 
 type SyncInfo struct {
-	LatestBlockTime time.Time `json:"latest_block_time"`
-	CatchingUp      bool      `json:"catching_up"`
+	LatestBlockHeight int64     `json:"latest_block_height,string"`
+	LatestBlockTime   time.Time `json:"latest_block_time"`
+	CatchingUp        bool      `json:"catching_up"`
 }
 
 type ValidatorInfo struct {
@@ -55,4 +56,15 @@ type AbciQueryResult struct {
 type AbciResponse struct {
 	Code  int    `json:"code"`
 	Value []byte `json:"value"`
+}
+
+type BlocksInfo struct {
+	NewerBlock BlockResponse
+	OlderBlock BlockResponse
+}
+
+func (b *BlocksInfo) BlockTime() float64 {
+	blocksDiffHeight := b.NewerBlock.Result.Block.Header.Height - b.OlderBlock.Result.Block.Header.Height
+	blocksDiffTime := b.NewerBlock.Result.Block.Header.Time.Sub(b.OlderBlock.Result.Block.Header.Time)
+	return blocksDiffTime.Seconds() / float64(blocksDiffHeight)
 }

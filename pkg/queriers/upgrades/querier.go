@@ -71,21 +71,6 @@ func (u *Querier) Get(ctx context.Context) ([]metrics.MetricInfo, []query_info.Q
 		return metricInfos, queryInfos
 	}
 
-	// Calculate upgrade estimated time
-	upgradeTime, upgradeTimeQuery, err := u.Tendermint.GetEstimateBlockTime(childCtx, upgrade.Height)
-	queryInfos = append(queryInfos, upgradeTimeQuery)
-
-	if err != nil {
-		u.Logger.Err(err).Msg("Could not get estimated upgrade time")
-		return metricInfos, queryInfos
-	}
-
-	metricInfos = append(metricInfos, metrics.MetricInfo{
-		MetricName: metrics.MetricNameUpgradeEstimatedTime,
-		Labels:     map[string]string{"name": upgrade.Name},
-		Value:      float64(upgradeTime.Unix()),
-	})
-
 	if u.Cosmovisor == nil {
 		u.Logger.Warn().
 			Msg("Cosmovisor not initialized, not returning binary presence.")

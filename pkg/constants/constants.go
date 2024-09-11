@@ -13,6 +13,7 @@ type FetcherName string
 const (
 	MetricsPrefix                  = "cosmos_node_exporter_"
 	UncachedGithubQueryTime        = 120 * time.Second
+	BlocksBehindToCheck            = 1000
 	ModuleCosmovisor        Module = "cosmovisor"
 	ModuleTendermint        Module = "tendermint"
 	ModuleGit               Module = "git"
@@ -24,7 +25,6 @@ const (
 	ActionGitGetLatestRelease            Action = "get_latest_release"
 	ActionTendermintGetNodeStatus        Action = "get_node_status"
 	ActionTendermintGetUpgradePlan       Action = "get_upgrade_plan"
-	ActionTendermintGetUpgradeTime       Action = "get_upgrade_time"
 	ActionTendermintGetBlockTime         Action = "get_block_time"
 	ActionGrpcGetNodeConfig              Action = "get_node_config"
 	ActionGrpcGetNodeInfo                Action = "get_node_info"

@@ -83,6 +83,7 @@ func NewNodeHandler(
 		generatorsPkg.NewLocalVersionGenerator(),
 		generatorsPkg.NewIsLatestGenerator(appLogger),
 		generatorsPkg.NewUpgradesGenerator(),
+		generatorsPkg.NewTimeTillUpgradeGenerator(),
 	}
 
 	controller := fetchersPkg.NewController(fetchers, appLogger, config.Name)

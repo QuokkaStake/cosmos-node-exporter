@@ -60,7 +60,7 @@ func (n *BlockTimeFetcher) Get(ctx context.Context, data ...interface{}) (interf
 
 	blockTime, queryInfo, err := n.TendermintRPC.GetBlockTime(childCtx)
 	if err != nil {
-		n.Logger.Error().Err(err).Msg("Could not fetch blockTime")
+		n.Logger.Error().Err(err).Msg("Could not fetch block time info")
 		return nil, []query_info.QueryInfo{queryInfo}
 	}
 
