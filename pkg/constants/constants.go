@@ -29,16 +29,17 @@ const (
 	ActionGrpcGetNodeConfig              Action = "get_node_config"
 	ActionGrpcGetNodeInfo                Action = "get_node_info"
 
-	FetcherNameNodeStatus        FetcherName = "node_status"
-	FetcherNameCosmovisorVersion FetcherName = "cosmovisor_version"
-	FetcherNameNodeConfig        FetcherName = "node_config"
-	FetcherNameNodeInfo          FetcherName = "node_info"
-	FetcherNameUptime            FetcherName = "uptime"
-	FetcherNameAppVersion        FetcherName = "app_version"
-	FetcherNameRemoteVersion     FetcherName = "remote_version"
-	FetcherNameLocalVersion      FetcherName = "local_version"
-	FetcherNameUpgrades          FetcherName = "upgrades"
-	FetcherNameBlockTime         FetcherName = "block_time"
+	FetcherNameNodeStatus         FetcherName = "node_status"
+	FetcherNameCosmovisorVersion  FetcherName = "cosmovisor_version"
+	FetcherNameNodeConfig         FetcherName = "node_config"
+	FetcherNameNodeInfo           FetcherName = "node_info"
+	FetcherNameUptime             FetcherName = "uptime"
+	FetcherNameAppVersion         FetcherName = "app_version"
+	FetcherNameRemoteVersion      FetcherName = "remote_version"
+	FetcherNameLocalVersion       FetcherName = "local_version"
+	FetcherNameUpgrades           FetcherName = "upgrades"
+	FetcherNameBlockTime          FetcherName = "block_time"
+	FetcherNameCosmovisorUpgrades FetcherName = "cosmovisor_upgrades"
 )
 
 var (
