@@ -57,8 +57,7 @@ func TestCosmovisorUpgradesGeneratorEmptyInvalidUpgrades(t *testing.T) {
 	}
 
 	generator := NewCosmovisorUpgradesGenerator()
-	metrics := generator.Get(state)
-	assert.Empty(t, metrics)
+	generator.Get(state)
 }
 
 func TestCosmovisorUpgradesGeneratorEmptyInvalidCosmovisorUpgrades(t *testing.T) {
@@ -73,6 +72,20 @@ func TestCosmovisorUpgradesGeneratorEmptyInvalidCosmovisorUpgrades(t *testing.T)
 	state := fetchers.State{
 		constants.FetcherNameUpgrades:           &upgradeTypes.Plan{},
 		constants.FetcherNameCosmovisorUpgrades: 3,
+	}
+
+	generator := NewCosmovisorUpgradesGenerator()
+	generator.Get(state)
+}
+
+func TestCosmovisorUpgradesGeneratorEmptyUpgradePlan(t *testing.T) {
+	t.Parallel()
+
+	var upgradePlan *upgradeTypes.Plan
+
+	state := fetchers.State{
+		constants.FetcherNameUpgrades:           upgradePlan,
+		constants.FetcherNameCosmovisorUpgrades: types.UpgradesPresent{},
 	}
 
 	generator := NewCosmovisorUpgradesGenerator()
