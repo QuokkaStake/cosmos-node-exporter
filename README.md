@@ -129,7 +129,7 @@ and therefore Generator that uses the data from that Fetcher won't provide any m
 
 Here's a list of Generators:
 
-| Querier                     | Metrics returned                                                                                                                   | Per-node? | Requirements                                                                                 |
+| Generator                   | Metrics returned                                                                                                                   | Per-node? | Requirements                                                                                 |
 |-----------------------------|------------------------------------------------------------------------------------------------------------------------------------|-----------|----------------------------------------------------------------------------------------------|
 | AppVersionGenerator         | cosmos-node-exporter version                                                                                                       | No        |                                                                                              |
 | UptimeGenerator             | App launch timestamp, useful for annotations                                                                                       | No        |                                                                                              |
