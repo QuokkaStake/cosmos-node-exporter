@@ -12,7 +12,6 @@ const (
 	MetricNameRemoteVersion         MetricName = "remote_version"
 	MetricNameLocalVersion          MetricName = "local_version"
 	MetricNameIsLatest              MetricName = "is_latest"
-	MetricNameUpgradeComing         MetricName = "upgrade_coming"
 	MetricNameUpgradeInfo           MetricName = "upgrade_info"
 	MetricNameUpgradeHeight         MetricName = "upgrade_height"
 	MetricNameUpgradeEstimatedTime  MetricName = "upgrade_estimated_time"
@@ -26,6 +25,7 @@ const (
 	MetricNameCosmosSdkVersion      MetricName = "cosmos_sdk_version"
 	MetricNameRunningAppVersion     MetricName = "running_app_version"
 	MetricNameGoVersion             MetricName = "go_version"
+	MetricNameHaltHeight            MetricName = "halt_height"
 	MetricNameNotExisting           MetricName = "not_existing" // for tests only
 )
 

@@ -8,9 +8,12 @@ import (
 type Module string
 type Action string
 
+type FetcherName string
+
 const (
 	MetricsPrefix                  = "cosmos_node_exporter_"
 	UncachedGithubQueryTime        = 120 * time.Second
+	BlocksBehindToCheck            = 1000
 	ModuleCosmovisor        Module = "cosmovisor"
 	ModuleTendermint        Module = "tendermint"
 	ModuleGit               Module = "git"
@@ -22,9 +25,21 @@ const (
 	ActionGitGetLatestRelease            Action = "get_latest_release"
 	ActionTendermintGetNodeStatus        Action = "get_node_status"
 	ActionTendermintGetUpgradePlan       Action = "get_upgrade_plan"
-	ActionTendermintGetUpgradeTime       Action = "get_upgrade_time"
+	ActionTendermintGetBlockTime         Action = "get_block_time"
 	ActionGrpcGetNodeConfig              Action = "get_node_config"
 	ActionGrpcGetNodeInfo                Action = "get_node_info"
+
+	FetcherNameNodeStatus         FetcherName = "node_status"
+	FetcherNameCosmovisorVersion  FetcherName = "cosmovisor_version"
+	FetcherNameNodeConfig         FetcherName = "node_config"
+	FetcherNameNodeInfo           FetcherName = "node_info"
+	FetcherNameUptime             FetcherName = "uptime"
+	FetcherNameAppVersion         FetcherName = "app_version"
+	FetcherNameRemoteVersion      FetcherName = "remote_version"
+	FetcherNameLocalVersion       FetcherName = "local_version"
+	FetcherNameUpgrades           FetcherName = "upgrades"
+	FetcherNameBlockTime          FetcherName = "block_time"
+	FetcherNameCosmovisorUpgrades FetcherName = "cosmovisor_upgrades"
 )
 
 var (

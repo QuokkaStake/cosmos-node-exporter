@@ -7,17 +7,10 @@ import (
 	grpcPkg "main/pkg/clients/grpc"
 	"main/pkg/clients/tendermint"
 	configPkg "main/pkg/config"
-	"main/pkg/metrics"
-	cosmovisorQuerierPkg "main/pkg/queriers/cosmovisor"
-	nodeConfig "main/pkg/queriers/node_config"
-	nodeInfo "main/pkg/queriers/node_info"
-	nodeStats "main/pkg/queriers/node_stats"
-	"main/pkg/queriers/upgrades"
-	"main/pkg/queriers/versions"
+	fetchersPkg "main/pkg/fetchers"
+	generatorsPkg "main/pkg/generators"
+	metricsPkg "main/pkg/metrics"
 	"main/pkg/query_info"
-	"main/pkg/types"
-	"main/pkg/utils"
-	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -26,10 +19,11 @@ import (
 )
 
 type NodeHandler struct {
-	Logger   zerolog.Logger
-	Queriers []types.Querier
-	Config   configPkg.NodeConfig
-	Tracer   trace.Tracer
+	Logger     zerolog.Logger
+	Config     configPkg.NodeConfig
+	Tracer     trace.Tracer
+	Generators []generatorsPkg.Generator
+	Controller *fetchersPkg.Controller
 }
 
 func NewNodeHandler(
@@ -60,32 +54,51 @@ func NewNodeHandler(
 
 	gitClient := git.GetClient(config.GitConfig, appLogger, tracer)
 
-	queriers := []types.Querier{
-		nodeStats.NewQuerier(appLogger, tendermintRPC, tracer),
-		versions.NewQuerier(appLogger, gitClient, cosmovisor, tracer),
-		upgrades.NewQuerier(config.TendermintConfig.QueryUpgrades.Bool, appLogger, cosmovisor, tendermintRPC, tracer),
-		cosmovisorQuerierPkg.NewQuerier(appLogger, cosmovisor, tracer),
-		nodeConfig.NewQuerier(appLogger, grpc, tracer),
-		nodeInfo.NewQuerier(appLogger, grpc, tracer),
+	fetchers := fetchersPkg.Fetchers{
+		fetchersPkg.NewNodeStatusFetcher(appLogger, tendermintRPC, tracer),
+		fetchersPkg.NewCosmovisorVersionFetcher(appLogger, cosmovisor, tracer),
+		fetchersPkg.NewNodeConfigFetcher(appLogger, grpc, tracer),
+		fetchersPkg.NewNodeInfoFetcher(appLogger, grpc, tracer),
+		fetchersPkg.NewRemoteVersionFetcher(appLogger, gitClient, tracer),
+		fetchersPkg.NewLocalVersionFetcher(appLogger, cosmovisor, tracer),
+		fetchersPkg.NewUpgradesFetcher(appLogger, tendermintRPC, config.TendermintConfig.QueryUpgrades.Bool, tracer),
+		fetchersPkg.NewBlockTimeFetcher(appLogger, tendermintRPC, tracer),
+		fetchersPkg.NewCosmovisorUpgradesFetcher(appLogger, cosmovisor, tracer),
 	}
 
-	for _, querier := range queriers {
-		if querier.Enabled() {
-			appLogger.Debug().Str("name", querier.Name()).Msg("Querier is enabled")
+	generators := []generatorsPkg.Generator{
+		generatorsPkg.NewNodeStatusGenerator(),
+		generatorsPkg.NewCosmovisorVersionGenerator(),
+		generatorsPkg.NewNodeConfigGenerator(),
+		generatorsPkg.NewNodeInfoGenerator(),
+		generatorsPkg.NewRemoteVersionGenerator(),
+		generatorsPkg.NewLocalVersionGenerator(),
+		generatorsPkg.NewIsLatestGenerator(appLogger),
+		generatorsPkg.NewUpgradesGenerator(),
+		generatorsPkg.NewTimeTillUpgradeGenerator(),
+		generatorsPkg.NewCosmovisorUpgradesGenerator(),
+	}
+
+	controller := fetchersPkg.NewController(fetchers, appLogger, config.Name)
+
+	for _, fetcher := range fetchers {
+		if fetcher.Enabled() {
+			appLogger.Debug().Str("name", string(fetcher.Name())).Msg("Fetcher is enabled")
 		} else {
-			appLogger.Debug().Str("name", querier.Name()).Msg("Querier is disabled")
+			appLogger.Debug().Str("name", string(fetcher.Name())).Msg("Fetcher is disabled")
 		}
 	}
 
 	return &NodeHandler{
-		Logger:   appLogger,
-		Queriers: queriers,
-		Config:   config,
-		Tracer:   tracer,
+		Logger:     appLogger,
+		Config:     config,
+		Tracer:     tracer,
+		Generators: generators,
+		Controller: controller,
 	}
 }
 
-func (a *NodeHandler) Process(ctx context.Context) ([]metrics.MetricInfo, map[string][]query_info.QueryInfo) {
+func (a *NodeHandler) Process(ctx context.Context) ([]metricsPkg.MetricInfo, map[string][]query_info.QueryInfo) {
 	childCtx, span := a.Tracer.Start(
 		ctx,
 		"Node "+a.Config.Name,
@@ -93,38 +106,19 @@ func (a *NodeHandler) Process(ctx context.Context) ([]metrics.MetricInfo, map[st
 	)
 	defer span.End()
 
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-
-	allResults := []metrics.MetricInfo{}
+	allResults := []metricsPkg.MetricInfo{}
 	allQueries := map[string][]query_info.QueryInfo{}
 
-	for _, querier := range a.Queriers {
-		allResults = append(allResults, metrics.MetricInfo{
-			MetricName: metrics.MetricNameQuerierEnabled,
-			Labels: map[string]string{
-				"querier": querier.Name(),
-				"node":    a.Config.Name,
-			},
-			Value: utils.BoolToFloat64(querier.Enabled()),
-		})
+	state, queries := a.Controller.Fetch(childCtx)
 
-		if !querier.Enabled() {
-			continue
-		}
-
-		wg.Add(1)
-		go func(querier types.Querier) {
-			querierResults, queriesInfo := querier.Get(childCtx)
-			mu.Lock()
-			allResults = append(allResults, querierResults...)
-			allQueries[querier.Name()] = queriesInfo
-			mu.Unlock()
-			wg.Done()
-		}(querier)
+	for _, generator := range a.Generators {
+		metrics := generator.Get(state)
+		allResults = append(allResults, metrics...)
 	}
 
-	wg.Wait()
+	for key, fetcherQueries := range queries {
+		allQueries[string(key)] = fetcherQueries
+	}
 
 	return allResults, allQueries
 }

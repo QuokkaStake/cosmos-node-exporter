@@ -104,28 +104,48 @@ scrape-configs:
 
 Then restart Prometheus and you're good to go!
 
-## What data can I get from it?
+## How does it work?
 
-This exporter runs a single app, which is running a separate NodeHandler for each node in config
-and scrapes data for each of NodeHandlers.
+Well, here's the app schema:
 
-Each of NodeHandlers has multiple Queriers, each of them querying a node or external resource (like GitHub)
-in some way, then returns a set of metrics. Each Querier can be enabled or disabled based on the config.
-Here's the list of Queriers:
+![App schema](https://raw.githubusercontent.com/QuokkaStake/cosmos-node-exporter/main/assets/schema.png)
 
-| Querier           | Metrics returned                                                                                                                   | Requirements                                                                                                                                                                                                    |
-|-------------------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| NodeStatsQuerier  | Voting power, node status<br>(catching up, time since latest block)                                                                | Tendermint config                                                                                                                                                                                               |
-| VersionsQuerier   | Local node version, remote node version,<br>whether the node is using the latest binary                                            | Cosmovisor config (for local config),<br>GitHub config (for remote version),<br>both (for checking if the version used is latest)                                                                               |
-| UpgradesQuerier   | Whether there is an upcoming upgrade,<br>its data, estimated upgrade time and<br>whether the binary for the upgrade<br>is prepared | Tendermint config (for getting the upgrade plan), Cosmovisor config (for getting the built binaries), Tendermint config (for getting<br>the upgrade time if the height upgrade is<br>specified for the upgrade) |
-| CosmovisorQuerier | Cosmovisor version                                                                                                                 | Cosmovisor config                                                                                                                                                                                               |
-| NodeConfigQuerier | Node's minimum-gas-prices and halt-height                                                                                          | gRPC config, the chain should implement the `cosmos.base.node.v1beta1/Config` gRPC endpoint.                                                                                                                    |
-| NodeInfoQuerier   | Running app version/git tag, cosmos-sdk version, Go version/build tags used to build it                                            | gRPC config                                                                                                                                                                                                     |
-| UptimeQuerier     | Global querier, returns the time the app was started at                                                                            | None                                                                                                                                                                                                            |
-| AppQuerier        | Global querier, returns app version                                                                                                | None                                                                                                                                                                                                            |
+Sounds complex, huh? Let us explain.
 
-Additionally, each Querier returns the list of actions it did (like, querying a node, getting GitHub latest release etc.)
-and whether they were successful a node. The exporter itself should never return an error (if it does, please file an issue),
+We built this exporter to be as modular as possible, so it'd be easy to add new data fetching and new metrics.
+Here's some terms we use within the app:
+- `Fetcher` - an entity that fetches data from remote source (like RPC node); it may require some data from other fetchers
+- `Controller` - an entity that fetches all the data from all provided Fetchers and generates a State
+- `State` - an entity that represents an eventual result of all Fetchers execution
+- `Generator` - an entity that generates some metrics based on State entity
+- `NodeHandler` - an entity that fetches data and generates metrics for a specific node
+- `App` - an entity that spawns a bunch of NodeHandlers per each chain, then assembles and returns metrics to a user
+
+This allows to build complex schemas (like, we don't need to fetch block time to calculate time till upgrade
+if there's no upgrade upcoming) and make it flexible and easy to add new Fetchers and Generators.
+
+Fetchers can also be enabled/disabled, if a Fetcher is disabled, then it will provide no data
+and therefore Generator that uses the data from that Fetcher won't provide any metrics.
+
+Here's a list of Generators:
+
+| Querier                     | Metrics returned                                                                                                                   | Per-node? | Requirements                                                                                 |
+|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------|-----------|----------------------------------------------------------------------------------------------|
+| AppVersionGenerator         | cosmos-node-exporter version                                                                                                       | No        |                                                                                              |
+| UptimeGenerator             | App launch timestamp, useful for annotations                                                                                       | No        |                                                                                              |
+| CosmovisorUpgradesGenerator | Whether the Cosmovisor binary is present for the upgrade                                                                           | Yes       | Cosmovisor config and the upcoming upgrade                                                   |
+| CosmovisorVersionGenerator  | Cosmovisor version                                                                                                                 | Yes       | Cosmovisor config                                                                            |
+| IsLatestGenerator           | Whether the local version is the same or greater than the latest GitHub/Gitopia release                                            | Yes       | Cosmovisor config (for local version), Git config (for fetching remote version)              |
+| LocalVersionGenerator       | Local app binary version                                                                                                           | Yes       | Cosmovisor config                                                                            |
+| NodeConfigGenerator         | Node's minimum-gas-prices and halt-height                                                                                          | Yes       | gRPC config, the chain should implement the `cosmos.base.node.v1beta1/Config` gRPC endpoint. |
+| NodeInfoGenerator           | Running app version/git tag, cosmos-sdk version, Go version/build tags used to build it                                            | Yes       | gRPC config                                                                                  |
+| NodeStatusGenerator         | Node's voting power, sync status, latest block time, node info, Tendermint/CometBFT version                                        | Yes       | Tendermint/CometBFT config                                                                   |
+| RemoteVersionGenerator      | Latest release of this app published                                                                                               | Yes       | Git config (either Git or Gitopia)                                                           |
+| TimeTillUpgradeGenerator    | Estimated upgrade time                                                                                                             | Yes       | Tendermint/CometBFT config (for fetching upgrade plan and block time)                        |
+| UpgradesGenerator           | Upcoming upgrade info                                                                                                              | Yes       | Tendermint/CometBFT config                                                                   |
+
+Additionally, per each Fetcher, the app will return the list of actions it did (like, querying a node, getting GitHub latest release etc.)
+and whether they were successful a node. The exporter itself should never return an error or crash (if it does, please file an issue),
 instead it will return all the data it could get, and additionally it'll return a metrics set with all the actions it could
 or couldn't do. You can set alerts based on that, for example, if `node_status` action is failing for a big period of time,
 likely the node is down.
@@ -133,10 +153,6 @@ likely the node is down.
 All metrics are prefixed with `cosmos_node_exporter_`, to get the list of all metrics, try something like
 `curl localhost:9500/metrics` on a fullnode the binary is running at and look at the results.
 
-## How does it work?
-
-It fetches some data from the local node by querying Tendermint RPC (listening on port 26657 by default),
-Cosmovisor binary, gRPC and GitHub/Gitopia.
 
 ## How can I configure it?
 

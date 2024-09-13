@@ -86,14 +86,6 @@ func NewManager() *Manager {
 			[]string{"node", "local_version", "remote_version"},
 		),
 
-		MetricNameUpgradeComing: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: constants.MetricsPrefix + "upgrade_coming",
-				Help: "Is future upgrade planned?",
-			},
-			[]string{"node"},
-		),
-
 		MetricNameUpgradeInfo: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: constants.MetricsPrefix + "upgrade_info",
@@ -107,7 +99,7 @@ func NewManager() *Manager {
 				Name: constants.MetricsPrefix + "upgrade_height",
 				Help: "Future upgrade height",
 			},
-			[]string{"node", "name", "info"},
+			[]string{"node", "name"},
 		),
 
 		MetricNameUpgradeEstimatedTime: prometheus.NewGaugeVec(
@@ -115,7 +107,7 @@ func NewManager() *Manager {
 				Name: constants.MetricsPrefix + "upgrade_estimated_time",
 				Help: "Estimated upgrade time, as Unix timestamp",
 			},
-			[]string{"node", "name", "info"},
+			[]string{"node", "name"},
 		),
 
 		MetricNameUpgradeBinaryPresent: prometheus.NewGaugeVec(
@@ -123,7 +115,7 @@ func NewManager() *Manager {
 				Name: constants.MetricsPrefix + "upgrade_binary_present",
 				Help: "Is upgrade binary present?",
 			},
-			[]string{"node", "name", "info"},
+			[]string{"node", "name"},
 		),
 
 		MetricNameQuerierEnabled: prometheus.NewGaugeVec(
@@ -172,6 +164,14 @@ func NewManager() *Manager {
 				Help: "Go version that was used to build the app",
 			},
 			[]string{"node", "version", "tags"},
+		),
+
+		MetricNameHaltHeight: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "halt_height",
+				Help: "Node's halt-height, if it's set.",
+			},
+			[]string{"node"},
 		),
 	}
 

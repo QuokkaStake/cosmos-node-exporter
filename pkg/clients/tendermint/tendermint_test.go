@@ -8,7 +8,6 @@ import (
 	loggerPkg "main/pkg/logger"
 	"main/pkg/tracing"
 	"testing"
-	"time"
 
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
@@ -142,7 +141,7 @@ func TestTendermintBlockSpecific(t *testing.T) {
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
-func TestTendermintTimeSinceLatestBlockFailCurrent(t *testing.T) {
+func TestTendermintGetBlockTimeFailCurrent(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
@@ -160,14 +159,14 @@ func TestTendermintTimeSinceLatestBlockFailCurrent(t *testing.T) {
 	tracer := tracing.InitNoopTracer()
 	rpc := NewRPC(config, *logger, tracer)
 
-	_, queryInfo, err := rpc.GetEstimateBlockTime(context.Background(), 21078108)
+	_, queryInfo, err := rpc.GetBlockTime(context.Background())
 	require.Error(t, err)
 	assert.False(t, queryInfo.Success)
 	require.ErrorContains(t, err, "custom error")
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
-func TestTendermintTimeSinceLatestBlockFailOlder(t *testing.T) {
+func TestTendermintGetBlockTimeFailOlder(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
@@ -191,14 +190,14 @@ func TestTendermintTimeSinceLatestBlockFailOlder(t *testing.T) {
 	tracer := tracing.InitNoopTracer()
 	rpc := NewRPC(config, *logger, tracer)
 
-	_, queryInfo, err := rpc.GetEstimateBlockTime(context.Background(), 21078108)
+	_, queryInfo, err := rpc.GetBlockTime(context.Background())
 	require.Error(t, err)
 	assert.False(t, queryInfo.Success)
 	require.ErrorContains(t, err, "custom error")
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
-func TestTendermintTimeSinceLatestBlockSuccess(t *testing.T) {
+func TestTendermintGetBlockTimeSuccess(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
@@ -222,10 +221,10 @@ func TestTendermintTimeSinceLatestBlockSuccess(t *testing.T) {
 	tracer := tracing.InitNoopTracer()
 	rpc := NewRPC(config, *logger, tracer)
 
-	timeTillBlock, queryInfo, err := rpc.GetEstimateBlockTime(context.Background(), 21078108)
+	blockTime, queryInfo, err := rpc.GetBlockTime(context.Background())
 	require.NoError(t, err)
 	require.True(t, queryInfo.Success)
-	assert.Equal(t, "2024-06-29T19:21:21Z", timeTillBlock.UTC().Format(time.RFC3339))
+	assert.NotNil(t, blockTime)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
@@ -276,4 +275,29 @@ func TestTendermintGetUpgradePlanSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, queryInfo.Success)
 	require.Equal(t, "v1.5.0", plan.Name)
+}
+
+//nolint:paralleltest // disabled due to httpmock usage
+func TestTendermintNotSuccessCode(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder(
+		"GET",
+		"https://example.com:443/status",
+		httpmock.NewBytesResponder(501, assets.GetBytesOrPanic("status.json")),
+	)
+
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
+	}
+	logger := loggerPkg.GetNopLogger()
+	tracer := tracing.InitNoopTracer()
+	rpc := NewRPC(config, *logger, tracer)
+
+	_, queryInfo, err := rpc.Status(context.Background())
+	require.Error(t, err)
+	require.ErrorContains(t, err, "http request failed with status code 501")
+	assert.False(t, queryInfo.Success)
 }
