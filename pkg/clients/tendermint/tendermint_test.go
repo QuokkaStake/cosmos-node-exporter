@@ -277,6 +277,7 @@ func TestTendermintGetUpgradePlanSuccess(t *testing.T) {
 	require.Equal(t, "v1.5.0", plan.Name)
 }
 
+//nolint:paralleltest // disabled due to httpmock usage
 func TestTendermintNotSuccessCode(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
