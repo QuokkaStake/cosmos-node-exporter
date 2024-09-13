@@ -57,9 +57,29 @@ func TestBlockTimeFetcherDataNil(t *testing.T) {
 	tracer := tracing.InitNoopTracer()
 	client := tendermint.NewRPC(config, *logger, tracer)
 	fetcher := NewBlockTimeFetcher(*logger, client, tracer)
-	data, queryInfos := fetcher.Get(context.Background(), nil)
+
+	var upgradePlan *types.Plan
+
+	data, queryInfos := fetcher.Get(context.Background(), upgradePlan)
 	assert.Empty(t, queryInfos)
 	assert.Nil(t, data)
+}
+
+func TestBlockTimeFetcherDataWrong(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		if r := recover(); r == nil {
+			require.Fail(t, "Expected to have a panic here!")
+		}
+	}()
+
+	config := configPkg.TendermintConfig{Address: "https://example.com"}
+	logger := loggerPkg.GetNopLogger()
+	tracer := tracing.InitNoopTracer()
+	client := tendermint.NewRPC(config, *logger, tracer)
+	fetcher := NewBlockTimeFetcher(*logger, client, tracer)
+	fetcher.Get(context.Background(), 3)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
@@ -125,7 +145,9 @@ func TestBlockTimeFetcherNoUpgrade(t *testing.T) {
 	client := tendermint.NewRPC(config, *logger, tracer)
 	fetcher := NewBlockTimeFetcher(*logger, client, tracer)
 
-	data, queryInfos := fetcher.Get(context.Background(), nil)
+	var upgradePlan *types.Plan
+
+	data, queryInfos := fetcher.Get(context.Background(), upgradePlan)
 	assert.Empty(t, queryInfos)
 	assert.Nil(t, data)
 }

@@ -6,6 +6,8 @@ import (
 	"main/pkg/constants"
 	"main/pkg/query_info"
 
+	"cosmossdk.io/x/upgrade/types"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
@@ -45,9 +47,18 @@ func (n *BlockTimeFetcher) Get(ctx context.Context, data ...interface{}) (interf
 		panic("data is empty")
 	}
 
-	// upgrade-info was not fetched
 	if data[0] == nil {
-		n.Logger.Trace().Msg("Upgrade plan is empty, not fetching upgrade info.")
+		n.Logger.Trace().Msg("Upgrade plan is empty, not fetching block time.")
+		return nil, []query_info.QueryInfo{}
+	}
+
+	// upgrade-info was not fetched
+	upgradePlan, ok := data[0].(*types.Plan)
+	if !ok {
+		panic("expected upgrade plan to be *types.Plan")
+	}
+	if upgradePlan == nil {
+		n.Logger.Trace().Msg("Upgrade plan is empty, not fetching block time.")
 		return nil, []query_info.QueryInfo{}
 	}
 
