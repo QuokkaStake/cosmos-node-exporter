@@ -276,3 +276,27 @@ func TestTendermintGetUpgradePlanSuccess(t *testing.T) {
 	require.True(t, queryInfo.Success)
 	require.Equal(t, "v1.5.0", plan.Name)
 }
+
+func TestTendermintNotSuccessCode(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder(
+		"GET",
+		"https://example.com:443/status",
+		httpmock.NewBytesResponder(501, assets.GetBytesOrPanic("status.json")),
+	)
+
+	config := configPkg.TendermintConfig{
+		Enabled: null.BoolFrom(true),
+		Address: "https://example.com:443",
+	}
+	logger := loggerPkg.GetNopLogger()
+	tracer := tracing.InitNoopTracer()
+	rpc := NewRPC(config, *logger, tracer)
+
+	_, queryInfo, err := rpc.Status(context.Background())
+	require.Error(t, err)
+	require.ErrorContains(t, err, "http request failed with status code 501")
+	assert.False(t, queryInfo.Success)
+}

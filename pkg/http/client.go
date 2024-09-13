@@ -50,5 +50,9 @@ func (c Client) Query(ctx context.Context, relativeUrl string, output interface{
 	}
 	defer res.Body.Close()
 
+	if res.StatusCode >= http.StatusBadRequest {
+		return fmt.Errorf("http request failed with status code %d", res.StatusCode)
+	}
+
 	return json.NewDecoder(res.Body).Decode(&output)
 }
