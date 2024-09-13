@@ -39,6 +39,10 @@ func (g *CosmovisorUpgradesGenerator) Get(state fetchers.State) []metrics.Metric
 		panic("expected the state entry to be types.UpgradesPresent")
 	}
 
+	if upgradePlan == nil {
+		return []metrics.MetricInfo{}
+	}
+
 	// From cosmovisor docs:
 	// The name variable in upgrades/<name> is the lowercase URI-encoded name
 	// of the upgrade as specified in the upgrade module plan.
