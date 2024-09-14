@@ -23,7 +23,11 @@ func TestUpgradesGeneratorEmpty(t *testing.T) {
 	state := fetchers.State{}
 	generator := NewUpgradesGenerator()
 	metrics := generator.Get(state)
-	assert.Empty(t, metrics)
+	assert.Len(t, metrics, 1)
+
+	upgradeComing := metrics[0]
+	assert.Empty(t, upgradeComing.Labels)
+	assert.Zero(t, upgradeComing.Value)
 }
 
 func TestUpgradesGeneratorInvalid(t *testing.T) {
@@ -66,7 +70,11 @@ func TestUpgradesGeneratorNotPresent(t *testing.T) {
 	generator := NewUpgradesGenerator()
 
 	metrics := generator.Get(state)
-	assert.Empty(t, metrics)
+	assert.Len(t, metrics, 1)
+
+	upgradeComing := metrics[0]
+	assert.Empty(t, upgradeComing.Labels)
+	assert.Zero(t, upgradeComing.Value)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
@@ -96,14 +104,18 @@ func TestUpgradesGeneratorOk(t *testing.T) {
 	generator := NewUpgradesGenerator()
 
 	metrics := generator.Get(state)
-	assert.Len(t, metrics, 2)
+	assert.Len(t, metrics, 3)
 
-	upgradeInfo := metrics[0]
+	upgradeComing := metrics[0]
+	assert.Empty(t, upgradeComing.Labels)
+	assert.InDelta(t, 1, upgradeComing.Value, 0.01)
+
+	upgradeInfo := metrics[1]
 	assert.NotEmpty(t, upgradeInfo.Labels["info"])
 	assert.Equal(t, "v1.5.0", upgradeInfo.Labels["name"])
 	assert.InDelta(t, 1, upgradeInfo.Value, 0.01)
 
-	upgradeHeight := metrics[1]
+	upgradeHeight := metrics[2]
 	assert.Equal(t, "v1.5.0", upgradeHeight.Labels["name"])
 	assert.InDelta(t, 8375044, upgradeHeight.Value, 0.01)
 }
