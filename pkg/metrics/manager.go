@@ -86,6 +86,14 @@ func NewManager() *Manager {
 			[]string{"node", "local_version", "remote_version"},
 		),
 
+		MetricNameUpgradeComing: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "upgrade_coming",
+				Help: "Is future upgrade planned?",
+			},
+			[]string{"node"},
+		),
+
 		MetricNameUpgradeInfo: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: constants.MetricsPrefix + "upgrade_info",
