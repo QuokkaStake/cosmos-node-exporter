@@ -31,9 +31,18 @@ func (c Client) Query(ctx context.Context, relativeUrl string, output interface{
 	childCtx, span := c.Tracer.Start(ctx, "HTTP request")
 	defer span.End()
 
+	var transport http.RoundTripper
+
+	transportRaw, ok := http.DefaultTransport.(*http.Transport)
+	if ok {
+		transport = transportRaw.Clone()
+	} else {
+		transport = http.DefaultTransport
+	}
+
 	client := &http.Client{
 		Timeout:   10 * time.Second,
-		Transport: otelhttp.NewTransport(http.DefaultTransport),
+		Transport: otelhttp.NewTransport(transport),
 	}
 
 	fullUrl := fmt.Sprintf("%s%s", c.Host, relativeUrl)
