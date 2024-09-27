@@ -91,7 +91,7 @@ func TestGetGithubClientInvalidRatelimitHeader(t *testing.T) {
 		"GET",
 		"https://api.github.com/repos/cosmos/gaia/releases/latest",
 		httpmock.
-			NewBytesResponder(200, assets.GetBytesOrPanic("invalid.toml")).
+			NewBytesResponder(200, assets.GetBytesOrPanic("github-valid.json")).
 			HeaderAdd(http.Header{"x-ratelimit-reset": []string{"asd"}}),
 	)
 
@@ -102,10 +102,9 @@ func TestGetGithubClientInvalidRatelimitHeader(t *testing.T) {
 
 	release, queryInfo, err := client.GetLatestRelease(context.Background())
 
-	require.Error(t, err)
-	require.ErrorContains(t, err, "invalid syntax")
-	assert.False(t, queryInfo.Success)
-	require.Empty(t, release)
+	require.NoError(t, err)
+	assert.True(t, queryInfo.Success)
+	require.Equal(t, "v17.2.0", release)
 }
 
 //nolint:paralleltest // disabled due to httpmock usage

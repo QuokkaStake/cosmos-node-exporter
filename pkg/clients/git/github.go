@@ -117,18 +117,23 @@ func (g *Github) GetLatestRelease(ctx context.Context) (string, query_info.Query
 	// rate limiting
 	rateLimitTimeHeader := res.Header.Get("x-ratelimit-reset") //nolint:canonicalheader
 	rateLimitHeaderInt, err := strconv.ParseInt(rateLimitTimeHeader, 10, 64)
-	if err != nil {
-		return "", queryInfo, err
+	if err == nil {
+		rateLimitTime := time.Unix(rateLimitHeaderInt, 0)
+
+		g.Logger.Trace().
+			Str("url", latestReleaseUrl).
+			Str("ratelimit-limit", res.Header.Get("x-ratelimit-limit")).         //nolint:canonicalheader
+			Str("ratelimit-remaining", res.Header.Get("x-ratelimit-remaining")). //nolint:canonicalheader
+			Time("ratelimit-reset", rateLimitTime).
+			Msg("GitHub query finished")
+	} else {
+		g.Logger.Trace().
+			Str("url", latestReleaseUrl).
+			Str("ratelimit-limit", res.Header.Get("x-ratelimit-limit")).         //nolint:canonicalheader
+			Str("ratelimit-remaining", res.Header.Get("x-ratelimit-remaining")). //nolint:canonicalheader
+			Str("ratelimit-reset", res.Header.Get("x-ratelimit-reset")).         //nolint:canonicalheader
+			Msg("GitHub query finished")
 	}
-
-	rateLimitTime := time.Unix(rateLimitHeaderInt, 0)
-
-	g.Logger.Trace().
-		Str("url", latestReleaseUrl).
-		Str("ratelimit-limit", res.Header.Get("x-ratelimit-limit")).         //nolint:canonicalheader
-		Str("ratelimit-remaining", res.Header.Get("x-ratelimit-remaining")). //nolint:canonicalheader
-		Time("ratelimit-reset", rateLimitTime).
-		Msg("GitHub query finished")
 
 	releaseInfo := GithubReleaseInfo{}
 	err = json.NewDecoder(res.Body).Decode(&releaseInfo)
