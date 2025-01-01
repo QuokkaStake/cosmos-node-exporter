@@ -4,7 +4,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,7 +17,6 @@ func TestValidateConfigNoConfigProvided(t *testing.T) {
 
 	os.Args = []string{"cmd", "validate-config"}
 	main()
-	assert.True(t, true)
 }
 
 //nolint:paralleltest // disabled
@@ -31,7 +29,6 @@ func TestValidateConfigFailedToLoad(t *testing.T) {
 
 	os.Args = []string{"cmd", "validate-config", "--config", "../assets/config-not-found.toml"}
 	main()
-	assert.True(t, true)
 }
 
 //nolint:paralleltest // disabled
@@ -44,14 +41,12 @@ func TestValidateConfigInvalid(t *testing.T) {
 
 	os.Args = []string{"cmd", "validate-config", "--config", "../assets/config-invalid.toml"}
 	main()
-	assert.True(t, true)
 }
 
 //nolint:paralleltest // disabled
-func TestValidateConfigValid(t *testing.T) {
+func TestValidateConfigValid(_ *testing.T) {
 	os.Args = []string{"cmd", "validate-config", "--config", "../assets/config-valid.toml"}
 	main()
-	assert.True(t, true)
 }
 
 //nolint:paralleltest // disabled
@@ -64,7 +59,6 @@ func TestStartNoConfigProvided(t *testing.T) {
 
 	os.Args = []string{"cmd"}
 	main()
-	assert.True(t, true)
 }
 
 //nolint:paralleltest // disabled
@@ -77,5 +71,4 @@ func TestStartConfigProvided(t *testing.T) {
 
 	os.Args = []string{"cmd", "--config", "../assets/config-invalid.toml"}
 	main()
-	assert.True(t, true)
 }

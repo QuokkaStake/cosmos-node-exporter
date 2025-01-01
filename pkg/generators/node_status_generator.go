@@ -32,6 +32,11 @@ func (g *NodeStatusGenerator) Get(state fetchers.State) []metrics.MetricInfo {
 			Value:      utils.BoolToFloat64(status.Result.SyncInfo.CatchingUp),
 		},
 		{
+			MetricName: metrics.MetricNameLatestBlockHeight,
+			Labels:     map[string]string{},
+			Value:      float64(status.Result.SyncInfo.LatestBlockHeight),
+		},
+		{
 			MetricName: metrics.MetricNameLatestBlockTime,
 			Labels:     map[string]string{},
 			Value:      float64(status.Result.SyncInfo.LatestBlockTime.Unix()),

@@ -62,12 +62,11 @@ func TestAppFailToStart(t *testing.T) {
 }
 
 //nolint:paralleltest // disabled
-func TestAppStopOperation(t *testing.T) {
+func TestAppStopOperation(_ *testing.T) {
 	filesystem := &fs.TestFS{}
 
 	app := NewApp(filesystem, "config-valid.toml", "1.2.3")
 	app.Stop()
-	assert.True(t, true)
 }
 
 //nolint:paralleltest // disabled

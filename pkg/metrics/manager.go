@@ -30,10 +30,18 @@ func NewManager() *Manager {
 			[]string{"node"},
 		),
 
+		MetricNameLatestBlockHeight: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: constants.MetricsPrefix + "latest_block_height",
+				Help: "Height of the node's latest block",
+			},
+			[]string{"node"},
+		),
+
 		MetricNameLatestBlockTime: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: constants.MetricsPrefix + "latest_block_time",
-				Help: "Unix timestamp of the time of the latest block",
+				Help: "Unix timestamp of the time of the node's latest block",
 			},
 			[]string{"node"},
 		),
