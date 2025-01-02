@@ -5,6 +5,7 @@ type MetricName string
 const (
 	MetricNameCosmovisorVersion     MetricName = "cosmovisor_version"
 	MetricNameCatchingUp            MetricName = "catching_up"
+	MetricNameLatestBlockHeight     MetricName = "latest_block_height"
 	MetricNameLatestBlockTime       MetricName = "latest_block_time"
 	MetricNameNodeInfo              MetricName = "node_info"
 	MetricNameTendermintVersion     MetricName = "tendermint_version"

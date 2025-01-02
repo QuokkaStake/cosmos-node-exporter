@@ -74,29 +74,34 @@ func TestNodeStatusGeneratorOk(t *testing.T) {
 	generator := NewNodeStatusGenerator()
 
 	metrics := generator.Get(state)
-	assert.Len(t, metrics, 5)
+	assert.Len(t, metrics, 6)
 
 	catchingUp := metrics[0]
 	assert.Empty(t, catchingUp.Labels)
 	assert.Zero(t, catchingUp.Value)
 
-	timeSinceLatest := metrics[1]
-	assert.Empty(t, timeSinceLatest.Labels)
+	latestBlockHeight := metrics[1]
+	assert.Empty(t, latestBlockHeight.Labels)
+	assert.InDelta(t, float64(21076916), latestBlockHeight.Value, 0.01)
 
-	nodeInfo := metrics[2]
+	latestBlockTime := metrics[2]
+	assert.Empty(t, latestBlockTime.Labels)
+	assert.InDelta(t, 1719681623, latestBlockTime.Value, 0.01)
+
+	nodeInfo := metrics[3]
 	assert.Equal(t, map[string]string{
 		"chain":   "cosmoshub-4",
 		"moniker": "freak12techno",
 	}, nodeInfo.Labels)
 	assert.InDelta(t, 1, nodeInfo.Value, 0.01)
 
-	tendermintVersion := metrics[3]
+	tendermintVersion := metrics[4]
 	assert.Equal(t, map[string]string{
 		"version": "0.37.6",
 	}, tendermintVersion.Labels)
 	assert.InDelta(t, 1, tendermintVersion.Value, 0.01)
 
-	votingPower := metrics[4]
+	votingPower := metrics[5]
 	assert.Empty(t, votingPower.Labels)
 	assert.Zero(t, votingPower.Value)
 }
