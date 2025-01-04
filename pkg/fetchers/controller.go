@@ -2,8 +2,10 @@ package fetchers
 
 import (
 	"context"
+	"fmt"
 	"main/pkg/constants"
 	"main/pkg/query_info"
+	"reflect"
 	"sync"
 
 	"github.com/rs/zerolog"
@@ -31,6 +33,34 @@ func (s State) GetData(fetcherNames []constants.FetcherName) []interface{} {
 	}
 
 	return data
+}
+
+func StateGet[T any](state State, fetcherName constants.FetcherName) (T, bool) {
+	var zero T
+
+	dataRaw, found := state[fetcherName]
+	if !found {
+		return zero, false
+	}
+
+	if dataRaw == nil {
+		return zero, false
+	}
+
+	data, converted := dataRaw.(T)
+	if !converted {
+		panic(fmt.Sprintf(
+			"Error converting data: expected %s, got %s",
+			reflect.TypeOf(zero).String(),
+			reflect.TypeOf(dataRaw).String(),
+		))
+	}
+
+	if reflect.ValueOf(data).Kind() == reflect.Ptr && reflect.ValueOf(data).IsNil() {
+		return zero, false
+	}
+
+	return data, true
 }
 
 type Controller struct {

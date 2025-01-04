@@ -21,17 +21,8 @@ func (g *UpgradesGenerator) Get(state fetchers.State) []metrics.MetricInfo {
 		Value:      0,
 	}}
 
-	upgradesRaw, ok := state[constants.FetcherNameUpgrades]
-	if !ok || upgradesRaw == nil {
-		return metricInfos
-	}
-
-	upgradeInfo, ok := upgradesRaw.(*upgradeTypes.Plan)
-	if !ok {
-		panic("expected the state entry to be string")
-	}
-
-	if upgradeInfo == nil {
+	upgradeInfo, upgradeInfoFound := fetchers.StateGet[*upgradeTypes.Plan](state, constants.FetcherNameUpgrades)
+	if !upgradeInfoFound {
 		return metricInfos
 	}
 

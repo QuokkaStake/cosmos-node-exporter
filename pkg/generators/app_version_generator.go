@@ -13,14 +13,9 @@ func NewAppVersionGenerator() *AppVersionGenerator {
 }
 
 func (g *AppVersionGenerator) Get(state fetchers.State) []metrics.MetricInfo {
-	statusRaw, ok := state[constants.FetcherNameAppVersion]
-	if !ok || statusRaw == nil {
+	version, found := fetchers.StateGet[string](state, constants.FetcherNameAppVersion)
+	if !found {
 		return []metrics.MetricInfo{}
-	}
-
-	version, ok := statusRaw.(string)
-	if !ok {
-		panic("expected the state entry to be string")
 	}
 
 	return []metrics.MetricInfo{{

@@ -14,14 +14,9 @@ func NewUptimeGenerator() *UptimeGenerator {
 }
 
 func (g *UptimeGenerator) Get(state fetchers.State) []metrics.MetricInfo {
-	statusRaw, ok := state[constants.FetcherNameUptime]
-	if !ok || statusRaw == nil {
+	startTime, startTimeFound := fetchers.StateGet[time.Time](state, constants.FetcherNameUptime)
+	if !startTimeFound {
 		return []metrics.MetricInfo{}
-	}
-
-	startTime, ok := statusRaw.(time.Time)
-	if !ok {
-		panic("expected the state entry to be time.Time")
 	}
 
 	return []metrics.MetricInfo{{

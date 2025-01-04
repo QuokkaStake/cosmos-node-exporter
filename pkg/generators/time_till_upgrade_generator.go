@@ -17,24 +17,11 @@ func NewTimeTillUpgradeGenerator() *TimeTillUpgradeGenerator {
 }
 
 func (g *TimeTillUpgradeGenerator) Get(state fetchers.State) []metrics.MetricInfo {
-	upgradeRaw, ok := state[constants.FetcherNameUpgrades]
-	if !ok || upgradeRaw == nil {
+	upgrade, upgradeFound := fetchers.StateGet[*types.Plan](state, constants.FetcherNameUpgrades)
+	blocksInfo, blocksInfoFound := fetchers.StateGet[*tendermint.BlocksInfo](state, constants.FetcherNameBlockTime)
+
+	if !upgradeFound || !blocksInfoFound {
 		return []metrics.MetricInfo{}
-	}
-
-	blocksInfoRaw, ok := state[constants.FetcherNameBlockTime]
-	if !ok || blocksInfoRaw == nil {
-		return []metrics.MetricInfo{}
-	}
-
-	upgrade, ok := upgradeRaw.(*types.Plan)
-	if !ok {
-		panic("expected the state entry to be *types.Plan")
-	}
-
-	blocksInfo, ok := blocksInfoRaw.(*tendermint.BlocksInfo)
-	if !ok {
-		panic("expected the state entry to be *tendermint.BlocksInfo")
 	}
 
 	blockTime := blocksInfo.BlockTime()

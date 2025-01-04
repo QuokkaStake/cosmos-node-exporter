@@ -15,14 +15,9 @@ func NewNodeStatusGenerator() *NodeStatusGenerator {
 }
 
 func (g *NodeStatusGenerator) Get(state fetchers.State) []metrics.MetricInfo {
-	statusRaw, ok := state[constants.FetcherNameNodeStatus]
-	if !ok || statusRaw == nil {
+	status, statusFound := fetchers.StateGet[tendermint.StatusResponse](state, constants.FetcherNameNodeStatus)
+	if !statusFound {
 		return []metrics.MetricInfo{}
-	}
-
-	status, ok := statusRaw.(tendermint.StatusResponse)
-	if !ok {
-		panic("expected the state entry to be tendermint.StatusResponse")
 	}
 
 	return []metrics.MetricInfo{

@@ -19,27 +19,10 @@ func NewCosmovisorUpgradesGenerator() *CosmovisorUpgradesGenerator {
 }
 
 func (g *CosmovisorUpgradesGenerator) Get(state fetchers.State) []metrics.MetricInfo {
-	upgradePlanRaw, ok := state[constants.FetcherNameUpgrades]
-	if !ok || upgradePlanRaw == nil {
-		return []metrics.MetricInfo{}
-	}
+	upgradePlan, upgradePlanFound := fetchers.StateGet[*upgradeTypes.Plan](state, constants.FetcherNameUpgrades)
+	cosmovisorUpgrades, cosmovisorUpgradesFound := fetchers.StateGet[*types.UpgradesPresent](state, constants.FetcherNameCosmovisorUpgrades)
 
-	cosmovisorUpgradesRaw, ok := state[constants.FetcherNameCosmovisorUpgrades]
-	if !ok || cosmovisorUpgradesRaw == nil {
-		return []metrics.MetricInfo{}
-	}
-
-	upgradePlan, ok := upgradePlanRaw.(*upgradeTypes.Plan)
-	if !ok {
-		panic("expected the state entry to be *types.Plan")
-	}
-
-	cosmovisorUpgrades, ok := cosmovisorUpgradesRaw.(types.UpgradesPresent)
-	if !ok {
-		panic("expected the state entry to be types.UpgradesPresent")
-	}
-
-	if upgradePlan == nil {
+	if !upgradePlanFound || !cosmovisorUpgradesFound {
 		return []metrics.MetricInfo{}
 	}
 

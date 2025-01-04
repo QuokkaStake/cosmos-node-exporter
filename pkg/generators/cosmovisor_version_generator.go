@@ -13,14 +13,9 @@ func NewCosmovisorVersionGenerator() *CosmovisorVersionGenerator {
 }
 
 func (g *CosmovisorVersionGenerator) Get(state fetchers.State) []metrics.MetricInfo {
-	statusRaw, ok := state[constants.FetcherNameCosmovisorVersion]
-	if !ok || statusRaw == nil {
+	version, versionFound := fetchers.StateGet[string](state, constants.FetcherNameCosmovisorVersion)
+	if !versionFound {
 		return []metrics.MetricInfo{}
-	}
-
-	version, ok := statusRaw.(string)
-	if !ok {
-		panic("expected the state entry to be string")
 	}
 
 	return []metrics.MetricInfo{

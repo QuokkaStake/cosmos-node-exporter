@@ -85,7 +85,7 @@ func TestCosmovisorUpgradesGeneratorEmptyUpgradePlan(t *testing.T) {
 
 	state := fetchers.State{
 		constants.FetcherNameUpgrades:           upgradePlan,
-		constants.FetcherNameCosmovisorUpgrades: types.UpgradesPresent{},
+		constants.FetcherNameCosmovisorUpgrades: &types.UpgradesPresent{},
 	}
 
 	generator := NewCosmovisorUpgradesGenerator()

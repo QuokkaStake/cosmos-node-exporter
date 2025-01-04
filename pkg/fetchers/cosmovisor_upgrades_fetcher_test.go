@@ -74,5 +74,5 @@ func TestCosmovisorUpgradesFetcherOk(t *testing.T) {
 	data, queryInfos := fetcher.Get(context.Background())
 	assert.Len(t, queryInfos, 1)
 	assert.True(t, queryInfos[0].Success)
-	assert.Equal(t, types.UpgradesPresent{"v15": true}, data)
+	assert.Equal(t, &types.UpgradesPresent{"v15": true}, data)
 }
