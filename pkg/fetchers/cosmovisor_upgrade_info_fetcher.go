@@ -67,7 +67,7 @@ func (n *CosmovisorUpgradeInfoFetcher) Get(ctx context.Context, data ...interfac
 	}
 
 	if upgradeInfo == nil {
-		return nil, []query_info.QueryInfo{}
+		return nil, []query_info.QueryInfo{queryInfo}
 	}
 
 	if upgradeInfo.Height < status.Result.SyncInfo.LatestBlockHeight {

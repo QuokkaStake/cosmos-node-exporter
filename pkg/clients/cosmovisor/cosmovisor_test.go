@@ -248,3 +248,90 @@ func TestCosmovisorGetUpgradesGetFileOk(t *testing.T) {
 	assert.True(t, queryInfo.Success)
 	assert.True(t, upgrades.HasUpgrade("v15"))
 }
+
+func TestCosmovisorGetUpgradeInfoFail(t *testing.T) {
+	t.Parallel()
+
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "/home/validator/.gaia",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
+	}
+	logger := loggerPkg.GetNopLogger()
+	tracer := tracing.InitNoopTracer()
+	client := NewCosmovisor(config, *logger, tracer)
+	client.CommandExecutor = &exec.TestCommandExecutor{Fail: true}
+
+	upgradeInfo, queryInfo, err := client.GetUpgradeInfo(context.Background())
+	require.Error(t, err)
+	assert.False(t, queryInfo.Success)
+	assert.Empty(t, upgradeInfo)
+}
+
+func TestCosmovisorGetUpgradeInfoNotPresent(t *testing.T) {
+	t.Parallel()
+
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "/home/validator/.gaia",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
+	}
+	logger := loggerPkg.GetNopLogger()
+	tracer := tracing.InitNoopTracer()
+	client := NewCosmovisor(config, *logger, tracer)
+
+	content := assets.GetBytesOrPanic("cosmovisor-upgrade-info-not-found.txt")
+	client.CommandExecutor = &exec.TestCommandExecutor{Expected: content}
+
+	upgradeInfo, queryInfo, err := client.GetUpgradeInfo(context.Background())
+	require.NoError(t, err)
+	assert.True(t, queryInfo.Success)
+	assert.Empty(t, upgradeInfo)
+}
+
+func TestCosmovisorGetUpgradeInfoInvalid(t *testing.T) {
+	t.Parallel()
+
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "/home/validator/.gaia",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
+	}
+	logger := loggerPkg.GetNopLogger()
+	tracer := tracing.InitNoopTracer()
+	client := NewCosmovisor(config, *logger, tracer)
+
+	content := assets.GetBytesOrPanic("cosmovisor-version-ok.txt")
+	client.CommandExecutor = &exec.TestCommandExecutor{Expected: content}
+
+	upgradeInfo, queryInfo, err := client.GetUpgradeInfo(context.Background())
+	require.Error(t, err)
+	assert.False(t, queryInfo.Success)
+	assert.Empty(t, upgradeInfo)
+}
+
+func TestCosmovisorGetUpgradeInfoOk(t *testing.T) {
+	t.Parallel()
+
+	config := configPkg.CosmovisorConfig{
+		Enabled:         null.BoolFrom(true),
+		ChainBinaryName: "gaiad",
+		ChainFolder:     "/home/validator/.gaia",
+		CosmovisorPath:  "/home/validator/go/bin/cosmovisor",
+	}
+	logger := loggerPkg.GetNopLogger()
+	tracer := tracing.InitNoopTracer()
+	client := NewCosmovisor(config, *logger, tracer)
+
+	content := assets.GetBytesOrPanic("cosmovisor-upgrade-info.txt")
+	client.CommandExecutor = &exec.TestCommandExecutor{Expected: content}
+
+	upgradeInfo, queryInfo, err := client.GetUpgradeInfo(context.Background())
+	require.NoError(t, err)
+	assert.True(t, queryInfo.Success)
+	assert.NotEmpty(t, upgradeInfo)
+	assert.Equal(t, int64(999), upgradeInfo.Height)
+}
