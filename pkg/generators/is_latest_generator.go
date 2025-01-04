@@ -22,27 +22,17 @@ func NewIsLatestGenerator(logger zerolog.Logger) *IsLatestGenerator {
 }
 
 func (g *IsLatestGenerator) Get(state fetchers.State) []metrics.MetricInfo {
-	localVersionRaw, ok := state[constants.FetcherNameLocalVersion]
-	if !ok || localVersionRaw == nil {
+	localVersion, localVersionFound := fetchers.StateGet[types.VersionInfo](state, constants.FetcherNameLocalVersion)
+	if !localVersionFound {
 		return []metrics.MetricInfo{}
 	}
 
-	localVersionInfo, ok := localVersionRaw.(types.VersionInfo)
-	if !ok {
-		panic("expected the state entry to be types.VersionInfo")
-	}
-
-	remoteVersionRaw, ok := state[constants.FetcherNameRemoteVersion]
-	if !ok || remoteVersionRaw == nil {
+	remoteVersion, remoteVersionFound := fetchers.StateGet[string](state, constants.FetcherNameRemoteVersion)
+	if !remoteVersionFound {
 		return []metrics.MetricInfo{}
 	}
 
-	remoteVersion, ok := remoteVersionRaw.(string)
-	if !ok {
-		panic("expected the state entry to be string")
-	}
-
-	semverLocal, err := semver.NewVersion(localVersionInfo.Version)
+	semverLocal, err := semver.NewVersion(localVersion.Version)
 	if err != nil {
 		g.Logger.Err(err).Msg("Could not get local app version")
 		return []metrics.MetricInfo{}
@@ -60,7 +50,7 @@ func (g *IsLatestGenerator) Get(state fetchers.State) []metrics.MetricInfo {
 	return []metrics.MetricInfo{{
 		MetricName: metrics.MetricNameIsLatest,
 		Labels: map[string]string{
-			"local_version":  localVersionInfo.Version,
+			"local_version":  localVersion.Version,
 			"remote_version": remoteVersion,
 		},
 		Value: utils.BoolToFloat64(isLatestOrSameVersion),

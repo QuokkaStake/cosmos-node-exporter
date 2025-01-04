@@ -14,19 +14,14 @@ func NewLocalVersionGenerator() *LocalVersionGenerator {
 }
 
 func (g *LocalVersionGenerator) Get(state fetchers.State) []metrics.MetricInfo {
-	remoteVersionRaw, ok := state[constants.FetcherNameLocalVersion]
-	if !ok || remoteVersionRaw == nil {
+	localVersion, localVersionFound := fetchers.StateGet[types.VersionInfo](state, constants.FetcherNameLocalVersion)
+	if !localVersionFound {
 		return []metrics.MetricInfo{}
-	}
-
-	versionInfo, ok := remoteVersionRaw.(types.VersionInfo)
-	if !ok {
-		panic("expected the state entry to be string")
 	}
 
 	return []metrics.MetricInfo{{
 		MetricName: metrics.MetricNameLocalVersion,
-		Labels:     map[string]string{"version": versionInfo.Version},
+		Labels:     map[string]string{"version": localVersion.Version},
 		Value:      1,
 	}}
 }

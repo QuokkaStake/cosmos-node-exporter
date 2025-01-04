@@ -143,7 +143,7 @@ func (c *Cosmovisor) GetCosmovisorVersion(ctx context.Context) (string, query_in
 	return "", queryInfo, errors.New("could not find version in Cosmovisor response")
 }
 
-func (c *Cosmovisor) GetUpgrades(ctx context.Context) (types.UpgradesPresent, query_info.QueryInfo, error) {
+func (c *Cosmovisor) GetUpgrades(ctx context.Context) (*types.UpgradesPresent, query_info.QueryInfo, error) {
 	_, span := c.Tracer.Start(
 		ctx,
 		"Fetching cosmovisor upgrades",
@@ -161,10 +161,10 @@ func (c *Cosmovisor) GetUpgrades(ctx context.Context) (types.UpgradesPresent, qu
 	if err != nil {
 		span.RecordError(err)
 		c.Logger.Error().Err(err).Msg("Could not fetch Cosmovisor upgrades folder content")
-		return map[string]bool{}, cosmovisorGetUpgradesQueryInfo, err
+		return nil, cosmovisorGetUpgradesQueryInfo, err
 	}
 
-	upgrades := map[string]bool{}
+	upgrades := types.UpgradesPresent{}
 
 	for _, upgradeFolder := range upgradesFolderContent {
 		if !upgradeFolder.IsDir() {
@@ -182,7 +182,7 @@ func (c *Cosmovisor) GetUpgrades(ctx context.Context) (types.UpgradesPresent, qu
 			if !errors.Is(err, os.ErrNotExist) {
 				c.Logger.Warn().Err(err).Msg("Error fetching Cosmovisor upgrade")
 				span.RecordError(err)
-				return upgrades, cosmovisorGetUpgradesQueryInfo, err
+				return &upgrades, cosmovisorGetUpgradesQueryInfo, err
 			}
 
 			upgrades[upgradeFolder.Name()] = false
@@ -193,5 +193,5 @@ func (c *Cosmovisor) GetUpgrades(ctx context.Context) (types.UpgradesPresent, qu
 
 	cosmovisorGetUpgradesQueryInfo.Success = true
 
-	return upgrades, cosmovisorGetUpgradesQueryInfo, nil
+	return &upgrades, cosmovisorGetUpgradesQueryInfo, nil
 }

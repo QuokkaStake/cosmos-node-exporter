@@ -16,17 +16,12 @@ func NewNodeConfigGenerator() *NodeConfigGenerator {
 }
 
 func (g *NodeConfigGenerator) Get(state fetchers.State) []metricsPkg.MetricInfo {
-	statusRaw, ok := state[constants.FetcherNameNodeConfig]
-	if !ok || statusRaw == nil {
+	nodeConfig, nodeConfigFound := fetchers.StateGet[*node.ConfigResponse](state, constants.FetcherNameNodeConfig)
+	if !nodeConfigFound {
 		return []metricsPkg.MetricInfo{}
 	}
 
-	config, ok := statusRaw.(*node.ConfigResponse)
-	if !ok {
-		panic("expected the state entry to be *node.ConfigResponse")
-	}
-
-	coinsParsed, err := cosmosTypes.ParseDecCoins(config.MinimumGasPrice)
+	coinsParsed, err := cosmosTypes.ParseDecCoins(nodeConfig.MinimumGasPrice)
 	if err != nil {
 		panic(err)
 	}
@@ -46,11 +41,11 @@ func (g *NodeConfigGenerator) Get(state fetchers.State) []metricsPkg.MetricInfo 
 		})
 	}
 
-	if config.HaltHeight > 0 {
+	if nodeConfig.HaltHeight > 0 {
 		metrics = append(metrics, metricsPkg.MetricInfo{
 			MetricName: metricsPkg.MetricNameHaltHeight,
 			Labels:     map[string]string{},
-			Value:      float64(config.HaltHeight),
+			Value:      float64(nodeConfig.HaltHeight),
 		})
 	}
 

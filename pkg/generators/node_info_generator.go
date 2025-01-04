@@ -15,14 +15,9 @@ func NewNodeInfoGenerator() *NodeInfoGenerator {
 }
 
 func (g *NodeInfoGenerator) Get(state fetchers.State) []metricsPkg.MetricInfo {
-	statusRaw, ok := state[constants.FetcherNameNodeInfo]
-	if !ok || statusRaw == nil {
+	nodeInfo, nodeInfoFound := fetchers.StateGet[*cmtservice.GetNodeInfoResponse](state, constants.FetcherNameNodeInfo)
+	if !nodeInfoFound {
 		return []metricsPkg.MetricInfo{}
-	}
-
-	nodeInfo, ok := statusRaw.(*cmtservice.GetNodeInfoResponse)
-	if !ok {
-		panic("expected the state entry to be *cmtservice.GetNodeInfoResponse")
 	}
 
 	return []metricsPkg.MetricInfo{

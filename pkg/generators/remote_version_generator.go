@@ -13,19 +13,14 @@ func NewRemoteVersionGenerator() *RemoteVersionGenerator {
 }
 
 func (g *RemoteVersionGenerator) Get(state fetchers.State) []metrics.MetricInfo {
-	remoteVersionRaw, ok := state[constants.FetcherNameRemoteVersion]
-	if !ok || remoteVersionRaw == nil {
+	remoteVersion, remoteVersionFound := fetchers.StateGet[string](state, constants.FetcherNameRemoteVersion)
+	if !remoteVersionFound {
 		return []metrics.MetricInfo{}
-	}
-
-	version, ok := remoteVersionRaw.(string)
-	if !ok {
-		panic("expected the state entry to be string")
 	}
 
 	return []metrics.MetricInfo{{
 		MetricName: metrics.MetricNameRemoteVersion,
-		Labels:     map[string]string{"version": version},
+		Labels:     map[string]string{"version": remoteVersion},
 		Value:      1,
 	}}
 }
