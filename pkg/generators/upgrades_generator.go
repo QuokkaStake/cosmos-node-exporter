@@ -15,28 +15,76 @@ func NewUpgradesGenerator() *UpgradesGenerator {
 }
 
 func (g *UpgradesGenerator) Get(state fetchers.State) []metrics.MetricInfo {
-	metricInfos := []metrics.MetricInfo{{
-		MetricName: metrics.MetricNameUpgradeComing,
-		Labels:     map[string]string{},
-		Value:      0,
-	}}
+	metricInfos := []metrics.MetricInfo{}
 
-	upgradeInfo, upgradeInfoFound := fetchers.StateGet[*upgradeTypes.Plan](state, constants.FetcherNameUpgrades)
-	if !upgradeInfoFound {
-		return metricInfos
+	governanceUpgrade, governanceUpgradeFound := fetchers.StateGet[*upgradeTypes.Plan](state, constants.FetcherNameUpgrades)
+	upgradeInfoJSON, upgradeInfoJSONFound := fetchers.StateGet[*upgradeTypes.Plan](state, constants.FetcherNameCosmovisorUpgradeInfo)
+
+	if governanceUpgradeFound {
+		metricInfos = append(metricInfos, metrics.MetricInfo{
+			MetricName: metrics.MetricNameUpgradeComing,
+			Labels: map[string]string{
+				"source": constants.UpgradeSourceGovernance,
+			},
+			Value: 1,
+		}, metrics.MetricInfo{
+			MetricName: metrics.MetricNameUpgradeInfo,
+			Labels: map[string]string{
+				"name":   governanceUpgrade.Name,
+				"info":   governanceUpgrade.Info,
+				"source": constants.UpgradeSourceGovernance,
+			},
+			Value: 1,
+		}, metrics.MetricInfo{
+			MetricName: metrics.MetricNameUpgradeHeight,
+			Labels: map[string]string{
+				"name":   governanceUpgrade.Name,
+				"source": constants.UpgradeSourceGovernance,
+			},
+			Value: float64(governanceUpgrade.Height),
+		})
+	} else {
+		metricInfos = append(metricInfos, metrics.MetricInfo{
+			MetricName: metrics.MetricNameUpgradeComing,
+			Labels: map[string]string{
+				"source": constants.UpgradeSourceGovernance,
+			},
+			Value: 0,
+		})
 	}
 
-	metricInfos[0].Value = 1
-
-	metricInfos = append(metricInfos, metrics.MetricInfo{
-		MetricName: metrics.MetricNameUpgradeInfo,
-		Labels:     map[string]string{"name": upgradeInfo.Name, "info": upgradeInfo.Info},
-		Value:      1,
-	}, metrics.MetricInfo{
-		MetricName: metrics.MetricNameUpgradeHeight,
-		Labels:     map[string]string{"name": upgradeInfo.Name},
-		Value:      float64(upgradeInfo.Height),
-	})
+	if upgradeInfoJSONFound {
+		metricInfos = append(metricInfos, metrics.MetricInfo{
+			MetricName: metrics.MetricNameUpgradeComing,
+			Labels: map[string]string{
+				"source": constants.UpgradeSourceUpgradeInfo,
+			},
+			Value: 1,
+		}, metrics.MetricInfo{
+			MetricName: metrics.MetricNameUpgradeInfo,
+			Labels: map[string]string{
+				"name":   upgradeInfoJSON.Name,
+				"info":   upgradeInfoJSON.Info,
+				"source": constants.UpgradeSourceUpgradeInfo,
+			},
+			Value: 1,
+		}, metrics.MetricInfo{
+			MetricName: metrics.MetricNameUpgradeHeight,
+			Labels: map[string]string{
+				"name":   upgradeInfoJSON.Name,
+				"source": constants.UpgradeSourceUpgradeInfo,
+			},
+			Value: float64(upgradeInfoJSON.Height),
+		})
+	} else {
+		metricInfos = append(metricInfos, metrics.MetricInfo{
+			MetricName: metrics.MetricNameUpgradeComing,
+			Labels: map[string]string{
+				"source": constants.UpgradeSourceUpgradeInfo,
+			},
+			Value: 0,
+		})
+	}
 
 	return metricInfos
 }

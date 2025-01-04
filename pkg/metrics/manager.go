@@ -99,7 +99,7 @@ func NewManager() *Manager {
 				Name: constants.MetricsPrefix + "upgrade_coming",
 				Help: "Is future upgrade planned?",
 			},
-			[]string{"node"},
+			[]string{"node", "source"},
 		),
 
 		MetricNameUpgradeInfo: prometheus.NewGaugeVec(
@@ -107,7 +107,7 @@ func NewManager() *Manager {
 				Name: constants.MetricsPrefix + "upgrade_info",
 				Help: "Future upgrade info",
 			},
-			[]string{"node", "name", "info"},
+			[]string{"node", "name", "info", "source"},
 		),
 
 		MetricNameUpgradeHeight: prometheus.NewGaugeVec(
@@ -115,7 +115,7 @@ func NewManager() *Manager {
 				Name: constants.MetricsPrefix + "upgrade_height",
 				Help: "Future upgrade height",
 			},
-			[]string{"node", "name"},
+			[]string{"node", "name", "source"},
 		),
 
 		MetricNameUpgradeEstimatedTime: prometheus.NewGaugeVec(
@@ -123,7 +123,7 @@ func NewManager() *Manager {
 				Name: constants.MetricsPrefix + "upgrade_estimated_time",
 				Help: "Estimated upgrade time, as Unix timestamp",
 			},
-			[]string{"node", "name"},
+			[]string{"node", "name", "source"},
 		),
 
 		MetricNameUpgradeBinaryPresent: prometheus.NewGaugeVec(
@@ -131,7 +131,7 @@ func NewManager() *Manager {
 				Name: constants.MetricsPrefix + "upgrade_binary_present",
 				Help: "Is upgrade binary present?",
 			},
-			[]string{"node", "name"},
+			[]string{"node", "name", "source"},
 		),
 
 		MetricNameQuerierEnabled: prometheus.NewGaugeVec(

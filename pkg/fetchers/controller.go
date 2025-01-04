@@ -43,16 +43,22 @@ func StateGet[T any](state State, fetcherName constants.FetcherName) (T, bool) {
 		return zero, false
 	}
 
-	if dataRaw == nil {
+	return Convert[T](dataRaw)
+}
+
+func Convert[T any](input interface{}) (T, bool) {
+	var zero T
+
+	if input == nil {
 		return zero, false
 	}
 
-	data, converted := dataRaw.(T)
+	data, converted := input.(T)
 	if !converted {
 		panic(fmt.Sprintf(
 			"Error converting data: expected %s, got %s",
 			reflect.TypeOf(zero).String(),
-			reflect.TypeOf(dataRaw).String(),
+			reflect.TypeOf(input).String(),
 		))
 	}
 

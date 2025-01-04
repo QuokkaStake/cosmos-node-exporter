@@ -15,6 +15,8 @@ import (
 	"os"
 	"strings"
 
+	upgradeTypes "cosmossdk.io/x/upgrade/types"
+
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/rs/zerolog"
@@ -194,4 +196,59 @@ func (c *Cosmovisor) GetUpgrades(ctx context.Context) (*types.UpgradesPresent, q
 	cosmovisorGetUpgradesQueryInfo.Success = true
 
 	return &upgrades, cosmovisorGetUpgradesQueryInfo, nil
+}
+
+func (c *Cosmovisor) GetUpgradeInfo(ctx context.Context) (*upgradeTypes.Plan, query_info.QueryInfo, error) {
+	_, span := c.Tracer.Start(
+		ctx,
+		"Fetching cosmovisor upgrade info",
+	)
+	defer span.End()
+
+	queryInfo := query_info.QueryInfo{
+		Module:  constants.ModuleCosmovisor,
+		Action:  constants.ActionCosmovisorGetCosmovisorUpgradeInfo,
+		Success: false,
+	}
+
+	env := append(
+		os.Environ(),
+		"DAEMON_NAME="+c.Config.ChainBinaryName,
+		"DAEMON_HOME="+c.Config.ChainFolder,
+	)
+
+	out, err := c.CommandExecutor.RunWithEnv(
+		c.Config.CosmovisorPath,
+		[]string{"show-upgrade-info"},
+		env,
+	)
+	if err != nil {
+		c.Logger.Error().
+			Err(err).
+			Str("output", utils.DecolorifyString(string(out))).
+			Msg("Could not get Cosmovisor upgrade info")
+		span.RecordError(err)
+		return nil, queryInfo, err
+	}
+
+	if strings.Contains(string(out), "No upgrade info found") {
+		c.Logger.Trace().Msg("Cosmovisor reports that there is no upgrade info present")
+		queryInfo.Success = true
+		return nil, queryInfo, nil
+	}
+
+	jsonOutput := getJsonString(string(out))
+
+	var upgradePlan *upgradeTypes.Plan
+	if unmarshalErr := json.Unmarshal([]byte(jsonOutput), &upgradePlan); unmarshalErr != nil {
+		c.Logger.Error().
+			Err(unmarshalErr).
+			Str("output", jsonOutput).
+			Msg("Could not unmarshall upgrade info")
+		span.RecordError(unmarshalErr)
+		return upgradePlan, queryInfo, unmarshalErr
+	}
+
+	queryInfo.Success = true
+	return upgradePlan, queryInfo, nil
 }

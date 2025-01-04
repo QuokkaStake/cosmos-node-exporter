@@ -39,25 +39,19 @@ func (n *BlockTimeFetcher) Name() constants.FetcherName {
 func (n *BlockTimeFetcher) Dependencies() []constants.FetcherName {
 	return []constants.FetcherName{
 		constants.FetcherNameUpgrades,
+		constants.FetcherNameCosmovisorUpgradeInfo,
 	}
 }
 
 func (n *BlockTimeFetcher) Get(ctx context.Context, data ...interface{}) (interface{}, []query_info.QueryInfo) {
-	if len(data) < 1 {
+	if len(data) < 2 {
 		panic("data is empty")
 	}
 
-	if data[0] == nil {
-		n.Logger.Trace().Msg("Upgrade plan is empty, not fetching block time.")
-		return nil, []query_info.QueryInfo{}
-	}
+	_, governanceUpgradePlanConverted := Convert[*types.Plan](data[0])
+	_, upgradeInfoJSONConverted := Convert[*types.Plan](data[1])
 
-	// upgrade-info was not fetched
-	upgradePlan, ok := data[0].(*types.Plan)
-	if !ok {
-		panic("expected upgrade plan to be *types.Plan")
-	}
-	if upgradePlan == nil {
+	if !governanceUpgradePlanConverted && !upgradeInfoJSONConverted {
 		n.Logger.Trace().Msg("Upgrade plan is empty, not fetching block time.")
 		return nil, []query_info.QueryInfo{}
 	}
