@@ -28,7 +28,10 @@ func TestBlockTimeFetcherBase(t *testing.T) {
 	client := tendermint.NewRPC(config, *logger, tracer)
 	fetcher := NewBlockTimeFetcher(*logger, client, tracer)
 	assert.True(t, fetcher.Enabled())
-	assert.Equal(t, []constants.FetcherName{constants.FetcherNameUpgrades}, fetcher.Dependencies())
+	assert.Equal(t, []constants.FetcherName{
+		constants.FetcherNameUpgrades,
+		constants.FetcherNameCosmovisorUpgradeInfo,
+	}, fetcher.Dependencies())
 	assert.Equal(t, constants.FetcherNameBlockTime, fetcher.Name())
 }
 
@@ -60,7 +63,7 @@ func TestBlockTimeFetcherDataNil(t *testing.T) {
 
 	var upgradePlan *types.Plan
 
-	data, queryInfos := fetcher.Get(context.Background(), upgradePlan)
+	data, queryInfos := fetcher.Get(context.Background(), upgradePlan, upgradePlan)
 	assert.Empty(t, queryInfos)
 	assert.Nil(t, data)
 }
@@ -99,7 +102,7 @@ func TestBlockTimeFetcherTendermintFailBlock(t *testing.T) {
 	client := tendermint.NewRPC(config, *logger, tracer)
 	fetcher := NewBlockTimeFetcher(*logger, client, tracer)
 
-	data, queryInfos := fetcher.Get(context.Background(), &types.Plan{})
+	data, queryInfos := fetcher.Get(context.Background(), &types.Plan{}, &types.Plan{})
 	assert.Len(t, queryInfos, 1)
 	assert.False(t, queryInfos[0].Success)
 	assert.Nil(t, data)
@@ -128,7 +131,7 @@ func TestBlockTimeFetcherTendermintFailOlderBlock(t *testing.T) {
 	client := tendermint.NewRPC(config, *logger, tracer)
 	fetcher := NewBlockTimeFetcher(*logger, client, tracer)
 
-	data, queryInfos := fetcher.Get(context.Background(), &types.Plan{})
+	data, queryInfos := fetcher.Get(context.Background(), &types.Plan{}, &types.Plan{})
 	assert.Len(t, queryInfos, 1)
 	assert.False(t, queryInfos[0].Success)
 	assert.Nil(t, data)
@@ -147,7 +150,7 @@ func TestBlockTimeFetcherNoUpgrade(t *testing.T) {
 
 	var upgradePlan *types.Plan
 
-	data, queryInfos := fetcher.Get(context.Background(), upgradePlan)
+	data, queryInfos := fetcher.Get(context.Background(), upgradePlan, upgradePlan)
 	assert.Empty(t, queryInfos)
 	assert.Nil(t, data)
 }
@@ -175,7 +178,7 @@ func TestBlockTimeFetcherTendermintOk(t *testing.T) {
 	client := tendermint.NewRPC(config, *logger, tracer)
 	fetcher := NewBlockTimeFetcher(*logger, client, tracer)
 
-	data, queryInfos := fetcher.Get(context.Background(), &types.Plan{})
+	data, queryInfos := fetcher.Get(context.Background(), &types.Plan{}, &types.Plan{})
 	assert.Len(t, queryInfos, 1)
 	assert.True(t, queryInfos[0].Success)
 	assert.NotNil(t, data)

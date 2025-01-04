@@ -64,6 +64,7 @@ func NewNodeHandler(
 		fetchersPkg.NewUpgradesFetcher(appLogger, tendermintRPC, config.TendermintConfig.QueryUpgrades.Bool, tracer),
 		fetchersPkg.NewBlockTimeFetcher(appLogger, tendermintRPC, tracer),
 		fetchersPkg.NewCosmovisorUpgradesFetcher(appLogger, cosmovisor, tracer),
+		fetchersPkg.NewCosmovisorUpgradeInfoFetcher(appLogger, cosmovisor, tracer),
 	}
 
 	generators := []generatorsPkg.Generator{

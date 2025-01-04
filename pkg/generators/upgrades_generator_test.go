@@ -8,6 +8,7 @@ import (
 	"main/pkg/constants"
 	"main/pkg/fetchers"
 	loggerPkg "main/pkg/logger"
+	metricsPkg "main/pkg/metrics"
 	"main/pkg/tracing"
 	"testing"
 
@@ -23,11 +24,19 @@ func TestUpgradesGeneratorEmpty(t *testing.T) {
 	state := fetchers.State{}
 	generator := NewUpgradesGenerator()
 	metrics := generator.Get(state)
-	assert.Len(t, metrics, 1)
+	assert.Len(t, metrics, 2)
 
-	upgradeComing := metrics[0]
-	assert.Empty(t, upgradeComing.Labels)
-	assert.Zero(t, upgradeComing.Value)
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeComing,
+		Labels:     map[string]string{"source": constants.UpgradeSourceGovernance},
+		Value:      0,
+	}, metrics[0])
+
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeComing,
+		Labels:     map[string]string{"source": constants.UpgradeSourceUpgradeInfo},
+		Value:      0,
+	}, metrics[1])
 }
 
 func TestUpgradesGeneratorInvalid(t *testing.T) {
@@ -70,11 +79,19 @@ func TestUpgradesGeneratorNotPresent(t *testing.T) {
 	generator := NewUpgradesGenerator()
 
 	metrics := generator.Get(state)
-	assert.Len(t, metrics, 1)
+	assert.Len(t, metrics, 2)
 
-	upgradeComing := metrics[0]
-	assert.Empty(t, upgradeComing.Labels)
-	assert.Zero(t, upgradeComing.Value)
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeComing,
+		Labels:     map[string]string{"source": constants.UpgradeSourceGovernance},
+		Value:      0,
+	}, metrics[0])
+
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeComing,
+		Labels:     map[string]string{"source": constants.UpgradeSourceUpgradeInfo},
+		Value:      0,
+	}, metrics[1])
 }
 
 //nolint:paralleltest // disabled due to httpmock usage
@@ -99,23 +116,63 @@ func TestUpgradesGeneratorOk(t *testing.T) {
 	data, _ := fetcher.Get(context.Background())
 	assert.NotNil(t, data)
 
-	state := fetchers.State{constants.FetcherNameUpgrades: data}
+	state := fetchers.State{
+		constants.FetcherNameUpgrades:              data,
+		constants.FetcherNameCosmovisorUpgradeInfo: data,
+	}
 
 	generator := NewUpgradesGenerator()
 
 	metrics := generator.Get(state)
-	assert.Len(t, metrics, 3)
+	assert.Len(t, metrics, 6)
 
-	upgradeComing := metrics[0]
-	assert.Empty(t, upgradeComing.Labels)
-	assert.InDelta(t, 1, upgradeComing.Value, 0.01)
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeComing,
+		Labels:     map[string]string{"source": constants.UpgradeSourceGovernance},
+		Value:      1,
+	}, metrics[0])
 
-	upgradeInfo := metrics[1]
-	assert.NotEmpty(t, upgradeInfo.Labels["info"])
-	assert.Equal(t, "v1.5.0", upgradeInfo.Labels["name"])
-	assert.InDelta(t, 1, upgradeInfo.Value, 0.01)
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeInfo,
+		Labels: map[string]string{
+			"info":   "{\n  \"binaries\": {\n    \"linux/amd64\": \"https://github.com/NibiruChain/nibiru/releases/download/v1.5.0/nibid_1.5.0_linux_amd64.tar.gz\",\n    \"linux/arm64\": \"https://github.com/NibiruChain/nibiru/releases/download/v1.5.0/nibid_1.5.0_linux_arm64.tar.gz\",\n    \"docker\": \"ghcr.io/nibiruchain/nibiru:1.5.0\"\n  }\n}",
+			"name":   "v1.5.0",
+			"source": constants.UpgradeSourceGovernance,
+		},
+		Value: 1,
+	}, metrics[1])
 
-	upgradeHeight := metrics[2]
-	assert.Equal(t, "v1.5.0", upgradeHeight.Labels["name"])
-	assert.InDelta(t, 8375044, upgradeHeight.Value, 0.01)
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeHeight,
+		Labels: map[string]string{
+			"name":   "v1.5.0",
+			"source": constants.UpgradeSourceGovernance,
+		},
+		Value: 8375044,
+	}, metrics[2])
+
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeComing,
+		Labels:     map[string]string{"source": constants.UpgradeSourceUpgradeInfo},
+		Value:      1,
+	}, metrics[3])
+
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeInfo,
+		Labels: map[string]string{
+			"info":   "{\n  \"binaries\": {\n    \"linux/amd64\": \"https://github.com/NibiruChain/nibiru/releases/download/v1.5.0/nibid_1.5.0_linux_amd64.tar.gz\",\n    \"linux/arm64\": \"https://github.com/NibiruChain/nibiru/releases/download/v1.5.0/nibid_1.5.0_linux_arm64.tar.gz\",\n    \"docker\": \"ghcr.io/nibiruchain/nibiru:1.5.0\"\n  }\n}",
+			"name":   "v1.5.0",
+			"source": constants.UpgradeSourceUpgradeInfo,
+		},
+		Value: 1,
+	}, metrics[4])
+
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeHeight,
+		Labels: map[string]string{
+			"name":   "v1.5.0",
+			"source": constants.UpgradeSourceUpgradeInfo,
+		},
+		Value: 8375044,
+	}, metrics[5])
 }
