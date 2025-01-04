@@ -8,6 +8,7 @@ import (
 	"main/pkg/constants"
 	"main/pkg/fetchers"
 	loggerPkg "main/pkg/logger"
+	metricsPkg "main/pkg/metrics"
 	"main/pkg/tracing"
 	"testing"
 
@@ -110,19 +111,34 @@ func TestTimeTillUpgradeGeneratorOk(t *testing.T) {
 	assert.NotNil(t, upgradesInfo)
 
 	blockTimeFetcher := fetchers.NewBlockTimeFetcher(*logger, client, tracer)
-	blockTimeData, _ := blockTimeFetcher.Get(context.Background(), upgradesInfo)
+	blockTimeData, _ := blockTimeFetcher.Get(context.Background(), upgradesInfo, upgradesInfo)
 	assert.NotNil(t, blockTimeData)
 
 	state := fetchers.State{
-		constants.FetcherNameUpgrades:  upgradesInfo,
-		constants.FetcherNameBlockTime: blockTimeData,
+		constants.FetcherNameUpgrades:              upgradesInfo,
+		constants.FetcherNameCosmovisorUpgradeInfo: upgradesInfo,
+		constants.FetcherNameBlockTime:             blockTimeData,
 	}
 
 	generator := NewTimeTillUpgradeGenerator()
 	metrics := generator.Get(state)
-	assert.Len(t, metrics, 1)
+	assert.Len(t, metrics, 2)
 
-	upgradeTime := metrics[0]
-	assert.Equal(t, "v1.5.0", upgradeTime.Labels["name"])
-	assert.InDelta(t, 1642330177, upgradeTime.Value, 0.01)
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeEstimatedTime,
+		Labels: map[string]string{
+			"name":   "v1.5.0",
+			"source": constants.UpgradeSourceGovernance,
+		},
+		Value: 1642330177,
+	}, metrics[0])
+
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeEstimatedTime,
+		Labels: map[string]string{
+			"name":   "v1.5.0",
+			"source": constants.UpgradeSourceUpgradeInfo,
+		},
+		Value: 1642330177,
+	}, metrics[1])
 }
