@@ -10,6 +10,7 @@ import (
 	"main/pkg/fetchers"
 	"main/pkg/fs"
 	loggerPkg "main/pkg/logger"
+	metricsPkg "main/pkg/metrics"
 	"main/pkg/tracing"
 	"main/pkg/types"
 	"testing"
@@ -123,15 +124,30 @@ func TestCosmovisorUpgradesGeneratorOk(t *testing.T) {
 	assert.NotNil(t, upgrades)
 
 	state := fetchers.State{
-		constants.FetcherNameUpgrades:           upgrades,
-		constants.FetcherNameCosmovisorUpgrades: cosmovisorUpgrades,
+		constants.FetcherNameUpgrades:              upgrades,
+		constants.FetcherNameCosmovisorUpgradeInfo: upgrades,
+		constants.FetcherNameCosmovisorUpgrades:    cosmovisorUpgrades,
 	}
 
 	generator := NewCosmovisorUpgradesGenerator()
 	metrics := generator.Get(state)
-	assert.Len(t, metrics, 1)
+	assert.Len(t, metrics, 2)
 
-	upgradePresent := metrics[0]
-	assert.Equal(t, "v1.5.0", upgradePresent.Labels["name"])
-	assert.Zero(t, upgradePresent.Value)
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeBinaryPresent,
+		Labels: map[string]string{
+			"name":   "v1.5.0",
+			"source": constants.UpgradeSourceGovernance,
+		},
+		Value: 0,
+	}, metrics[0])
+
+	assert.Equal(t, metricsPkg.MetricInfo{
+		MetricName: metricsPkg.MetricNameUpgradeBinaryPresent,
+		Labels: map[string]string{
+			"name":   "v1.5.0",
+			"source": constants.UpgradeSourceUpgradeInfo,
+		},
+		Value: 0,
+	}, metrics[1])
 }
